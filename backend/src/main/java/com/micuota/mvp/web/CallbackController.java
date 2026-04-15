@@ -35,15 +35,45 @@ public class CallbackController {
         return paymentService.updateStatus(operationId, OperationStatus.SUCCESS);
     }
 
+    @GetMapping("/success/by-reference")
+    @Operation(summary = "Callback success por providerReference", description = "Actualiza la operacion como SUCCESS segun referencia del proveedor.")
+    public PaymentOperation successByReference(@RequestParam String providerReference) {
+        return paymentService.updateStatusByProviderReference(providerReference, OperationStatus.SUCCESS);
+    }
+
     @GetMapping("/pending")
     @Operation(summary = "Callback pending", description = "Actualiza la operacion como PENDING.")
     public PaymentOperation pending(@RequestParam Long operationId) {
         return paymentService.updateStatus(operationId, OperationStatus.PENDING);
     }
 
+    @GetMapping("/pending/by-reference")
+    @Operation(summary = "Callback pending por providerReference", description = "Actualiza la operacion como PENDING segun referencia del proveedor.")
+    public PaymentOperation pendingByReference(@RequestParam String providerReference) {
+        return paymentService.updateStatusByProviderReference(providerReference, OperationStatus.PENDING);
+    }
+
     @GetMapping("/failure")
     @Operation(summary = "Callback failure", description = "Actualiza la operacion como FAILURE.")
     public PaymentOperation failure(@RequestParam Long operationId) {
         return paymentService.updateStatus(operationId, OperationStatus.FAILURE);
+    }
+
+    @GetMapping("/failed")
+    @Operation(summary = "Callback failed", description = "Alias de failure para compatibilidad de pasarelas.")
+    public PaymentOperation failed(@RequestParam Long operationId) {
+        return paymentService.updateStatus(operationId, OperationStatus.FAILURE);
+    }
+
+    @GetMapping("/failure/by-reference")
+    @Operation(summary = "Callback failure por providerReference", description = "Actualiza la operacion como FAILURE segun referencia del proveedor.")
+    public PaymentOperation failureByReference(@RequestParam String providerReference) {
+        return paymentService.updateStatusByProviderReference(providerReference, OperationStatus.FAILURE);
+    }
+
+    @GetMapping("/failed/by-reference")
+    @Operation(summary = "Callback failed por providerReference", description = "Alias de failure por referencia para compatibilidad.")
+    public PaymentOperation failedByReference(@RequestParam String providerReference) {
+        return paymentService.updateStatusByProviderReference(providerReference, OperationStatus.FAILURE);
     }
 }

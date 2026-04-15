@@ -27,13 +27,16 @@ public class MercadoPagoGateway implements PaymentProviderGateway {
 
         String ref = "MP-" + UUID.randomUUID().toString().substring(0, 8);
         String checkoutUrl = callbackBaseUrl + "/sandbox/mercadopago/checkout/" + ref;
+        String successUrl = callbackBaseUrl + "/api/callbacks/success/by-reference?providerReference=" + ref;
+        String pendingUrl = callbackBaseUrl + "/api/callbacks/pending/by-reference?providerReference=" + ref;
+        String failureUrl = callbackBaseUrl + "/api/callbacks/failed/by-reference?providerReference=" + ref;
 
         String raw = "{\"provider\":\"mercadopago\",\"flow\":\""
             + flowType
             + "\",\"back_urls\":{\"success\":\""
-            + callbackBaseUrl + "/api/callbacks/success\",\"pending\":\""
-            + callbackBaseUrl + "/api/callbacks/pending\",\"failure\":\""
-            + callbackBaseUrl + "/api/callbacks/failure\"}}";
+            + successUrl + "\",\"pending\":\""
+            + pendingUrl + "\",\"failure\":\""
+            + failureUrl + "\"}}";
 
         return new ProviderCheckoutResult(ref, checkoutUrl, raw);
     }

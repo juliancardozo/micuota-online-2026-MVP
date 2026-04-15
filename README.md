@@ -60,11 +60,18 @@ En la raiz del proyecto:
 docker compose up -d
 ```
 
-Esto levanta PostgreSQL en `localhost:5432` con:
+Esto levanta PostgreSQL en `localhost:5432` y Mailpit para correos en `http://localhost:8025`.
+
+PostgreSQL:
 
 - DB: `micuota`
 - User: `micuota`
 - Password: `micuota`
+
+Mailpit (sin credenciales para desarrollo):
+
+- SMTP: `localhost:1025`
+- Inbox web: `http://localhost:8025`
 
 Para apagarlo:
 
@@ -104,6 +111,16 @@ mvn spring-boot:run
 ```
 
 Con perfil `prod` se ejecuta Flyway (`db/migration/V1__initial_schema.sql`) y se valida esquema JPA.
+
+### 1.2) Correos temporales para MVP (camino facil)
+
+Recomendado para desarrollo: usar Mailpit local.
+
+1. Levanta servicios con `docker compose up -d`.
+2. Crea un pago desde backoffice (`payerEmail` ahora es requerido).
+3. Abre `http://localhost:8025` para ver el email generado con template HTML, QR y link de pago.
+
+Esto evita credenciales SMTP reales durante el MVP.
 
 ### 2) Levantar frontend
 
