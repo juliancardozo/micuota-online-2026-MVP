@@ -2,3 +2,5 @@
 .vscode/
 backend/target/
 backend/data/*.mv.db
+backend/data/*.lock.db
+backend/data/*.trace.db
