@@ -22,7 +22,7 @@
         <nav class="nav-links">
           <a href="/landing.html">Inicio</a>
           <a href="/pago.html">Pago directo</a>
-          <a href="/landing.html">Salir</a>
+          <a href="/landing.html" id="logout-link">Cerrar sesión</a>
         </nav>
       </header>
 
@@ -56,6 +56,16 @@
       const token = urlToken || localStorage.getItem("micuota.authToken");
       const tenantSlug = localStorage.getItem("micuota.tenantSlug") || "(sin slug)";
 
+      if (urlToken) {
+        localStorage.setItem("micuota.authToken", urlToken);
+      }
+
+      function logout() {
+        localStorage.removeItem("micuota.authToken");
+        localStorage.removeItem("micuota.tenantSlug");
+        window.location.href = "/landing.html";
+      }
+
       async function apiGet(path) {
         const response = await fetch(`${API_BASE}${path}`, {
           headers: { "X-Auth-Token": token }
@@ -88,7 +98,7 @@
 
       async function bootstrap() {
         if (!token) {
-          window.location.href = "/landing.html";
+          logout();
           return;
         }
 
@@ -110,11 +120,19 @@
           fillCourses(dashboard.enrolledCourses || []);
           fillPayments(dashboard.payments || []);
         } catch (error) {
+          if (/Sesion invalida o expirada|Token de sesion requerido|Token no encontrado/i.test(error.message)) {
+            logout();
+            return;
+          }
           document.getElementById("courses-list").innerHTML = `<div class='item error'>${error.message}</div>`;
           document.getElementById("payments-list").innerHTML = "";
         }
       }
 
+      document.getElementById("logout-link").addEventListener("click", (event) => {
+        event.preventDefault();
+        logout();
+      });
       bootstrap();
     </script>
     <script src="/chatbot.js"></script>

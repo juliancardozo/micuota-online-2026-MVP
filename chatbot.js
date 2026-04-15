@@ -2,7 +2,18 @@
   const API_BASE = "http://localhost:8080";
   const QUICK_CHAT = true;
   const firstMessage =
-    "Listo, vamos rapido. Contame tu caso y te digo que te conviene + el texto para enviarlo por WhatsApp.";
+    "Listo, vamos rapido. Si eres nuevo, escribe 'onboarding' y te guio paso a paso.";
+
+  const onboardingState = {
+    active: false,
+    step: null,
+    answers: {
+      role: "",
+      channel: "",
+      frequency: "",
+      objection: ""
+    }
+  };
 
   function buildResponse(parts) {
     if (QUICK_CHAT) {
@@ -19,6 +30,127 @@
       "4. Que puedes hacer ahora\n" + parts.ahora,
       "5. Texto sugerido\n" + parts.texto
     ].join("\n\n");
+  }
+
+  function startsOnboarding(raw) {
+    const text = (raw || "").toLowerCase();
+    return (
+      text.includes("onboarding") ||
+      text.includes("empezar") ||
+      text.includes("arrancar") ||
+      text.includes("soy nuevo") ||
+      text.includes("nuevo usuario")
+    );
+  }
+
+  function resetOnboarding() {
+    onboardingState.active = false;
+    onboardingState.step = null;
+    onboardingState.answers = {
+      role: "",
+      channel: "",
+      frequency: "",
+      objection: ""
+    };
+  }
+
+  function startOnboarding(roleByPath) {
+    onboardingState.active = true;
+    onboardingState.step = "role";
+    onboardingState.answers = {
+      role: roleByPath === "usuario" ? "" : roleByPath,
+      channel: "",
+      frequency: "",
+      objection: ""
+    };
+
+    if (onboardingState.answers.role) {
+      onboardingState.step = "channel";
+      return "Perfecto. Para arrancar: como quieres cobrar primero? (link, qr o suscripcion)";
+    }
+
+    return "Buenisimo. Primer paso: cual es tu perfil? (profesor, administrador o alumno/paciente)";
+  }
+
+  function getOnboardingSummary() {
+    const role = onboardingState.answers.role || "usuario";
+    const channel = onboardingState.answers.channel || "link";
+    const frequency = onboardingState.answers.frequency || "puntual";
+    const objection = onboardingState.answers.objection || "sin objeciones fuertes";
+
+    const isMonthly = frequency === "mensual";
+    const conviene =
+      channel === "suscripcion" || isMonthly
+        ? "Suscripcion mensual con recordatorio automatico"
+        : channel === "qr"
+        ? "QR para cobro inmediato"
+        : "Link de pago por WhatsApp";
+
+    const ahora =
+      "Crea tu primer cobro de prueba, compartelo con 3 personas y valida confirmaciones en el dashboard.";
+
+    const texto =
+      "Hola! Estamos empezando a usar MiCuota para ordenar los pagos. Te comparto este " +
+      (channel === "qr" ? "QR" : "link") +
+      " para que sea rapido y claro. Si te resulta comodo, lo dejamos como modalidad fija.";
+
+    return buildResponse({
+      situacion:
+        "Onboarding " +
+        role +
+        " con frecuencia " +
+        frequency +
+        " y principal objecion: " +
+        objection +
+        ".",
+      conviene,
+      porque:
+        "Empiezas simple, reduces friccion de adopcion y puedes evolucionar a un esquema mas automatico sin romper el habito actual.",
+      ahora,
+      texto
+    });
+  }
+
+  function handleOnboardingAnswer(raw) {
+    const text = (raw || "").toLowerCase();
+
+    if (onboardingState.step === "role") {
+      if (text.includes("prof")) onboardingState.answers.role = "profesor";
+      else if (text.includes("admin") || text.includes("backoffice")) onboardingState.answers.role = "administrador";
+      else if (text.includes("alumno") || text.includes("paciente")) onboardingState.answers.role = "alumno/paciente";
+      else return "Te leo. Para perfilarte rapido: escribe profesor, administrador o alumno/paciente.";
+
+      onboardingState.step = "channel";
+      return "Genial. Como prefieres cobrar primero? (link, qr o suscripcion)";
+    }
+
+    if (onboardingState.step === "channel") {
+      if (text.includes("qr")) onboardingState.answers.channel = "qr";
+      else if (text.includes("suscrip") || text.includes("mensual")) onboardingState.answers.channel = "suscripcion";
+      else if (text.includes("link") || text.includes("whatsapp")) onboardingState.answers.channel = "link";
+      else return "Perfecto. Dime una opcion: link, qr o suscripcion.";
+
+      onboardingState.step = "frequency";
+      return "Bien. Tus cobros son mensuales o puntuales?";
+    }
+
+    if (onboardingState.step === "frequency") {
+      if (text.includes("mens")) onboardingState.answers.frequency = "mensual";
+      else if (text.includes("punt") || text.includes("unico") || text.includes("ocasional")) onboardingState.answers.frequency = "puntual";
+      else return "Para cerrar esta parte: responde mensual o puntual.";
+
+      onboardingState.step = "objection";
+      return "Ultimo paso: cual es tu mayor objecion hoy? (desconfianza, tiempo, precio o 'ninguna')";
+    }
+
+    if (onboardingState.step === "objection") {
+      onboardingState.answers.objection = text || "ninguna";
+      const summary = getOnboardingSummary();
+      resetOnboarding();
+      return summary;
+    }
+
+    return "Si quieres, escribeme 'onboarding' y lo hacemos guiado en 4 pasos.";
   }
 
   function recommendByMessage(raw, contextRole) {
@@ -162,6 +294,7 @@
     const chips = document.createElement("div");
     chips.className = "mc-chatbot-chips";
     const chipItems = [
+      "Quiero onboarding",
       "Soy profesor",
       "Soy alumno",
       "Quiero cobrar mensual",
@@ -174,6 +307,14 @@
       btn.textContent = label;
       btn.addEventListener("click", async function () {
         addMessage(body, label, "user");
+        if (startsOnboarding(label)) {
+          addMessage(body, startOnboarding(roleByPath), "bot");
+          return;
+        }
+        if (onboardingState.active) {
+          addMessage(body, handleOnboardingAnswer(label), "bot");
+          return;
+        }
         try {
           const backendAnswer = await askBackend(label, roleByPath);
           addMessage(body, backendAnswer, "bot");
@@ -194,6 +335,7 @@
 
     clearBtn.addEventListener("click", function () {
       body.innerHTML = "";
+      resetOnboarding();
       body.appendChild(chips);
       addMessage(body, firstMessage, "bot");
     });
@@ -203,6 +345,16 @@
       const question = input.value.trim();
       if (!question) return;
       addMessage(body, question, "user");
+      if (startsOnboarding(question)) {
+        addMessage(body, startOnboarding(roleByPath), "bot");
+        input.value = "";
+        return;
+      }
+      if (onboardingState.active) {
+        addMessage(body, handleOnboardingAnswer(question), "bot");
+        input.value = "";
+        return;
+      }
       try {
         const backendAnswer = await askBackend(question, roleByPath);
         addMessage(body, backendAnswer, "bot");

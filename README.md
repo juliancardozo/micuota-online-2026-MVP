@@ -4,7 +4,7 @@ Repositorio con un MVP real orientado a SaaS:
 
 - Frontend estatico deployable en Netlify
 - Backend Spring Boot con API REST
-- Persistencia de operaciones en H2
+- Persistencia por perfiles: H2 (dev) y PostgreSQL (prod)
 - Callbacks `success/pending/failure`
 - Capa abstracta de proveedores: MercadoPago, Prometeo y WooCommerce
 
@@ -47,6 +47,63 @@ mvn spring-boot:run
 ```
 
 Backend disponible en `http://localhost:8080`.
+
+Por defecto arranca perfil `dev` (H2 local, seed demo activo).
+
+### 1.1) Preparar backend para MVP productivo (PostgreSQL)
+
+#### Opcion recomendada local: Docker Compose
+
+En la raiz del proyecto:
+
+```bash
+docker compose up -d
+```
+
+Esto levanta PostgreSQL en `localhost:5432` con:
+
+- DB: `micuota`
+- User: `micuota`
+- Password: `micuota`
+
+Para apagarlo:
+
+```bash
+docker compose down
+```
+
+Para apagarlo y borrar datos:
+
+```bash
+docker compose down -v
+```
+
+#### Variables de entorno para perfil `prod`
+
+Puedes usar el template:
+
+```bash
+cp .env.prod.example .env.prod
+source .env.prod
+```
+
+Configurar variables de entorno:
+
+```bash
+export SPRING_PROFILES_ACTIVE=prod
+export DB_URL=jdbc:postgresql://<host>:5432/<database>
+export DB_USERNAME=<usuario>
+export DB_PASSWORD=<password>
+```
+
+Luego levantar:
+
+```bash
+cd backend
+mvn spring-boot:run
+```
+
+Con perfil `prod` se ejecuta Flyway (`db/migration/V1__initial_schema.sql`) y se valida esquema JPA.
 
 ### 2) Levantar frontend
 
@@ -126,7 +183,7 @@ Flujo recomendado:
 3. Redireccion automatica a `backoffice.html?token=...`.
 4. Crear perfiles de profesor/alumno y luego cursos.
 
-Teacher demo seed:
+Teacher demo seed (solo perfil `dev`):
 
 - email: `teacher@micuota.online`
 - id esperado: `1`

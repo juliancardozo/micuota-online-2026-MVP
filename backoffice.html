@@ -23,7 +23,7 @@
           <a href="/index.html">Demo pagos</a>
           <a href="/profesor.html">Dashboard profesor</a>
           <a href="/alumno.html">Dashboard alumno</a>
-          <a href="/landing.html">Salir</a>
+          <a href="/landing.html" id="logout-link">Cerrar sesión</a>
         </nav>
       </header>
 
@@ -259,6 +259,10 @@
       const token = urlToken || localStorage.getItem("micuota.authToken");
       const tenantSlug = localStorage.getItem("micuota.tenantSlug") || "(sin slug)";
 
+      if (urlToken) {
+        localStorage.setItem("micuota.authToken", urlToken);
+      }
+
       const state = {
         users: { teachers: [], students: [] },
         courses: [],
@@ -273,6 +277,13 @@
       const createEnrollmentForm = document.getElementById("create-enrollment-form");
       const oneTimeForm = document.getElementById("one-time-form");
       const subscriptionForm = document.getElementById("subscription-form");
+      const logoutLink = document.getElementById("logout-link");
+
+      function logout() {
+        localStorage.removeItem("micuota.authToken");
+        localStorage.removeItem("micuota.tenantSlug");
+        window.location.href = "/landing.html";
+      }
 
       function setText(target, message, hasError) {
         target.textContent = message;
@@ -470,8 +481,7 @@
 
       async function bootstrap() {
         if (!token) {
-          sessionCard.innerHTML = '<span class="pill">Sin sesión activa</span><span class="pill">Ir a landing</span>';
-          setBackofficeEnabled(false);
+          logout();
           return;
         }
 
@@ -490,10 +500,14 @@
           fillUserAndCourseSelectors();
           await loadPayments();
         } catch (error) {
-          setBackofficeEnabled(false);
-          sessionCard.innerHTML = `<span class='pill'>Sesión inválida</span><span class='pill'>${error.message}</span>`;
+          logout();
         }
       }
+
+      logoutLink.addEventListener("click", (event) => {
+        event.preventDefault();
+        logout();
+      });
 
       document.getElementById("payments-course-filter").addEventListener("change", loadPayments);
       document.getElementById("refresh-payments").addEventListener("click", loadPayments);
