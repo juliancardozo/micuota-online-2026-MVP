@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MiCuota.online | Cobros simples para profesionales</title>
+    <meta
+      name="description"
+      content="MiCuota.online permite crear pagos unicos y suscripciones recurrentes para profesores y profesionales independientes."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Bebas+Neue&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="bg-gradient"></div>
+    <header class="hero container">
+      <p class="eyebrow">MVP FINTECH | LATAM</p>
+      <h1>MiCuota.online</h1>
+      <p class="subtitle">
+        Cobros recurrentes y pagos unicos para profesores, psicologos y profesionales
+        independientes.
+      </p>
+      <div class="chips">
+        <span>MercadoPago</span>
+        <span>Links</span>
+        <span>QR</span>
+        <span>Suscripciones</span>
+      </div>
+    </header>
+
+    <main class="container grid">
+      <section class="card reveal">
+        <h2>Crear pago unico</h2>
+        <p>Genera un link de cobro para una clase, sesion o pago puntual.</p>
+        <form id="single-payment-form" class="form-grid">
+          <label>
+            Titulo
+            <input name="title" value="Clase de apoyo" required />
+          </label>
+          <label>
+            Monto
+            <input name="amount" type="number" min="1" step="1" value="800" required />
+          </label>
+          <label>
+            Moneda
+            <select name="currency">
+              <option value="UYU">UYU</option>
+              <option value="ARS">ARS</option>
+              <option value="USD">USD</option>
+            </select>
+          </label>
+          <button type="submit">Generar link + QR</button>
+        </form>
+        <div class="result" id="single-result" aria-live="polite"></div>
+      </section>
+
+      <section class="card reveal delay-1">
+        <h2>Crear suscripcion</h2>
+        <p>Configura una mensualidad recurrente para alumnos o pacientes.</p>
+        <form id="subscription-form" class="form-grid">
+          <label>
+            Nombre del plan
+            <input name="reason" value="Cuota mensual" required />
+          </label>
+          <label>
+            Monto mensual
+            <input name="amount" type="number" min="1" step="1" value="2500" required />
+          </label>
+          <label>
+            Frecuencia
+            <select name="frequency">
+              <option value="1">Cada 1 mes</option>
+              <option value="2">Cada 2 meses</option>
+              <option value="3">Cada 3 meses</option>
+            </select>
+          </label>
+          <button type="submit">Generar suscripcion + QR</button>
+        </form>
+        <div class="result" id="subscription-result" aria-live="polite"></div>
+      </section>
+
+      <section class="card reveal delay-2 full-width">
+        <h2>Estado del MVP</h2>
+        <ul class="status-list">
+          <li><strong>Profesor:</strong> onboarding y credenciales de MercadoPago</li>
+          <li><strong>Alumno:</strong> pago via link o QR</li>
+          <li><strong>Callbacks:</strong> success, pending, failure</li>
+          <li><strong>Monetizacion:</strong> comision por pago unico o recurrente</li>
+          <li><strong>Deploy:</strong> Netlify + flujo Git con develop/test/produccion</li>
+        </ul>
+      </section>
+    </main>
+
+    <footer class="container footer">
+      <p>MiCuota.online MVP | Build for speed, evolve with criteria.</p>
+    </footer>
+
+    <script src="app.js"></script>
+  </body>
+</html>
