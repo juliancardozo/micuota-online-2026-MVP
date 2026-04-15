@@ -8,3 +8,11 @@ backend/data/*.trace.db
 data/*.mv.db
 data/*.lock.db
 data/*.trace.db
+
+# Local tooling/runtime artifacts
+.local/
+
+# Embedding demo local artifacts
+embedding-sdk-demo/node_modules/
+embedding-sdk-demo/dist/
+embedding-sdk-demo/.env.local

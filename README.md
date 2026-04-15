@@ -62,6 +62,11 @@ docker compose up -d
 
 Esto levanta PostgreSQL en `localhost:5432` y Mailpit para correos en `http://localhost:8025`.
 
+Tambien quedan disponibles clientes de administracion:
+
+- Adminer (cliente SQL): `http://localhost:8081`
+- Metabase (dashboards y metricas): `http://localhost:3001`
+
 PostgreSQL:
 
 - DB: `micuota`
@@ -72,6 +77,19 @@ Mailpit (sin credenciales para desarrollo):
 
 - SMTP: `localhost:1025`
 - Inbox web: `http://localhost:8025`
+
+Metabase (dashboard admin del sistema):
+
+- URL: `http://localhost:3001`
+- Primera vez: crear usuario admin de Metabase (setup inicial)
+- Agregar fuente de datos PostgreSQL con:
+	- Host: `postgres`
+	- Port: `5432`
+	- Database: `micuota`
+	- Username: `micuota`
+	- Password: `micuota`
+
+Con eso puedes construir dashboards globales para todas las entidades (usuarios, cursos, pagos, enrollments, tenants).
 
 Para apagarlo:
 
@@ -122,6 +140,31 @@ Recomendado para desarrollo: usar Mailpit local.
 
 Esto evita credenciales SMTP reales durante el MVP.
 
+### 1.3) Dashboard de sistema (Metabase)
+
+Con `docker compose up -d` tambien se levanta Metabase para administracion y metricas de negocio.
+
+Sugerencia de tablero inicial (MVP):
+
+1. Total de tenants
+2. Usuarios por rol (`ADMIN`, `TEACHER`, `STUDENT`)
+3. Cursos activos por tenant
+4. Operaciones de pago por estado (`CREATED`, `PENDING`, `SUCCESS`, `FAILURE`)
+5. Monto total cobrado por mes
+6. Conversion de cobros (`SUCCESS / total`)
+
+Puedes crear preguntas en Metabase con query builder o SQL nativo y agrupar por `created_at` para tendencia temporal.
+
+Pack listo para usar (consultas SQL + guia de armado):
+
+- [analytics/metabase_global_dashboards.sql](analytics/metabase_global_dashboards.sql)
+- [analytics/metabase_dashboard_setup.md](analytics/metabase_dashboard_setup.md)
+
+Pack especifico de 3 dashboards (Tenants, Profesores/Alumnos y Pagos):
+
+- [analytics/metabase_3_dashboards_tenants_profesores_alumnos_pagos.sql](analytics/metabase_3_dashboards_tenants_profesores_alumnos_pagos.sql)
+- [analytics/metabase_3_dashboards_setup.md](analytics/metabase_3_dashboards_setup.md)
+
 ### 2) Levantar frontend
 
 En la raiz del repo:
@@ -137,6 +180,54 @@ python3 -m http.server 3000
 ```
 
 Abrir la URL de `serve` (por ejemplo `http://localhost:3000`).
+
+### 2.1) Quickstart: Modular Embedding SDK (React)
+
+Se agrego una mini app React de ejemplo en `embedding-sdk-demo/` para embeber un dashboard de Metabase via API key (solo evaluacion local).
+
+Prerequisitos:
+
+1. Metabase v52+ (en este entorno esta corriendo `v0.60.1`).
+2. En Metabase, habilitar: Admin > Embedding > Modular > React.
+3. Crear API key en: Admin > Settings > Authentication > API keys.
+4. Node.js `>= 18` y npm `>= 8`.
+
+Pasos:
+
+```bash
+cd embedding-sdk-demo
+cp .env.example .env.local
+```
+
+Editar `.env.local` con tu API key:
+
+```bash
+VITE_METABASE_URL=http://localhost:3001
+VITE_METABASE_API_KEY=<TU_API_KEY>
+VITE_METABASE_DASHBOARD_ID_TENANTS=1
+VITE_METABASE_DASHBOARD_ID_PROFESORES_ALUMNOS=2
+VITE_METABASE_DASHBOARD_ID_PAGOS=3
+```
+
+Instalar dependencias y ejecutar:
+
+```bash
+npm install
+npm run dev
+```
+
+Abrir la URL que muestra Vite (usualmente `http://localhost:5173`).
+
+Vista por una sola URL base con selector por query param:
+
+- `http://localhost:5173/?view=tenants`
+- `http://localhost:5173/?view=profesores-alumnos`
+- `http://localhost:5173/?view=pagos`
+
+Notas:
+
+- El ejemplo usa `@metabase/embedding-sdk-react@60-beta` para coincidir con Metabase `v0.60.x` (aun sin tag `60-stable` en npm).
+- Esta configuracion es para localhost y pruebas. Para produccion, usar JWT SSO con plan Pro/Enterprise.
 
 ## API principal
 
