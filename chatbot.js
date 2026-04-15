@@ -1,4 +1,5 @@
 (function () {
+  const API_BASE = "http://localhost:8080";
   const firstMessage =
     "Estoy listo para ayudarte a introducir MiCuota.online de forma clara, humana y practica. Cuentame si estas pensando como profesor, profesional, alumno, paciente o administrador, y te ayudo a elegir la mejor forma de usarlo.";
 
@@ -100,6 +101,30 @@
     container.scrollTop = container.scrollHeight;
   }
 
+  async function askBackend(question, roleByPath) {
+    const token = localStorage.getItem("micuota.authToken");
+    const headers = { "Content-Type": "application/json" };
+    if (token) {
+      headers["X-Auth-Token"] = token;
+    }
+
+    const response = await fetch(`${API_BASE}/api/chatbot/adoption`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        message: question,
+        page: window.location.pathname,
+        roleHint: roleByPath
+      })
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error((data && data.error) || "No se pudo consultar al asistente");
+    }
+    return data.answer;
+  }
+
   function init() {
     const roleByPath = detectRoleByPath();
 
@@ -138,9 +163,14 @@
       const btn = document.createElement("button");
       btn.type = "button";
       btn.textContent = label;
-      btn.addEventListener("click", function () {
+      btn.addEventListener("click", async function () {
         addMessage(body, label, "user");
-        addMessage(body, recommendByMessage(label, roleByPath), "bot");
+        try {
+          const backendAnswer = await askBackend(label, roleByPath);
+          addMessage(body, backendAnswer, "bot");
+        } catch (_error) {
+          addMessage(body, recommendByMessage(label, roleByPath), "bot");
+        }
       });
       chips.appendChild(btn);
     });
@@ -159,12 +189,17 @@
       addMessage(body, firstMessage, "bot");
     });
 
-    form.addEventListener("submit", function (event) {
+    form.addEventListener("submit", async function (event) {
       event.preventDefault();
       const question = input.value.trim();
       if (!question) return;
       addMessage(body, question, "user");
-      addMessage(body, recommendByMessage(question, roleByPath), "bot");
+      try {
+        const backendAnswer = await askBackend(question, roleByPath);
+        addMessage(body, backendAnswer, "bot");
+      } catch (_error) {
+        addMessage(body, recommendByMessage(question, roleByPath), "bot");
+      }
       input.value = "";
     });
   }
