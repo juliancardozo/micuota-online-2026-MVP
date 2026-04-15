@@ -1,2 +1,22 @@
 [build]
   publish = "."
+
+[[redirects]]
+  from = "/swagger"
+  to = "/swagger.html"
+  status = 200
+
+[[redirects]]
+  from = "/swagger/"
+  to = "/swagger.html"
+  status = 200
+
+[[redirects]]
+  from = "/swagger-ui/*"
+  to = "/swagger.html"
+  status = 200
+
+[[redirects]]
+  from = "/v3/api-docs"
+  to = "/swagger.html"
+  status = 200
