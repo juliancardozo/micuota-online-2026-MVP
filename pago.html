@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MiCuota | Pago</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="ui.css" />
+  </head>
+  <body>
+    <div class="app-shell" style="max-width: 760px; padding-top: 40px;">
+      <main class="card">
+      <span class="kicker">MiCuota.online</span>
+      <h1 style="margin-bottom: 10px;">Completar pago</h1>
+      <p class="section-copy" id="subtitle">Cargando detalle del pago...</p>
+
+      <section class="mini-grid" id="payment-grid" style="display:none; margin-bottom: 12px;">
+        <div class="kpi"><small>Profesional</small><strong id="professional-name"></strong></div>
+        <div class="kpi"><small>Concepto</small><strong id="description"></strong></div>
+        <div class="kpi"><small>Monto</small><strong id="amount"></strong></div>
+        <div class="kpi"><small>Tipo</small><strong id="flow-type"></strong></div>
+      </section>
+
+      <div class="row" id="payment-actions" style="display:none; margin-top: 0;">
+        <a id="pay-now" class="btn btn-primary" href="#" target="_blank" rel="noopener noreferrer">Pagar ahora</a>
+        <button id="copy-link" class="btn btn-ghost" type="button">Copiar link de pago</button>
+      </div>
+
+      <p class="footer-note">Pago procesado por proveedor seguro. No necesitas enviar comprobantes manualmente: tu profesional verá el estado automáticamente.</p>
+      <p id="error" class="error" style="display:none;"></p>
+      </main>
+    </div>
+
+    <script>
+      const API_BASE = "http://localhost:8080";
+      const params = new URLSearchParams(window.location.search);
+      const operationId = params.get("operationId");
+
+      const subtitle = document.getElementById("subtitle");
+      const paymentGrid = document.getElementById("payment-grid");
+      const actions = document.getElementById("payment-actions");
+      const payNow = document.getElementById("pay-now");
+      const copyLink = document.getElementById("copy-link");
+      const errorNode = document.getElementById("error");
+
+      async function loadPayment() {
+        if (!operationId) {
+          showError("No se recibió identificador de operación.");
+          return;
+        }
+
+        try {
+          const response = await fetch(`${API_BASE}/api/public/payments/${operationId}`);
+          const data = await response.json();
+          if (!response.ok) {
+            throw new Error(data.error || "No se pudo cargar la operación");
+          }
+
+          document.getElementById("professional-name").textContent = data.professionalName || "Profesional";
+          document.getElementById("description").textContent = data.description;
+          document.getElementById("amount").textContent = `${data.currency} ${data.amount}`;
+          document.getElementById("flow-type").textContent = data.flowType === "SUBSCRIPTION" ? "Suscripción" : "Pago único";
+
+          subtitle.textContent = "Revisa el detalle y completa el pago en un solo paso.";
+          payNow.href = data.checkoutUrl;
+
+          copyLink.addEventListener("click", async () => {
+            await navigator.clipboard.writeText(data.checkoutUrl);
+            copyLink.textContent = "Link copiado";
+            setTimeout(() => {
+              copyLink.textContent = "Copiar link de pago";
+            }, 1200);
+          });
+
+          paymentGrid.style.display = "grid";
+          actions.style.display = "flex";
+        } catch (error) {
+          showError(error.message);
+        }
+      }
+
+      function showError(message) {
+        subtitle.textContent = "No pudimos cargar tu pago en este momento.";
+        errorNode.style.display = "block";
+        errorNode.textContent = message;
+      }
+
+      loadPayment();
+    </script>
+  </body>
+</html>

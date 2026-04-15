@@ -23,6 +23,12 @@ public class PaymentOperation {
     @Column(nullable = false)
     private Long teacherId;
 
+    @Column
+    private Long studentUserId;
+
+    @Column
+    private Long courseId;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private PaymentProviderType provider;
@@ -74,6 +80,22 @@ public class PaymentOperation {
 
     public PaymentProviderType getProvider() {
         return provider;
+    }
+
+    public Long getStudentUserId() {
+        return studentUserId;
+    }
+
+    public void setStudentUserId(Long studentUserId) {
+        this.studentUserId = studentUserId;
+    }
+
+    public Long getCourseId() {
+        return courseId;
+    }
+
+    public void setCourseId(Long courseId) {
+        this.courseId = courseId;
     }
 
     public void setProvider(PaymentProviderType provider) {

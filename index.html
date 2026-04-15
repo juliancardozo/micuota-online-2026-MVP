@@ -3,90 +3,118 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MiCuota.online | Cobros simples para profesionales</title>
+    <title>MiCuota.online | Demo de cobros</title>
     <meta
       name="description"
-      content="MiCuota.online permite crear pagos unicos y suscripciones recurrentes para profesores y profesionales independientes."
+      content="Demo tecnológica y minimalista de cobros únicos y suscripciones en MiCuota.online."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Bebas+Neue&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="ui.css" />
   </head>
   <body>
-    <div class="bg-gradient"></div>
-    <header class="hero container">
-      <p class="eyebrow">MVP FINTECH | LATAM</p>
-      <h1>MiCuota.online</h1>
-      <p class="subtitle">
-        Cobros recurrentes y pagos unicos para profesores, psicologos y profesionales
-        independientes.
-      </p>
-      <div class="chips">
-        <span>MercadoPago</span>
-        <span>Links</span>
-        <span>QR</span>
-        <span>Suscripciones</span>
-      </div>
-    </header>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="/landing.html">
+          <span class="brand-dot"></span>
+          MiCuota.online
+        </a>
+        <nav class="nav-links">
+          <a href="/landing.html">Inicio</a>
+          <a href="/backoffice.html">Backoffice</a>
+          <a href="/profesor.html">Profesor</a>
+          <a href="/alumno.html">Alumno</a>
+        </nav>
+      </header>
 
-    <main class="container grid">
-      <section class="card reveal">
+      <section class="hero">
+        <span class="kicker">Demo interactiva</span>
+        <h1>Probá el flujo de cobro en minutos.</h1>
+        <p>
+          Crea links de pago y suscripciones con una experiencia tecnológica, limpia y usable.
+        </p>
+        <div class="pills">
+          <span class="pill">MercadoPago</span>
+          <span class="pill">QR</span>
+          <span class="pill">Callbacks</span>
+          <span class="pill">Suscripciones</span>
+        </div>
+      </section>
+
+      <main class="grid">
+      <section class="card span-6">
         <h2>Crear pago unico</h2>
-        <p>Genera un link de cobro para una clase, sesion o pago puntual.</p>
-        <form id="single-payment-form" class="form-grid">
-          <label>
-            Titulo
+        <p class="section-copy">Genera un link para una clase, sesión o cobro puntual.</p>
+        <form id="single-payment-form">
+          <div class="field">
+            <label>Proveedor</label>
+            <select name="provider">
+              <option value="MERCADOPAGO">MercadoPago</option>
+              <option value="PROMETEO">Prometeo</option>
+              <option value="WOOCOMMERCE">WooCommerce</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Titulo</label>
             <input name="title" value="Clase de apoyo" required />
-          </label>
-          <label>
-            Monto
+          </div>
+          <div class="field">
+            <label>Monto</label>
             <input name="amount" type="number" min="1" step="1" value="800" required />
-          </label>
-          <label>
-            Moneda
+          </div>
+          <div class="field">
+            <label>Moneda</label>
             <select name="currency">
               <option value="UYU">UYU</option>
               <option value="ARS">ARS</option>
               <option value="USD">USD</option>
             </select>
-          </label>
+          </div>
           <button type="submit">Generar link + QR</button>
         </form>
-        <div class="result" id="single-result" aria-live="polite"></div>
+        <div class="result stack" id="single-result" aria-live="polite"></div>
       </section>
 
-      <section class="card reveal delay-1">
+      <section class="card span-6">
         <h2>Crear suscripcion</h2>
-        <p>Configura una mensualidad recurrente para alumnos o pacientes.</p>
-        <form id="subscription-form" class="form-grid">
-          <label>
-            Nombre del plan
+        <p class="section-copy">Configura una mensualidad recurrente para alumnos o pacientes.</p>
+        <form id="subscription-form">
+          <div class="field">
+            <label>Proveedor</label>
+            <select name="provider">
+              <option value="MERCADOPAGO">MercadoPago</option>
+              <option value="PROMETEO">Prometeo</option>
+              <option value="WOOCOMMERCE">WooCommerce</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Nombre del plan</label>
             <input name="reason" value="Cuota mensual" required />
-          </label>
-          <label>
-            Monto mensual
+          </div>
+          <div class="field">
+            <label>Monto mensual</label>
             <input name="amount" type="number" min="1" step="1" value="2500" required />
-          </label>
-          <label>
-            Frecuencia
+          </div>
+          <div class="field">
+            <label>Frecuencia</label>
             <select name="frequency">
               <option value="1">Cada 1 mes</option>
               <option value="2">Cada 2 meses</option>
               <option value="3">Cada 3 meses</option>
             </select>
-          </label>
+          </div>
           <button type="submit">Generar suscripcion + QR</button>
         </form>
-        <div class="result" id="subscription-result" aria-live="polite"></div>
+        <div class="result stack" id="subscription-result" aria-live="polite"></div>
       </section>
 
-      <section class="card reveal delay-2 full-width">
+      <section class="card span-6">
         <h2>Estado del MVP</h2>
-        <ul class="status-list">
+        <ul class="stack" style="padding-left: 18px; margin: 0;">
           <li><strong>Profesor:</strong> onboarding y credenciales de MercadoPago</li>
           <li><strong>Alumno:</strong> pago via link o QR</li>
           <li><strong>Callbacks:</strong> success, pending, failure</li>
@@ -94,11 +122,15 @@
           <li><strong>Deploy:</strong> Netlify + flujo Git con develop/test/produccion</li>
         </ul>
       </section>
-    </main>
 
-    <footer class="container footer">
-      <p>MiCuota.online MVP | Build for speed, evolve with criteria.</p>
-    </footer>
+      <section class="card span-6">
+        <h2>Operaciones recientes</h2>
+        <p class="section-copy">Se consultan desde el backend para el teacher demo (id 1).</p>
+        <button id="refresh-ops" type="button">Actualizar operaciones</button>
+        <div class="result stack" id="ops-result" aria-live="polite"></div>
+      </section>
+    </main>
+    </div>
 
     <script src="app.js"></script>
   </body>

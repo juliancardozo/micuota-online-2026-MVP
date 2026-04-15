@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MiCuota.online | Cobros con calma operativa</title>
+    <meta
+      name="description"
+      content="MiCuota.online transforma el cobro recurrente en un flujo tecnológico, claro y agradable para profesionales independientes."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="ui.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="/landing.html">
+          <span class="brand-dot"></span>
+          MiCuota.online
+        </a>
+        <nav class="nav-links">
+          <a href="/index.html">Demo pagos</a>
+          <a href="/backoffice.html">Backoffice</a>
+        </nav>
+      </header>
+
+      <section class="hero">
+        <span class="kicker">Cobro inteligente</span>
+        <h1>Una experiencia de cobro que se siente liviana y profesional.</h1>
+        <p>
+          Menos perseguir comprobantes. Menos ruido en WhatsApp. Más tranquilidad para vos y una
+          experiencia moderna para tus alumnos o pacientes.
+        </p>
+        <div class="row">
+          <a class="btn btn-primary" href="/index.html">Ver experiencia de cobro</a>
+          <a class="btn btn-ghost" href="/backoffice.html">Ir al backoffice</a>
+        </div>
+      </section>
+
+      <main class="grid">
+        <section class="card span-6">
+          <h2>Qué cambia para vos</h2>
+          <p class="section-copy">Tu operación diaria pasa de reactiva a ordenada.</p>
+          <div class="stack">
+            <div class="item">Cobros únicos y suscripciones desde una sola interfaz.</div>
+            <div class="item">Links y QR listos para compartir en segundos.</div>
+            <div class="item">Seguimiento automático del estado de pago.</div>
+          </div>
+        </section>
+
+        <section class="card span-6">
+          <h2>Diseñado para sentirse bien</h2>
+          <p class="section-copy">Tecnología mínima en complejidad, máxima en claridad.</p>
+          <div class="pills">
+            <span class="pill">Profesores</span>
+            <span class="pill">Psicólogos</span>
+            <span class="pill">Tutores</span>
+            <span class="pill">Entrenadores</span>
+            <span class="pill">Consultores</span>
+          </div>
+          <p class="footer-note">
+            Tu cliente solo ve una acción simple: pagar. Vos ves control y previsibilidad.
+          </p>
+        </section>
+
+        <section class="card span-12">
+          <h2>Ingresar</h2>
+          <p class="section-copy">Acceso por rol con redirección automática al dashboard correcto.</p>
+          <form id="login-form">
+            <div class="field">
+              <label for="loginTenantSlug">Slug del tenant</label>
+              <input id="loginTenantSlug" name="tenantSlug" required />
+            </div>
+            <div class="field">
+              <label for="loginEmail">Email</label>
+              <input id="loginEmail" name="email" type="email" required />
+            </div>
+            <div class="field">
+              <label for="loginPassword">Contraseña</label>
+              <input id="loginPassword" name="password" type="password" required />
+            </div>
+            <button type="submit">Entrar</button>
+          </form>
+          <p id="login-note" class="note"></p>
+          <p class="footer-note">
+            Al iniciar sesión irás a admin, profesor o alumno según tu perfil.
+          </p>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      const API_BASE = "http://localhost:8080";
+
+      function setNote(element, message, hasError) {
+        element.textContent = message;
+        element.className = hasError ? "note error" : "note ok";
+      }
+
+      async function postJson(path, payload) {
+        const response = await fetch(`${API_BASE}${path}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || "No se pudo procesar la solicitud");
+        }
+        return data;
+      }
+
+      document.getElementById("login-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const note = document.getElementById("login-note");
+        setNote(note, "Iniciando sesión...", false);
+
+        const formData = new FormData(event.target);
+        const payload = Object.fromEntries(formData.entries());
+
+        try {
+          const result = await postJson("/api/auth/login", payload);
+          localStorage.setItem("micuota.authToken", result.token);
+          localStorage.setItem("micuota.tenantSlug", result.tenantSlug);
+          setNote(note, "Sesión iniciada. Redirigiendo...", false);
+          window.location.href = result.backofficeUrl;
+        } catch (error) {
+          setNote(note, error.message, true);
+        }
+      });
+    </script>
+  </body>
+</html>

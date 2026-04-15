@@ -1,12 +1,17 @@
 package com.micuota.mvp.service;
 
 import com.micuota.mvp.domain.OperationStatus;
+import com.micuota.mvp.domain.Course;
 import com.micuota.mvp.domain.PaymentFlowType;
 import com.micuota.mvp.domain.PaymentOperation;
 import com.micuota.mvp.domain.PaymentProviderType;
 import com.micuota.mvp.domain.TeacherProfile;
+import com.micuota.mvp.domain.User;
+import com.micuota.mvp.domain.UserRole;
+import com.micuota.mvp.repository.CourseRepository;
 import com.micuota.mvp.repository.PaymentOperationRepository;
 import com.micuota.mvp.repository.TeacherProfileRepository;
+import com.micuota.mvp.repository.UserRepository;
 import java.time.OffsetDateTime;
 import java.util.EnumMap;
 import java.util.List;
@@ -20,6 +25,8 @@ public class PaymentService {
 
     private final TeacherProfileRepository teacherProfileRepository;
     private final PaymentOperationRepository paymentOperationRepository;
+    private final UserRepository userRepository;
+    private final CourseRepository courseRepository;
     private final Map<PaymentProviderType, PaymentProviderGateway> gateways;
 
     @Value("${app.base-url}")
@@ -28,10 +35,14 @@ public class PaymentService {
     public PaymentService(
         TeacherProfileRepository teacherProfileRepository,
         PaymentOperationRepository paymentOperationRepository,
+        UserRepository userRepository,
+        CourseRepository courseRepository,
         List<PaymentProviderGateway> providers
     ) {
         this.teacherProfileRepository = teacherProfileRepository;
         this.paymentOperationRepository = paymentOperationRepository;
+        this.userRepository = userRepository;
+        this.courseRepository = courseRepository;
         this.gateways = new EnumMap<>(PaymentProviderType.class);
         providers.forEach(p -> this.gateways.put(p.provider(), p));
     }
@@ -51,6 +62,69 @@ public class PaymentService {
         return paymentOperationRepository.findTop20ByTeacherIdOrderByCreatedAtDesc(teacherId);
     }
 
+    @Transactional(readOnly = true)
+    public PaymentPublicView getPublicView(Long operationId) {
+        PaymentOperation operation = paymentOperationRepository.findById(operationId)
+            .orElseThrow(() -> new IllegalArgumentException("Operacion no encontrada"));
+
+        TeacherProfile teacherProfile = teacherProfileRepository.findById(operation.getTeacherId())
+            .orElseThrow(() -> new IllegalArgumentException("Perfil profesional no encontrado"));
+
+        return new PaymentPublicView(
+            operation.getId(),
+            teacherProfile.getDisplayName(),
+            operation.getDescription(),
+            operation.getAmount(),
+            operation.getCurrency(),
+            operation.getFlowType(),
+            operation.getProvider(),
+            operation.getStatus(),
+            operation.getCheckoutUrl()
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public List<PaymentOperation> lastOperationsByUser(Long userId) {
+        Long teacherProfileId = resolveTeacherProfileIdByUserId(userId);
+        return paymentOperationRepository.findTop20ByTeacherIdOrderByCreatedAtDesc(teacherProfileId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<PaymentOperation> lastOperationsByUserAndCourse(Long userId, Long courseId) {
+        Long teacherProfileId = resolveTeacherProfileIdByUserId(userId);
+        return paymentOperationRepository.findTop50ByTeacherIdAndCourseIdOrderByCreatedAtDesc(teacherProfileId, courseId);
+    }
+
+    @Transactional
+    public PaymentOperation createOneTimeForUser(Long userId, CreateBackofficePaymentRequest request) {
+        Long teacherProfileId = resolveTeacherProfileIdByUserId(userId);
+        return createOneTime(new CreatePaymentRequest(
+            teacherProfileId,
+            request.provider(),
+            request.description(),
+            request.amount(),
+            request.currency(),
+            request.payerEmail(),
+            request.studentUserId(),
+            request.courseId()
+        ));
+    }
+
+    @Transactional
+    public PaymentOperation createSubscriptionForUser(Long userId, CreateBackofficePaymentRequest request) {
+        Long teacherProfileId = resolveTeacherProfileIdByUserId(userId);
+        return createSubscription(new CreatePaymentRequest(
+            teacherProfileId,
+            request.provider(),
+            request.description(),
+            request.amount(),
+            request.currency(),
+            request.payerEmail(),
+            request.studentUserId(),
+            request.courseId()
+        ));
+    }
+
     @Transactional
     public PaymentOperation updateStatus(Long operationId, OperationStatus status) {
         PaymentOperation operation = paymentOperationRepository.findById(operationId)
@@ -63,6 +137,28 @@ public class PaymentService {
     private PaymentOperation createOperation(PaymentFlowType flowType, CreatePaymentRequest request) {
         TeacherProfile teacher = teacherProfileRepository.findById(request.teacherId())
             .orElseThrow(() -> new IllegalArgumentException("Teacher no encontrado: " + request.teacherId()));
+
+        User teacherUser = teacher.getUser();
+        Long tenantId = teacherUser.getTenant().getId();
+
+        if (request.studentUserId() != null) {
+            User student = userRepository.findById(request.studentUserId())
+                .orElseThrow(() -> new IllegalArgumentException("Alumno/paciente no encontrado"));
+            if (!student.getTenant().getId().equals(tenantId)) {
+                throw new IllegalArgumentException("Alumno/paciente fuera del tenant");
+            }
+            if (student.getRole() != UserRole.STUDENT) {
+                throw new IllegalArgumentException("El usuario seleccionado no es alumno/paciente");
+            }
+        }
+
+        if (request.courseId() != null) {
+            Course course = courseRepository.findById(request.courseId())
+                .orElseThrow(() -> new IllegalArgumentException("Curso no encontrado"));
+            if (!course.getTenant().getId().equals(tenantId)) {
+                throw new IllegalArgumentException("Curso fuera del tenant");
+            }
+        }
 
         PaymentProviderGateway gateway = gateways.get(request.provider());
         if (gateway == null) {
@@ -81,6 +177,8 @@ public class PaymentService {
         operation.setTeacherId(request.teacherId());
         operation.setProvider(request.provider());
         operation.setFlowType(flowType);
+        operation.setStudentUserId(request.studentUserId());
+        operation.setCourseId(request.courseId());
         operation.setAmount(request.amount());
         operation.setCurrency(request.currency());
         operation.setDescription(request.description());
@@ -91,5 +189,11 @@ public class PaymentService {
         operation.setCreatedAt(OffsetDateTime.now());
 
         return paymentOperationRepository.save(operation);
+    }
+
+    private Long resolveTeacherProfileIdByUserId(Long userId) {
+        return teacherProfileRepository.findByUserId(userId)
+            .map(TeacherProfile::getId)
+            .orElseThrow(() -> new IllegalArgumentException("El usuario no tiene perfil profesional configurado"));
     }
 }

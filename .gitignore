@@ -1,1 +1,4 @@
 .DS_Store
+.vscode/
+backend/target/
+backend/data/*.mv.db

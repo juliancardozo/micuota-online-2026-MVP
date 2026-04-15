@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MiCuota | Dashboard Alumno</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="ui.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="/landing.html">
+          <span class="brand-dot"></span>
+          MiCuota.online
+        </a>
+        <nav class="nav-links">
+          <a href="/landing.html">Inicio</a>
+          <a href="/pago.html">Pago directo</a>
+          <a href="/landing.html">Salir</a>
+        </nav>
+      </header>
+
+      <section class="hero">
+        <span class="kicker">Dashboard alumno</span>
+        <h1 id="welcome-title">Tus cuotas y pagos en una sola vista.</h1>
+        <p>
+          Revisa cursos activos, estado de pagos y links para completar cada cobro en segundos.
+        </p>
+        <div class="pills" id="session-pills"></div>
+      </section>
+
+      <main class="grid">
+        <section class="card span-12">
+          <h2>Mis cursos</h2>
+          <p class="section-copy">Todo lo que cursas o tienes asignado en este momento.</p>
+          <div class="stack" id="courses-list"></div>
+        </section>
+
+        <section class="card span-12">
+          <h2>Pagos</h2>
+          <p class="section-copy">Abre el link correspondiente para completar o revisar cada pago.</p>
+          <div class="stack" id="payments-list"></div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      const API_BASE = "http://localhost:8080";
+      const urlToken = new URLSearchParams(window.location.search).get("token");
+      const token = urlToken || localStorage.getItem("micuota.authToken");
+      const tenantSlug = localStorage.getItem("micuota.tenantSlug") || "(sin slug)";
+
+      async function apiGet(path) {
+        const response = await fetch(`${API_BASE}${path}`, {
+          headers: { "X-Auth-Token": token }
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Error de API");
+        return data;
+      }
+
+      function fillCourses(courses) {
+        const target = document.getElementById("courses-list");
+        target.innerHTML = courses.length
+          ? courses
+              .map((c) => `<div class="item"><strong>${c.name}</strong><br /><small>${c.description} · Profesor: ${c.teacherName}</small></div>`)
+              .join("")
+          : "<div class='item'>Aún no tienes cursos asignados.</div>";
+      }
+
+      function fillPayments(payments) {
+        const target = document.getElementById("payments-list");
+        target.innerHTML = payments.length
+          ? payments
+              .map((p) => {
+                const appUrl = p.checkoutUrl.startsWith("http") ? p.checkoutUrl : `${window.location.origin}${p.checkoutUrl}`;
+                return `<div class="item"><strong>${p.description}</strong><br /><small>${p.courseName} · ${p.currency} ${p.amount} · ${p.status}</small><br /><a href="${appUrl}" target="_blank" rel="noopener noreferrer">Pagar / ver detalle</a></div>`;
+              })
+              .join("")
+          : "<div class='item'>No hay pagos registrados por ahora.</div>";
+      }
+
+      async function bootstrap() {
+        if (!token) {
+          window.location.href = "/landing.html";
+          return;
+        }
+
+        try {
+          const me = await apiGet("/api/auth/me");
+          if (me.role !== "STUDENT") {
+            window.location.href = "/landing.html";
+            return;
+          }
+
+          document.getElementById("session-pills").innerHTML = [
+            `<span class="pill">Tenant: ${tenantSlug}</span>`,
+            `<span class="pill">Rol: ${me.role}</span>`,
+            `<span class="pill">Usuario: ${me.fullName}</span>`
+          ].join("");
+          document.getElementById("welcome-title").textContent = `${me.fullName}, tus cuotas y pagos en una sola vista.`;
+
+          const dashboard = await apiGet("/api/backoffice/dashboard/student");
+          fillCourses(dashboard.enrolledCourses || []);
+          fillPayments(dashboard.payments || []);
+        } catch (error) {
+          document.getElementById("courses-list").innerHTML = `<div class='item error'>${error.message}</div>`;
+          document.getElementById("payments-list").innerHTML = "";
+        }
+      }
+
+      bootstrap();
+    </script>
+  </body>
+</html>
