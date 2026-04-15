@@ -76,12 +76,12 @@
     }
 
     return buildResponse({
-      situacion: "Estas queriendo ordenar cobros sin volver todo acartonado ni perder cercania con la gente.",
-      conviene: "Arranca liviano: primero pago unico por link, y cuando tome ritmo pasas a suscripcion.",
-      porque: "Asi el cambio se siente natural, bajas la resistencia y todos se adaptan sin presion.",
-      ahora: "Esta semana prueba con un solo caso real, mandalo con un mensaje simple y mira como responde la persona.",
+      situacion: "Estas buscando ordenar los cobros, pero sin que se sienta frio ni complicado.",
+      conviene: "Anda tranqui: arranca con link de pago (pago unico) y despues, si fluye, pasas a suscripcion.",
+      porque: "Porque asi nadie se abruma, vos pruebas rapido y el cambio entra natural.",
+      ahora: "Elegi un solo caso esta semana, mandalo por WhatsApp con mensaje corto y fijate como responde.",
       texto:
-        "Hola! Para hacerlo mas facil, vamos a arrancar con un link de pago simple en cada cobro. Si vemos que funciona comodo para todos, despues pasamos a una modalidad mensual."
+        "Hola! Te paso un link de pago super simple para esta vez. Asi lo hacemos facil para todos. Si vemos que funciona bien, mas adelante lo pasamos a mensual y listo."
     });
   }
 

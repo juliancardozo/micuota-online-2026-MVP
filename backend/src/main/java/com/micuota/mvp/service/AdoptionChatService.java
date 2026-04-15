@@ -56,11 +56,11 @@ public class AdoptionChatService {
             now = "Crea un cobro, copia el link y envialo con concepto, monto y fecha sugerida.";
             text = "Te comparto este link de pago para que puedas abonarlo cuando te quede comodo. Si tienes dudas, te acompano paso a paso.";
         } else {
-            situation = "Estas queriendo ordenar cobros sin volver todo acartonado ni perder cercania con la gente.";
-            recommendation = "Arranca liviano: primero pago unico por link, y cuando tome ritmo pasas a suscripcion.";
-            why = "Asi el cambio se siente natural, bajas la resistencia y todos se adaptan sin presion.";
-            now = "Esta semana prueba con un solo caso real, mandalo con un mensaje simple y mira como responde la persona.";
-            text = "Hola! Para hacerlo mas facil, vamos a arrancar con un link de pago simple en cada cobro. Si vemos que funciona comodo para todos, despues pasamos a una modalidad mensual.";
+            situation = "Estas buscando ordenar los cobros, pero sin que se sienta frio ni complicado.";
+            recommendation = "Anda tranqui: arranca con link de pago (pago unico) y despues, si fluye, pasas a suscripcion.";
+            why = "Porque asi nadie se abruma, vos pruebas rapido y el cambio entra natural.";
+            now = "Elegi un solo caso esta semana, mandalo por WhatsApp con mensaje corto y fijate como responde.";
+            text = "Hola! Te paso un link de pago super simple para esta vez. Asi lo hacemos facil para todos. Si vemos que funciona bien, mas adelante lo pasamos a mensual y listo.";
         }
 
         if ("alumno".equals(role) || "paciente".equals(role)) {
