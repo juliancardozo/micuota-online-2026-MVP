@@ -3,96 +3,171 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MiCuota.online | Cobros con calma operativa</title>
+    <title>MiCuota.online | Cobros simples para profesionales</title>
     <meta
       name="description"
-      content="MiCuota.online transforma el cobro recurrente en un flujo tecnológico, claro y agradable para profesionales independientes."
+      content="MiCuota.online te ayuda a cobrar con links, QR y suscripciones en una experiencia clara para vos y tus clientes."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Archivo:wght@600;700;800&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="ui.css" />
+    <link rel="stylesheet" href="landing.css" />
   </head>
-  <body>
-    <div class="app-shell">
-      <header class="topbar">
-        <a class="brand" href="/landing.html">
-          <span class="brand-dot"></span>
+  <body class="landing-mp">
+    <div class="lp-bg"></div>
+
+    <header class="lp-nav-wrap">
+      <div class="lp-nav">
+        <a class="lp-brand" href="/landing.html">
+          <span class="lp-brand-mark" aria-hidden="true"></span>
           MiCuota.online
         </a>
-        <nav class="nav-links">
-          <a href="/index.html">Demo pagos</a>
+        <nav class="lp-links">
+          <a href="#como-funciona">Como funciona</a>
+          <a href="#beneficios">Beneficios</a>
+          <a href="/index.html">Demo de pago</a>
+          <a href="http://localhost:5173" target="_blank" rel="noopener noreferrer">Demo embebida</a>
           <a href="/backoffice.html">Backoffice</a>
         </nav>
-      </header>
+        <a class="lp-btn lp-btn-dark" href="#acceso">Ingresar</a>
+      </div>
+    </header>
 
-      <section class="hero">
-        <span class="kicker">Cobro inteligente</span>
-        <h1>Una experiencia de cobro que se siente liviana y profesional.</h1>
+    <main class="lp-main">
+      <section class="lp-hero">
+        <div class="lp-hero-copy">
+          <p class="lp-overline">Cobros digitales para profesionales</p>
+          <h1>Cobra por link, QR o suscripcion sin perseguir pagos.</h1>
+          <p class="lp-lead">
+            MiCuota.online ordena tus cobros para que pases menos tiempo gestionando mensajes y
+            mas tiempo en lo que realmente haces bien.
+          </p>
+          <div class="lp-cta-row">
+            <a class="lp-btn lp-btn-primary" href="/index.html">Probar experiencia de pago</a>
+            <a class="lp-btn lp-btn-light" href="#acceso">Entrar al panel</a>
+          </div>
+          <ul class="lp-trust-list">
+            <li>Checkout claro en celular</li>
+            <li>Estado de cobros en tiempo real</li>
+            <li>Onboarding guiado con asistente</li>
+          </ul>
+        </div>
+        <aside class="lp-hero-card">
+          <p class="lp-kicker">Esta semana</p>
+          <div class="lp-kpi">
+            <small>Cobros completados</small>
+            <strong>+37</strong>
+          </div>
+          <div class="lp-kpi">
+            <small>Pagos pendientes</small>
+            <strong>6</strong>
+          </div>
+          <div class="lp-kpi">
+            <small>Tiempo ahorrado</small>
+            <strong>4h</strong>
+          </div>
+          <p class="lp-card-note">Visual simple para tomar decisiones rapido, sin planillas.</p>
+        </aside>
+      </section>
+
+      <section class="lp-section">
+        <h2>Comparar flujos: clasico vs embebido</h2>
         <p>
-          Menos perseguir comprobantes. Menos ruido en WhatsApp. Más tranquilidad para vos y una
-          experiencia moderna para tus alumnos o pacientes.
+          Puedes probar el flujo actual de cobros y tambien abrir la demo de Metabase embebida con
+          SDK modular en React.
         </p>
-        <div class="row">
-          <a class="btn btn-primary" href="/index.html">Ver experiencia de cobro</a>
-          <a class="btn btn-ghost" href="/backoffice.html">Ir al backoffice</a>
+        <div class="lp-cta-row">
+          <a class="lp-btn lp-btn-light" href="/index.html">Abrir demo clasica</a>
+          <a
+            class="lp-btn lp-btn-primary"
+            href="http://localhost:5173"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Abrir demo embebida (SDK)</a
+          >
         </div>
       </section>
 
-      <main class="grid">
-        <section class="card span-6">
-          <h2>Qué cambia para vos</h2>
-          <p class="section-copy">Tu operación diaria pasa de reactiva a ordenada.</p>
-          <div class="stack">
-            <div class="item">Cobros únicos y suscripciones desde una sola interfaz.</div>
-            <div class="item">Links y QR listos para compartir en segundos.</div>
-            <div class="item">Seguimiento automático del estado de pago.</div>
-          </div>
-        </section>
+      <section id="beneficios" class="lp-section">
+        <h2>Todo lo que necesitas para cobrar mejor</h2>
+        <div class="lp-feature-grid">
+          <article class="lp-feature">
+            <h3>Links listos para WhatsApp</h3>
+            <p>Genera cobros puntuales en segundos y comparte un mensaje claro para cada caso.</p>
+          </article>
+          <article class="lp-feature">
+            <h3>Suscripciones mensuales</h3>
+            <p>Ideal para cuotas recurrentes con seguimiento del estado de cada pago.</p>
+          </article>
+          <article class="lp-feature">
+            <h3>QR para cobro presencial</h3>
+            <p>Cobro inmediato en clase o consulta, sin pasos extra para tus clientes.</p>
+          </article>
+          <article class="lp-feature">
+            <h3>Panel por rol</h3>
+            <p>Admin, profesor y alumno ven solo lo que necesitan para operar sin ruido.</p>
+          </article>
+        </div>
+      </section>
 
-        <section class="card span-6">
-          <h2>Diseñado para sentirse bien</h2>
-          <p class="section-copy">Tecnología mínima en complejidad, máxima en claridad.</p>
-          <div class="pills">
-            <span class="pill">Profesores</span>
-            <span class="pill">Psicólogos</span>
-            <span class="pill">Tutores</span>
-            <span class="pill">Entrenadores</span>
-            <span class="pill">Consultores</span>
-          </div>
-          <p class="footer-note">
-            Tu cliente solo ve una acción simple: pagar. Vos ves control y previsibilidad.
+      <section id="como-funciona" class="lp-section lp-steps">
+        <h2>Como funciona</h2>
+        <div class="lp-step-row">
+          <article class="lp-step">
+            <span>1</span>
+            <h3>Creas el cobro</h3>
+            <p>Define monto, concepto y modalidad: link, QR o suscripcion.</p>
+          </article>
+          <article class="lp-step">
+            <span>2</span>
+            <h3>Lo compartes</h3>
+            <p>Envialo por WhatsApp, email o muestro en presencial para pagar al instante.</p>
+          </article>
+          <article class="lp-step">
+            <span>3</span>
+            <h3>Haces seguimiento</h3>
+            <p>Revisa estados desde tu dashboard y reduce seguimiento manual.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="acceso" class="lp-section lp-access">
+        <div class="lp-access-copy">
+          <h2>Ingresa a tu panel</h2>
+          <p>
+            Acceso seguro por tenant y redireccion inteligente segun el perfil de cada usuario.
           </p>
-        </section>
-
-        <section class="card span-12">
-          <h2>Ingresar</h2>
-          <p class="section-copy">Acceso por rol con redirección automática al dashboard correcto.</p>
+          <ul>
+            <li>Administrador: control de cursos, pagos y usuarios.</li>
+            <li>Profesor: vista de cobros y resumen de comisiones.</li>
+            <li>Alumno: pagos y estado de suscripciones.</li>
+          </ul>
+        </div>
+        <div class="lp-login-card">
           <form id="login-form">
             <div class="field">
               <label for="loginTenantSlug">Slug del tenant</label>
-              <input id="loginTenantSlug" name="tenantSlug" required />
+              <input id="loginTenantSlug" name="tenantSlug" placeholder="ej: centro-fitness" required />
             </div>
             <div class="field">
               <label for="loginEmail">Email</label>
-              <input id="loginEmail" name="email" type="email" required />
+              <input id="loginEmail" name="email" type="email" placeholder="tu@email.com" required />
             </div>
             <div class="field">
-              <label for="loginPassword">Contraseña</label>
+              <label for="loginPassword">Contrasena</label>
               <input id="loginPassword" name="password" type="password" required />
             </div>
-            <button type="submit">Entrar</button>
+            <button type="submit" class="lp-btn lp-btn-primary lp-btn-full">Entrar</button>
           </form>
           <p id="login-note" class="note"></p>
-          <p class="footer-note">
-            Al iniciar sesión irás a admin, profesor o alumno según tu perfil.
-          </p>
-        </section>
-      </main>
-    </div>
+          <p class="lp-small-note">Al iniciar sesion vas directo al dashboard correcto.</p>
+        </div>
+      </section>
+    </main>
 
     <script>
       const API_BASE = "http://localhost:8080";
@@ -135,5 +210,6 @@
         }
       });
     </script>
+    <script src="/chatbot.js"></script>
   </body>
 </html>

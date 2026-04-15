@@ -13,6 +13,7 @@ import com.micuota.mvp.repository.PaymentOperationRepository;
 import com.micuota.mvp.repository.TeacherProfileRepository;
 import com.micuota.mvp.repository.UserRepository;
 import java.time.OffsetDateTime;
+import java.util.Locale;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,7 @@ public class PaymentService {
     private final PaymentOperationRepository paymentOperationRepository;
     private final UserRepository userRepository;
     private final CourseRepository courseRepository;
+    private final PaymentNotificationService paymentNotificationService;
     private final Map<PaymentProviderType, PaymentProviderGateway> gateways;
 
     @Value("${app.base-url}")
@@ -37,12 +39,14 @@ public class PaymentService {
         PaymentOperationRepository paymentOperationRepository,
         UserRepository userRepository,
         CourseRepository courseRepository,
+        PaymentNotificationService paymentNotificationService,
         List<PaymentProviderGateway> providers
     ) {
         this.teacherProfileRepository = teacherProfileRepository;
         this.paymentOperationRepository = paymentOperationRepository;
         this.userRepository = userRepository;
         this.courseRepository = courseRepository;
+        this.paymentNotificationService = paymentNotificationService;
         this.gateways = new EnumMap<>(PaymentProviderType.class);
         providers.forEach(p -> this.gateways.put(p.provider(), p));
     }
@@ -134,6 +138,15 @@ public class PaymentService {
         return paymentOperationRepository.save(operation);
     }
 
+    @Transactional
+    public PaymentOperation updateStatusByProviderReference(String providerReference, OperationStatus status) {
+        PaymentOperation operation = paymentOperationRepository.findByProviderReference(providerReference)
+            .orElseThrow(() -> new IllegalArgumentException("Operacion no encontrada para providerReference: " + providerReference));
+        operation.setStatus(status);
+        operation.setUpdatedAt(OffsetDateTime.now());
+        return paymentOperationRepository.save(operation);
+    }
+
     private PaymentOperation createOperation(PaymentFlowType flowType, CreatePaymentRequest request) {
         TeacherProfile teacher = teacherProfileRepository.findById(request.teacherId())
             .orElseThrow(() -> new IllegalArgumentException("Teacher no encontrado: " + request.teacherId()));
@@ -188,7 +201,10 @@ public class PaymentService {
         operation.setStatus(OperationStatus.CREATED);
         operation.setCreatedAt(OffsetDateTime.now());
 
-        return paymentOperationRepository.save(operation);
+        PaymentOperation saved = paymentOperationRepository.save(operation);
+        String normalizedPayerEmail = request.payerEmail() == null ? null : request.payerEmail().trim().toLowerCase(Locale.ROOT);
+        paymentNotificationService.sendPaymentCreatedEmail(normalizedPayerEmail, teacher.getDisplayName(), saved);
+        return saved;
     }
 
     private Long resolveTeacherProfileIdByUserId(Long userId) {

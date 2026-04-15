@@ -22,7 +22,7 @@
         <nav class="nav-links">
           <a href="/backoffice.html">Backoffice</a>
           <a href="/alumno.html">Vista alumno</a>
-          <a href="/landing.html">Salir</a>
+          <a href="/landing.html" id="logout-link">Cerrar sesión</a>
         </nav>
       </header>
 
@@ -66,6 +66,16 @@
       const urlToken = new URLSearchParams(window.location.search).get("token");
       const token = urlToken || localStorage.getItem("micuota.authToken");
       const tenantSlug = localStorage.getItem("micuota.tenantSlug") || "(sin slug)";
+
+      if (urlToken) {
+        localStorage.setItem("micuota.authToken", urlToken);
+      }
+
+      function logout() {
+        localStorage.removeItem("micuota.authToken");
+        localStorage.removeItem("micuota.tenantSlug");
+        window.location.href = "/landing.html";
+      }
 
       const state = {
         courses: [],
@@ -165,7 +175,7 @@
 
       async function bootstrap() {
         if (!token) {
-          window.location.href = "/landing.html";
+          logout();
           return;
         }
 
@@ -188,12 +198,21 @@
           fillCourses();
           fillPayments();
         } catch (error) {
+          if (/Sesion invalida o expirada|Token de sesion requerido|Token no encontrado/i.test(error.message)) {
+            logout();
+            return;
+          }
           document.getElementById("course-summary").innerHTML = `<div class='kpi error'>${error.message}</div>`;
         }
       }
 
       document.getElementById("load-share").addEventListener("click", loadQuickShare);
+      document.getElementById("logout-link").addEventListener("click", (event) => {
+        event.preventDefault();
+        logout();
+      });
       bootstrap();
     </script>
+    <script src="/chatbot.js"></script>
   </body>
 </html>
