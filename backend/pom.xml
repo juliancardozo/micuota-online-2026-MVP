@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.3.5</version>
+        <version>3.5.13</version>
         <relativePath/>
     </parent>
 
@@ -18,7 +18,7 @@
     <description>MVP backend for MiCuota.online</description>
 
     <properties>
-        <java.version>17</java.version>
+        <java.version>25</java.version>
     </properties>
 
     <dependencies>
