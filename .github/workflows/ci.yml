@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend-verify:
+    name: Backend Verify (Maven)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+
+      - name: Verify backend
+        run: mvn -B -ntp -f backend/pom.xml verify
+
+  frontend-smoke:
+    name: Frontend Smoke Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate required frontend files
+        run: |
+          set -euo pipefail
+          files=(
+            landing.html
+            backoffice.html
+            alumno.html
+            profesor.html
+            pago.html
+            ui.css
+            app.js
+            netlify.toml
+          )
+          for f in "${files[@]}"; do
+            test -f "$f" || { echo "Missing required file: $f"; exit 1; }
+          done
+
+      - name: Validate docs exist
+        run: |
+          set -euo pipefail
+          test -f docs/sequence-diagrams-mvp.md || { echo "Missing sequence diagrams doc"; exit 1; }
