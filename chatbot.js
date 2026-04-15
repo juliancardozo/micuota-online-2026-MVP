@@ -76,12 +76,12 @@
     }
 
     return buildResponse({
-      situacion: "Estas evaluando como adoptar MiCuota.online sin perder cercania con tus alumnos o pacientes.",
-      conviene: "Comenzar con pago unico por link y pasar a suscripcion solo en servicios estables.",
-      porque: "Ese enfoque reduce resistencia, permite aprender rapido y mejora orden de cobros.",
-      ahora: "Define un caso piloto de esta semana: un servicio, un mensaje claro y un primer cobro medible.",
+      situacion: "Estas queriendo ordenar cobros sin volver todo acartonado ni perder cercania con la gente.",
+      conviene: "Arranca liviano: primero pago unico por link, y cuando tome ritmo pasas a suscripcion.",
+      porque: "Asi el cambio se siente natural, bajas la resistencia y todos se adaptan sin presion.",
+      ahora: "Esta semana prueba con un solo caso real, mandalo con un mensaje simple y mira como responde la persona.",
       texto:
-        "Hola, para simplificar pagos vamos a empezar con MiCuota.online en un formato muy simple. Te compartire un link claro para cada cobro, y segun como te resulte evaluamos modalidad mensual."
+        "Hola! Para hacerlo mas facil, vamos a arrancar con un link de pago simple en cada cobro. Si vemos que funciona comodo para todos, despues pasamos a una modalidad mensual."
     });
   }
 
