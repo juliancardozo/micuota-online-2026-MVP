@@ -14,6 +14,13 @@ import com.micuota.mvp.service.EnrollmentView;
 import com.micuota.mvp.service.PaymentService;
 import com.micuota.mvp.service.ProfessorDashboardView;
 import com.micuota.mvp.service.StudentDashboardView;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,6 +33,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/backoffice")
+@Tag(name = "Backoffice", description = "Servicios privados del backoffice por tenant y rol")
+@SecurityRequirement(name = "AuthToken")
 public class BackofficeController {
 
     private final AuthSessionService authSessionService;
@@ -43,6 +52,12 @@ public class BackofficeController {
     }
 
     @PostMapping("/users")
+    @Operation(summary = "Crear usuario", description = "Crea usuarios TEACHER o STUDENT dentro del tenant autenticado. Requiere TENANT_ADMIN.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Usuario creado"),
+        @ApiResponse(responseCode = "400", description = "Token invalido o permisos insuficientes", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+        @ApiResponse(responseCode = "422", description = "Payload invalido", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
     public BackofficeUserView createUser(
         @RequestHeader("X-Auth-Token") String token,
         @Valid @RequestBody CreateBackofficeUserRequest request
@@ -53,6 +68,7 @@ public class BackofficeController {
     }
 
     @GetMapping("/users")
+    @Operation(summary = "Listar usuarios", description = "Lista usuarios del tenant autenticado, opcionalmente filtrando por rol.")
     public List<BackofficeUserView> listUsers(
         @RequestHeader("X-Auth-Token") String token,
         @RequestParam(required = false) UserRole role
@@ -63,6 +79,7 @@ public class BackofficeController {
     }
 
     @PostMapping("/courses")
+    @Operation(summary = "Crear curso", description = "Crea un curso asociado a un profesor del tenant autenticado.")
     public CourseView createCourse(
         @RequestHeader("X-Auth-Token") String token,
         @Valid @RequestBody CreateCourseRequest request
@@ -73,6 +90,7 @@ public class BackofficeController {
     }
 
     @GetMapping("/courses")
+    @Operation(summary = "Listar cursos", description = "Lista cursos del tenant autenticado.")
     public List<CourseView> listCourses(@RequestHeader("X-Auth-Token") String token) {
         AuthSessionService.SessionContext session = authSessionService.requireSession(token);
         requireTenantAdminOrTeacher(session);
@@ -80,6 +98,7 @@ public class BackofficeController {
     }
 
     @PostMapping("/payments/one-time")
+    @Operation(summary = "Crear pago unico", description = "Crea una operacion ONE_TIME para el profesional autenticado.")
     public PaymentOperation createOneTimeFromBackoffice(
         @RequestHeader("X-Auth-Token") String token,
         @Valid @RequestBody CreateBackofficePaymentRequest request
@@ -90,6 +109,7 @@ public class BackofficeController {
     }
 
     @PostMapping("/payments/subscriptions")
+    @Operation(summary = "Crear suscripcion", description = "Crea una operacion SUBSCRIPTION para el profesional autenticado.")
     public PaymentOperation createSubscriptionFromBackoffice(
         @RequestHeader("X-Auth-Token") String token,
         @Valid @RequestBody CreateBackofficePaymentRequest request
@@ -100,6 +120,7 @@ public class BackofficeController {
     }
 
     @GetMapping("/payments")
+    @Operation(summary = "Listar pagos del profesional", description = "Devuelve operaciones recientes del profesional autenticado.")
     public List<PaymentOperation> listBackofficePayments(@RequestHeader("X-Auth-Token") String token) {
         AuthSessionService.SessionContext session = authSessionService.requireSession(token);
         requireTenantAdminOrTeacher(session);
@@ -107,6 +128,7 @@ public class BackofficeController {
     }
 
     @GetMapping("/payments/by-course")
+    @Operation(summary = "Listar pagos por curso", description = "Devuelve operaciones recientes filtradas por curso.")
     public List<PaymentOperation> listBackofficePaymentsByCourse(
         @RequestHeader("X-Auth-Token") String token,
         @RequestParam Long courseId
@@ -117,6 +139,7 @@ public class BackofficeController {
     }
 
     @PostMapping("/enrollments")
+    @Operation(summary = "Inscribir alumno", description = "Asocia un alumno/paciente a un curso dentro del tenant autenticado.")
     public EnrollmentView createEnrollment(
         @RequestHeader("X-Auth-Token") String token,
         @Valid @RequestBody CreateEnrollmentRequest request
@@ -127,6 +150,7 @@ public class BackofficeController {
     }
 
     @GetMapping("/enrollments")
+    @Operation(summary = "Listar inscripciones", description = "Devuelve las inscripciones curso-alumno del tenant autenticado.")
     public List<EnrollmentView> listEnrollments(@RequestHeader("X-Auth-Token") String token) {
         AuthSessionService.SessionContext session = authSessionService.requireSession(token);
         requireTenantAdminOrTeacher(session);
@@ -134,6 +158,7 @@ public class BackofficeController {
     }
 
     @GetMapping("/dashboard/professor")
+    @Operation(summary = "Dashboard profesor", description = "Resumen de cursos y pagos recientes para TENANT_ADMIN o TEACHER.")
     public ProfessorDashboardView professorDashboard(@RequestHeader("X-Auth-Token") String token) {
         AuthSessionService.SessionContext session = authSessionService.requireSession(token);
         requireTenantAdminOrTeacher(session);
@@ -141,6 +166,11 @@ public class BackofficeController {
     }
 
     @GetMapping("/dashboard/student")
+    @Operation(summary = "Dashboard alumno", description = "Resumen de cursos y pagos del alumno autenticado (solo STUDENT).")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Dashboard generado"),
+        @ApiResponse(responseCode = "400", description = "Operacion permitida solo para STUDENT o token invalido", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
     public StudentDashboardView studentDashboard(@RequestHeader("X-Auth-Token") String token) {
         AuthSessionService.SessionContext session = authSessionService.requireSession(token);
         if (session.role() != UserRole.STUDENT) {

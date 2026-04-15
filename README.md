@@ -73,6 +73,29 @@ Abrir la URL de `serve` (por ejemplo `http://localhost:3000`).
 - `GET /api/callbacks/pending?operationId=...`
 - `GET /api/callbacks/failure?operationId=...`
 
+## Swagger y OpenAPI
+
+Con el backend levantado, la documentacion interactiva queda disponible en:
+
+- Swagger UI: `http://localhost:8080/swagger-ui/index.html`
+- OpenAPI JSON: `http://localhost:8080/v3/api-docs`
+
+### Autorizacion en Swagger
+
+El esquema privado usa header `X-Auth-Token`.
+
+Flujo recomendado:
+
+1. Ejecutar `POST /api/auth/login` (o `POST /api/auth/register-tenant`).
+2. Copiar el campo `token` de la respuesta.
+3. En Swagger UI, boton `Authorize`, pegar el token en `AuthToken`.
+4. Ejecutar endpoints privados (`/api/backoffice/*` y `/api/auth/me`).
+
+Notas:
+
+- Endpoints publicos como `/api/public/payments/*` y callbacks no requieren token.
+- Existen endpoints legacy en `/api/payments/*` sin `X-Auth-Token`, documentados para compatibilidad MVP.
+
 ## API multi-tenant y backoffice
 
 - `POST /api/auth/register-tenant`: crea tenant + usuario admin y devuelve token + URL de backoffice.
