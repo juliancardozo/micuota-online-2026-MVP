@@ -11,6 +11,8 @@ public record AdoptionChatRequest(
     @Schema(example = "/landing.html")
     String page,
     @Schema(example = "profesor")
-    String roleHint
+    String roleHint,
+    @Schema(example = "true", description = "Si es true devuelve respuesta corta de chat rapido")
+    Boolean quickMode
 ) {
 }

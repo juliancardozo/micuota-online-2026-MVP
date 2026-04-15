@@ -1,9 +1,17 @@
 (function () {
   const API_BASE = "http://localhost:8080";
+  const QUICK_CHAT = true;
   const firstMessage =
-    "Estoy listo para ayudarte a introducir MiCuota.online de forma clara, humana y practica. Cuentame si estas pensando como profesor, profesional, alumno, paciente o administrador, y te ayudo a elegir la mejor forma de usarlo.";
+    "Listo, vamos rapido. Contame tu caso y te digo que te conviene + el texto para enviarlo por WhatsApp.";
 
   function buildResponse(parts) {
+    if (QUICK_CHAT) {
+      return [
+        "Te conviene: " + parts.conviene,
+        "Ahora: " + parts.ahora,
+        "Texto para enviar: " + parts.texto
+      ].join("\n\n");
+    }
     return [
       "1. Que esta pasando\n" + parts.situacion,
       "2. Que te conviene mas\n" + parts.conviene,
@@ -114,7 +122,8 @@
       body: JSON.stringify({
         message: question,
         page: window.location.pathname,
-        roleHint: roleByPath
+        roleHint: roleByPath,
+        quickMode: QUICK_CHAT
       })
     });
 

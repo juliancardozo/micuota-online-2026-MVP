@@ -21,6 +21,9 @@ public class AdoptionChatService {
     @Transactional(readOnly = true)
     public AdoptionChatResponse advise(String token, AdoptionChatRequest request) {
         String normalizedMessage = request.message().toLowerCase(Locale.ROOT);
+        boolean quickMode = Boolean.TRUE.equals(request.quickMode())
+            || normalizedMessage.contains("rapido")
+            || normalizedMessage.contains("breve");
 
         AuthSessionService.SessionContext session = authSessionService.findSession(token).orElse(null);
         User sessionUser = null;
@@ -71,13 +74,22 @@ public class AdoptionChatService {
             text = "Para ti sera simple: recibes un enlace, revisas el detalle y pagas en pocos pasos. Si es mensual, se aclara antes de activar cualquier recurrencia.";
         }
 
-        String answer = String.join("\n\n",
-            "1. Que esta pasando\n" + situation,
-            "2. Que te conviene mas\n" + recommendation,
-            "3. Por que\n" + why,
-            "4. Que puedes hacer ahora\n" + now,
-            "5. Texto sugerido\n" + text
-        );
+        String answer;
+        if (quickMode) {
+            answer = String.join("\n\n",
+                "Te conviene: " + recommendation,
+                "Ahora: " + now,
+                "Texto para enviar: " + text
+            );
+        } else {
+            answer = String.join("\n\n",
+                "1. Que esta pasando\n" + situation,
+                "2. Que te conviene mas\n" + recommendation,
+                "3. Por que\n" + why,
+                "4. Que puedes hacer ahora\n" + now,
+                "5. Texto sugerido\n" + text
+            );
+        }
 
         return new AdoptionChatResponse(answer, role, flow, "backend-contextual");
     }
