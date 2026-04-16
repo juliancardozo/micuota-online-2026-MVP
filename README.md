@@ -40,6 +40,25 @@ Proyecto Maven en `backend/` con:
 	- `TeacherProfile` (composicion 1:1 con credenciales provider)
 	- `PaymentOperation`
 
+### Integracion real de links (Stripe, Square, Plexo)
+
+El backend soporta dos modos para estos providers:
+
+1. Modo sandbox interno (default): genera links locales `/sandbox/...` para pruebas.
+2. Modo externo real: crea links en APIs de Stripe/Square/Plexo segun variables de entorno.
+
+Variables relevantes:
+
+- `APP_PAYMENTS_EXTERNAL_PROVIDERS_ENABLED=true`
+- `APP_PAYMENTS_STRIPE_SECRET_KEY=...`
+- `APP_PAYMENTS_SQUARE_ACCESS_TOKEN=...`
+- `APP_PAYMENTS_SQUARE_LOCATION_ID=...`
+- `APP_PAYMENTS_SQUARE_USE_SANDBOX=true|false`
+- `APP_PAYMENTS_PLEXO_API_URL=...`
+- `APP_PAYMENTS_PLEXO_API_KEY=...`
+
+Nota: Plexo se deja con endpoint configurable (`.../links`) porque la URL final depende de la cuenta/entorno provisto por Plexo.
+
 ## Ejecutar local
 
 ### 1) Levantar backend
