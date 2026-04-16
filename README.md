@@ -59,6 +59,15 @@ Variables relevantes:
 
 Nota: Plexo se deja con endpoint configurable (`.../links`) porque la URL final depende de la cuenta/entorno provisto por Plexo.
 
+Referencias oficiales de producto (links de pago):
+
+- Stripe Payment Links: https://stripe.com/payments/payment-links
+	- Crea y comparte un enlace de pago sin necesidad de sitio web.
+- Square Payment Links: https://squareup.com/payment-links
+	- Configuracion rapida y flexible para generar links de cobro en segundos.
+- Plexo Links (UY): https://www.plexo.com.uy/productos/plexo-links
+	- Cobranzas para compartir por WhatsApp, email o redes sociales con un link.
+
 ## Ejecutar local
 
 ### 1) Levantar backend
