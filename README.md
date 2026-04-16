@@ -6,7 +6,7 @@ Repositorio con un MVP real orientado a SaaS:
 - Backend Spring Boot con API REST
 - Persistencia por perfiles: H2 (dev) y PostgreSQL (prod)
 - Callbacks `success/pending/failure`
-- Capa abstracta de proveedores: MercadoPago, Prometeo y WooCommerce
+- Capa abstracta de proveedores: MercadoPago, Prometeo, WooCommerce, Stripe, Square y Plexo
 
 ## Arquitectura
 
@@ -29,6 +29,9 @@ Proyecto Maven en `backend/` con:
 	- `MercadoPagoGateway`
 	- `PrometeoGateway`
 	- `WooCommerceGateway`
+	- `StripeGateway`
+	- `SquareGateway`
+	- `PlexoGateway`
 - `PaymentService` para orquestar flujos `ONE_TIME` y `SUBSCRIPTION`
 - `PaymentController` para crear operaciones
 - `CallbackController` para actualizar estados
