@@ -1,0 +1,118 @@
+{
+  "name": "02 - Lead Qualification and Enrichment",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "saas/leads/qualify",
+        "httpMethod": "POST",
+        "responseMode": "responseNode"
+      },
+      "id": "Webhook_Qualify",
+      "name": "Webhook Qualify",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{$env.CRM_BASE_URL + '/leads/search?email=' + encodeURIComponent($json.body.email)}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "={{'Bearer ' + $env.CRM_API_KEY}}" }
+          ]
+        }
+      },
+      "id": "HTTP_FindDuplicate",
+      "name": "Find Duplicate",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [430, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            { "value1": "={{Array.isArray($json.data) ? $json.data.length : 0}}", "operation": "larger", "value2": 0 }
+          ]
+        }
+      },
+      "id": "IF_Duplicate",
+      "name": "Duplicate?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [660, 300]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "number": [
+            { "name": "score", "value": "={{($json.body?.budget ? 50 : 20) + ($json.body?.teamSize ? 30 : 10) + ($json.body?.urgency === 'high' ? 20 : 5)}}" }
+          ],
+          "string": [
+            { "name": "segment", "value": "={{$json.score >= 70 ? 'SQL' : 'MQL'}}" }
+          ]
+        }
+      },
+      "id": "Set_Score",
+      "name": "Score Lead",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [900, 220]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.CRM_BASE_URL + '/leads/assign'}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "={{'Bearer ' + $env.CRM_API_KEY}}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { email: $json.body.email, segment: $json.segment, score: $json.score } }}"
+      },
+      "id": "HTTP_AssignOwner",
+      "name": "Assign Owner",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1140, 220]
+    },
+    {
+      "parameters": {
+        "responseBody": "={{ { \"ok\": true, \"qualified\": true } }}"
+      },
+      "id": "Respond_Qualified",
+      "name": "Respond Qualified",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1360, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Qualify": {
+      "main": [[{ "node": "Find Duplicate", "type": "main", "index": 0 }]]
+    },
+    "Find Duplicate": {
+      "main": [[{ "node": "Duplicate?", "type": "main", "index": 0 }]]
+    },
+    "Duplicate?": {
+      "main": [
+        [{ "node": "Respond Qualified", "type": "main", "index": 0 }],
+        [{ "node": "Score Lead", "type": "main", "index": 0 }]
+      ]
+    },
+    "Score Lead": {
+      "main": [[{ "node": "Assign Owner", "type": "main", "index": 0 }]]
+    },
+    "Assign Owner": {
+      "main": [[{ "node": "Respond Qualified", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "active": false
+}

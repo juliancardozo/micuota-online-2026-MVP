@@ -1,0 +1,113 @@
+{
+  "name": "01 - Lead Capture",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "saas/leads/capture",
+        "httpMethod": "POST",
+        "responseMode": "responseNode"
+      },
+      "id": "Webhook_LeadCapture",
+      "name": "Webhook Lead Capture",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [180, 280]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            { "name": "email", "value": "={{$json.body.email || $json.email || ''}}" },
+            { "name": "phone", "value": "={{$json.body.phone || $json.phone || ''}}" },
+            { "name": "fullName", "value": "={{$json.body.fullName || $json.name || 'Lead'}}" },
+            { "name": "source", "value": "={{$json.body.source || 'landing'}}" }
+          ]
+        }
+      },
+      "id": "Set_NormalizeLead",
+      "name": "Normalize Lead",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [420, 280]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            { "value1": "={{$json.email}}", "operation": "contains", "value2": "@" }
+          ]
+        }
+      },
+      "id": "IF_ValidEmail",
+      "name": "Valid Email?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [670, 280]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.CRM_BASE_URL + '/leads'}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "={{'Bearer ' + $env.CRM_API_KEY}}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{$json}}"
+      },
+      "id": "HTTP_SaveCRM",
+      "name": "Save Lead in CRM",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [920, 220]
+    },
+    {
+      "parameters": {
+        "sendTo": "ops@micuota.online",
+        "subject": "Lead invalido detectado",
+        "message": "={{'Lead descartado por email invalido: ' + JSON.stringify($json)}}"
+      },
+      "id": "Email_InvalidLead",
+      "name": "Notify Invalid Lead",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [920, 380]
+    },
+    {
+      "parameters": {
+        "responseBody": "={{ { \"ok\": true, \"captured\": true } }}"
+      },
+      "id": "Respond_Captured",
+      "name": "Respond Captured",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1160, 280]
+    }
+  ],
+  "connections": {
+    "Webhook Lead Capture": {
+      "main": [[{ "node": "Normalize Lead", "type": "main", "index": 0 }]]
+    },
+    "Normalize Lead": {
+      "main": [[{ "node": "Valid Email?", "type": "main", "index": 0 }]]
+    },
+    "Valid Email?": {
+      "main": [
+        [{ "node": "Save Lead in CRM", "type": "main", "index": 0 }],
+        [{ "node": "Notify Invalid Lead", "type": "main", "index": 0 }]
+      ]
+    },
+    "Save Lead in CRM": {
+      "main": [[{ "node": "Respond Captured", "type": "main", "index": 0 }]]
+    },
+    "Notify Invalid Lead": {
+      "main": [[{ "node": "Respond Captured", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "active": false
+}

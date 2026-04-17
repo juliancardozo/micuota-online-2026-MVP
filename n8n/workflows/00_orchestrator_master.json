@@ -1,0 +1,78 @@
+{
+  "name": "00 - SaaS Orchestrator Master",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "saas/orchestrator/start",
+        "httpMethod": "POST",
+        "responseMode": "responseNode"
+      },
+      "id": "Webhook_Start",
+      "name": "Webhook Start",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [220, 300]
+    },
+    {
+      "parameters": {
+        "workflowId": "01_lead_capture",
+        "options": {}
+      },
+      "id": "Exec_Lead_Capture",
+      "name": "Execute 01 Lead Capture",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "workflowId": "02_lead_qualification_enrichment",
+        "options": {}
+      },
+      "id": "Exec_Qualification",
+      "name": "Execute 02 Qualification",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [720, 300]
+    },
+    {
+      "parameters": {
+        "workflowId": "03_nurture_followup",
+        "options": {}
+      },
+      "id": "Exec_Nurture",
+      "name": "Execute 03 Nurture",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [970, 300]
+    },
+    {
+      "parameters": {
+        "responseBody": "={{ { \"ok\": true, \"message\": \"Master orchestration started\" } }}"
+      },
+      "id": "Respond_OK",
+      "name": "Respond OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1220, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Start": {
+      "main": [[{ "node": "Execute 01 Lead Capture", "type": "main", "index": 0 }]]
+    },
+    "Execute 01 Lead Capture": {
+      "main": [[{ "node": "Execute 02 Qualification", "type": "main", "index": 0 }]]
+    },
+    "Execute 02 Qualification": {
+      "main": [[{ "node": "Execute 03 Nurture", "type": "main", "index": 0 }]]
+    },
+    "Execute 03 Nurture": {
+      "main": [[{ "node": "Respond OK", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false
+}

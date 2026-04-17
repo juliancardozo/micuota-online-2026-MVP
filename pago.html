@@ -3,37 +3,552 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MiCuota | Pago</title>
+    <title>MiCuota | Completar pago</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="ui.css" />
+    <style>
+      :root {
+        --bg: #f5efe4;
+        --paper: rgba(255, 251, 244, 0.84);
+        --paper-strong: #fffaf2;
+        --ink: #211f1a;
+        --muted: #6f6659;
+        --line: rgba(93, 73, 43, 0.12);
+        --line-strong: rgba(93, 73, 43, 0.2);
+        --accent: #cc5a16;
+        --accent-2: #f0a64a;
+        --accent-3: #ffe5b3;
+        --ok: #297e59;
+        --pending: #9a6712;
+        --danger: #bf4056;
+        --shadow: 0 28px 70px rgba(60, 40, 12, 0.12);
+        --radius-xl: 30px;
+        --radius-lg: 22px;
+        --radius-md: 16px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        min-height: 100vh;
+        font-family: "Outfit", "Space Grotesk", sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 0% 0%, rgba(204, 90, 22, 0.2), transparent 26%),
+          radial-gradient(circle at 100% 10%, rgba(240, 166, 74, 0.24), transparent 24%),
+          linear-gradient(135deg, #f8f2e8 0%, #f4ead9 48%, #f9f4ea 100%);
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background-image:
+          linear-gradient(rgba(117, 93, 57, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(117, 93, 57, 0.03) 1px, transparent 1px);
+        background-size: 30px 30px;
+        mask-image: radial-gradient(circle at 50% 10%, black 0%, transparent 75%);
+      }
+
+      a,
+      button {
+        font: inherit;
+      }
+
+      .payment-page {
+        width: min(1180px, calc(100vw - 28px));
+        margin: 18px auto;
+        display: grid;
+        grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.82fr);
+        gap: 18px;
+        align-items: stretch;
+      }
+
+      .hero-card,
+      .summary-card {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-xl);
+        background: var(--paper);
+        backdrop-filter: blur(18px);
+        box-shadow: var(--shadow);
+      }
+
+      .hero-card {
+        padding: clamp(24px, 4vw, 42px);
+        display: grid;
+        gap: 24px;
+      }
+
+      .hero-card::after {
+        content: "";
+        position: absolute;
+        right: -120px;
+        top: -120px;
+        width: 280px;
+        height: 280px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(240, 166, 74, 0.36) 0%, transparent 70%);
+        pointer-events: none;
+      }
+
+      .summary-card {
+        padding: 24px;
+        display: grid;
+        gap: 18px;
+        align-self: start;
+        position: sticky;
+        top: 18px;
+      }
+
+      .eyebrow,
+      .section-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+
+      .eyebrow::before,
+      .section-label::before {
+        content: "";
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+        box-shadow: 0 0 0 6px rgba(204, 90, 22, 0.08);
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        font-size: clamp(2.5rem, 5vw, 4.5rem);
+        line-height: 0.94;
+        letter-spacing: -0.04em;
+        max-width: 10ch;
+      }
+
+      .subtitle {
+        max-width: 52ch;
+        color: var(--muted);
+        font-size: 1.02rem;
+        line-height: 1.65;
+      }
+
+      .hero-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        min-height: 36px;
+        padding: 0 14px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.6);
+        color: var(--muted);
+        font-size: 0.84rem;
+        font-weight: 600;
+      }
+
+      .chip strong {
+        color: var(--ink);
+        margin-left: 6px;
+      }
+
+      .hero-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(280px, 0.78fr);
+        gap: 18px;
+      }
+
+      .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .detail-card,
+      .trust-card,
+      .timeline-card,
+      .summary-block {
+        border: 1px solid var(--line);
+        border-radius: var(--radius-lg);
+        background: rgba(255, 255, 255, 0.56);
+        padding: 18px;
+      }
+
+      .detail-card small,
+      .summary-block small,
+      .timeline-step small {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--muted);
+        font-size: 0.78rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .detail-card strong {
+        font-size: 1.08rem;
+        line-height: 1.3;
+      }
+
+      .highlight-amount {
+        background: linear-gradient(135deg, #fff5df 0%, #fff0cb 100%);
+        border-color: rgba(204, 90, 22, 0.18);
+      }
+
+      .highlight-amount strong {
+        font-size: clamp(1.6rem, 3vw, 2.3rem);
+        color: var(--accent);
+      }
+
+      .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 36px;
+        padding: 0 14px;
+        border-radius: 999px;
+        font-size: 0.84rem;
+        font-weight: 700;
+        border: 1px solid transparent;
+      }
+
+      .status-badge::before {
+        content: "";
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: currentColor;
+      }
+
+      .status-created {
+        background: rgba(154, 103, 18, 0.1);
+        border-color: rgba(154, 103, 18, 0.15);
+        color: var(--pending);
+      }
+
+      .status-pending {
+        background: rgba(154, 103, 18, 0.1);
+        border-color: rgba(154, 103, 18, 0.15);
+        color: var(--pending);
+      }
+
+      .status-success {
+        background: rgba(41, 126, 89, 0.12);
+        border-color: rgba(41, 126, 89, 0.16);
+        color: var(--ok);
+      }
+
+      .status-failure {
+        background: rgba(191, 64, 86, 0.1);
+        border-color: rgba(191, 64, 86, 0.14);
+        color: var(--danger);
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 50px;
+        padding: 0 20px;
+        border-radius: 16px;
+        text-decoration: none;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease;
+      }
+
+      .btn:hover {
+        transform: translateY(-1px);
+      }
+
+      .btn-primary {
+        color: #fffaf2;
+        background: linear-gradient(135deg, #c04e11 0%, #ef9a2b 100%);
+        box-shadow: 0 14px 26px rgba(192, 78, 17, 0.18);
+      }
+
+      .btn-secondary {
+        color: var(--ink);
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid var(--line-strong);
+      }
+
+      .summary-card h2 {
+        font-size: 1.35rem;
+        line-height: 1.1;
+      }
+
+      .summary-stack,
+      .timeline {
+        display: grid;
+        gap: 12px;
+      }
+
+      .summary-block strong {
+        display: block;
+        font-size: 1rem;
+        line-height: 1.35;
+      }
+
+      .summary-block p {
+        margin-top: 6px;
+        color: var(--muted);
+        line-height: 1.55;
+        font-size: 0.92rem;
+      }
+
+      .qr-card {
+        display: grid;
+        gap: 14px;
+        place-items: center;
+        text-align: center;
+        background: linear-gradient(180deg, rgba(255, 252, 247, 0.92) 0%, rgba(255, 247, 232, 0.84) 100%);
+      }
+
+      .qr-frame {
+        width: min(220px, 100%);
+        aspect-ratio: 1;
+        border-radius: 22px;
+        border: 1px solid var(--line);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(252, 244, 228, 0.95) 100%);
+        display: grid;
+        place-items: center;
+        padding: 12px;
+      }
+
+      .qr-frame img {
+        width: 100%;
+        height: auto;
+        border-radius: 14px;
+      }
+
+      .trust-list,
+      .timeline {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      .trust-list li,
+      .timeline-step {
+        display: grid;
+        gap: 4px;
+        padding: 14px 0;
+        border-top: 1px solid var(--line);
+      }
+
+      .trust-list li:first-child,
+      .timeline-step:first-child {
+        border-top: 0;
+        padding-top: 0;
+      }
+
+      .timeline-step strong,
+      .trust-list strong {
+        font-size: 0.97rem;
+      }
+
+      .trust-list p,
+      .timeline-step p,
+      .footer-note {
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .footer-note {
+        font-size: 0.92rem;
+      }
+
+      .empty-state,
+      .error-state {
+        border-radius: var(--radius-lg);
+        border: 1px dashed var(--line-strong);
+        padding: 18px;
+        background: rgba(255, 255, 255, 0.46);
+      }
+
+      .error-state {
+        color: var(--danger);
+        border-color: rgba(191, 64, 86, 0.22);
+        background: rgba(255, 243, 245, 0.84);
+      }
+
+      @media (max-width: 980px) {
+        .payment-page,
+        .hero-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .summary-card {
+          position: static;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .payment-page {
+          width: min(100vw - 16px, 100%);
+          margin: 8px auto 20px;
+          gap: 12px;
+        }
+
+        .hero-card,
+        .summary-card {
+          padding: 18px;
+          border-radius: 24px;
+        }
+
+        .detail-grid {
+          grid-template-columns: 1fr;
+        }
+
+        h1 {
+          max-width: none;
+        }
+      }
+    </style>
   </head>
   <body>
-    <div class="app-shell" style="max-width: 760px; padding-top: 40px;">
-      <main class="card">
-      <span class="kicker">MiCuota.online</span>
-      <h1 style="margin-bottom: 10px;">Completar pago</h1>
-      <p class="section-copy" id="subtitle">Cargando detalle del pago...</p>
+    <div class="payment-page">
+      <main class="hero-card">
+        <div class="hero-copy">
+          <span class="eyebrow">MiCuota Checkout</span>
+          <h1>Completa tu pago sin vueltas.</h1>
+          <p class="subtitle" id="subtitle">Estamos preparando el detalle de tu operacion.</p>
+        </div>
 
-      <section class="mini-grid" id="payment-grid" style="display:none; margin-bottom: 12px;">
-        <div class="kpi"><small>Profesional</small><strong id="professional-name"></strong></div>
-        <div class="kpi"><small>Concepto</small><strong id="description"></strong></div>
-        <div class="kpi"><small>Monto</small><strong id="amount"></strong></div>
-        <div class="kpi"><small>Tipo</small><strong id="flow-type"></strong></div>
-      </section>
+        <div class="hero-meta" id="hero-meta">
+          <span class="chip">Operacion <strong id="operation-id">--</strong></span>
+          <span class="chip">Proveedor <strong id="provider-name">--</strong></span>
+          <span class="chip">Estado <strong id="status-inline">Cargando</strong></span>
+        </div>
 
-      <div class="row" id="payment-actions" style="display:none; margin-top: 0;">
-        <a id="pay-now" class="btn btn-primary" href="#" target="_blank" rel="noopener noreferrer">Pagar ahora</a>
-        <button id="copy-link" class="btn btn-ghost" type="button">Copiar link de pago</button>
-      </div>
+        <section class="detail-grid" id="payment-grid" hidden>
+          <article class="detail-card">
+            <small>Profesional</small>
+            <strong id="professional-name"></strong>
+          </article>
+          <article class="detail-card">
+            <small>Concepto</small>
+            <strong id="description"></strong>
+          </article>
+          <article class="detail-card highlight-amount">
+            <small>Monto</small>
+            <strong id="amount"></strong>
+          </article>
+          <article class="detail-card">
+            <small>Tipo</small>
+            <strong id="flow-type"></strong>
+          </article>
+        </section>
 
-      <p class="footer-note">Pago procesado por proveedor seguro. No necesitas enviar comprobantes manualmente: tu profesional verá el estado automáticamente.</p>
-      <p id="error" class="error" style="display:none;"></p>
+        <div class="actions" id="payment-actions" hidden>
+          <a id="pay-now" class="btn btn-primary" href="#" target="_blank" rel="noopener noreferrer">Ir al pago seguro</a>
+          <button id="copy-link" class="btn btn-secondary" type="button">Copiar link</button>
+        </div>
+
+        <section class="trust-card">
+          <span class="section-label">Que va a pasar</span>
+          <ol class="timeline">
+            <li class="timeline-step">
+              <small>Paso 1</small>
+              <strong>Revisas el resumen</strong>
+              <p>Confirmas monto, concepto y profesional antes de abrir el proveedor.</p>
+            </li>
+            <li class="timeline-step">
+              <small>Paso 2</small>
+              <strong>Pagas en el proveedor</strong>
+              <p>El boton principal te lleva al checkout seguro que corresponde a tu operacion.</p>
+            </li>
+            <li class="timeline-step">
+              <small>Paso 3</small>
+              <strong>Tu estado se actualiza</strong>
+              <p>No necesitas mandar comprobantes manuales. MiCuota sincroniza el estado para tu profesional.</p>
+            </li>
+          </ol>
+        </section>
+
+        <p class="footer-note">
+          Si ya abriste este pago desde WhatsApp o email, puedes copiar el link y retomarlo en otro dispositivo sin perder contexto.
+        </p>
+
+        <div id="error" class="error-state" hidden></div>
       </main>
+
+      <aside class="summary-card">
+        <span class="section-label">Resumen</span>
+        <h2>Una vista limpia para decidir rapido.</h2>
+
+        <div class="summary-stack">
+          <div class="summary-block">
+            <small>Estado actual</small>
+            <span id="status-badge" class="status-badge status-created">Preparando</span>
+            <p id="status-copy">Estamos cargando la operacion para mostrarte el estado correcto.</p>
+          </div>
+
+          <div class="summary-block qr-card">
+            <small>Continuar desde otro dispositivo</small>
+            <div class="qr-frame">
+              <img id="checkout-qr" alt="QR de pago" hidden />
+            </div>
+            <p>Escanea este QR para abrir el mismo link de pago en tu celular.</p>
+          </div>
+
+          <div class="summary-block">
+            <small>Confianza</small>
+            <ul class="trust-list">
+              <li>
+                <strong>Checkout seguro</strong>
+                <p>El cobro se procesa en el proveedor configurado para esta operacion.</p>
+              </li>
+              <li>
+                <strong>Sin seguimiento manual</strong>
+                <p>La plataforma informa automaticamente el resultado al profesional.</p>
+              </li>
+              <li>
+                <strong>Ideal para retomar</strong>
+                <p>Puedes copiar el link y abrirlo luego sin perder el detalle de la operacion.</p>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </aside>
     </div>
 
     <script>
@@ -47,47 +562,112 @@
       const payNow = document.getElementById("pay-now");
       const copyLink = document.getElementById("copy-link");
       const errorNode = document.getElementById("error");
+      const qrImage = document.getElementById("checkout-qr");
+      const statusBadge = document.getElementById("status-badge");
+      const statusCopy = document.getElementById("status-copy");
+
+      function formatFlowType(flowType) {
+        return flowType === "SUBSCRIPTION" ? "Suscripcion" : "Pago unico";
+      }
+
+      function formatProvider(provider) {
+        const labels = {
+          MERCADOPAGO: "MercadoPago",
+          PROMETEO: "Prometeo",
+          WOOCOMMERCE: "WooCommerce",
+          STRIPE: "Stripe",
+          SQUARE: "Square",
+          PLEXO: "Plexo"
+        };
+        return labels[provider] || provider || "Proveedor";
+      }
+
+      function formatStatus(status) {
+        const labels = {
+          CREATED: "Listo para pagar",
+          PENDING: "Pendiente",
+          SUCCESS: "Pagado",
+          FAILURE: "No completado"
+        };
+        return labels[status] || status || "Sin estado";
+      }
+
+      function statusClass(status) {
+        if (status === "SUCCESS") return "status-success";
+        if (status === "FAILURE") return "status-failure";
+        if (status === "PENDING") return "status-pending";
+        return "status-created";
+      }
+
+      function statusDescription(status) {
+        if (status === "SUCCESS") {
+          return "Este pago ya figura como completado. Puedes cerrar esta ventana si solo estabas verificando el estado.";
+        }
+        if (status === "FAILURE") {
+          return "La operacion no se completo. Puedes volver a intentar desde el mismo link si sigue vigente.";
+        }
+        if (status === "PENDING") {
+          return "El proveedor aun esta confirmando el resultado. Si ya pagaste, espera un instante antes de salir.";
+        }
+        return "La operacion esta lista para completarse. Revisa el resumen y continua cuando quieras.";
+      }
 
       async function loadPayment() {
         if (!operationId) {
-          showError("No se recibió identificador de operación.");
+          showError("No se recibio identificador de operacion.");
           return;
         }
+
+        document.getElementById("operation-id").textContent = `#${operationId}`;
 
         try {
           const response = await fetch(`${API_BASE}/api/public/payments/${operationId}`);
           const data = await response.json();
           if (!response.ok) {
-            throw new Error(data.error || "No se pudo cargar la operación");
+            throw new Error(data.error || "No se pudo cargar la operacion");
           }
 
+          document.title = `MiCuota | ${data.description}`;
           document.getElementById("professional-name").textContent = data.professionalName || "Profesional";
           document.getElementById("description").textContent = data.description;
           document.getElementById("amount").textContent = `${data.currency} ${data.amount}`;
-          document.getElementById("flow-type").textContent = data.flowType === "SUBSCRIPTION" ? "Suscripción" : "Pago único";
+          document.getElementById("flow-type").textContent = formatFlowType(data.flowType);
+          document.getElementById("provider-name").textContent = formatProvider(data.provider);
+          document.getElementById("status-inline").textContent = formatStatus(data.status);
 
-          subtitle.textContent = "Revisa el detalle y completa el pago en un solo paso.";
+          subtitle.textContent = "Revisa el resumen y continua con tu pago seguro en un solo paso.";
           payNow.href = data.checkoutUrl;
+
+          statusBadge.className = `status-badge ${statusClass(data.status)}`;
+          statusBadge.textContent = formatStatus(data.status);
+          statusCopy.textContent = statusDescription(data.status);
+
+          const qr = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(data.checkoutUrl)}`;
+          qrImage.src = qr;
+          qrImage.hidden = false;
 
           copyLink.addEventListener("click", async () => {
             await navigator.clipboard.writeText(data.checkoutUrl);
             copyLink.textContent = "Link copiado";
             setTimeout(() => {
-              copyLink.textContent = "Copiar link de pago";
-            }, 1200);
+              copyLink.textContent = "Copiar link";
+            }, 1400);
           });
 
-          paymentGrid.style.display = "grid";
-          actions.style.display = "flex";
+          paymentGrid.hidden = false;
+          actions.hidden = false;
         } catch (error) {
           showError(error.message);
         }
       }
 
       function showError(message) {
-        subtitle.textContent = "No pudimos cargar tu pago en este momento.";
-        errorNode.style.display = "block";
+        subtitle.textContent = "No pudimos cargar este pago en este momento.";
+        errorNode.hidden = false;
         errorNode.textContent = message;
+        statusBadge.className = "status-badge status-failure";
+        statusBadge.textContent = "Error";
+        statusCopy.textContent = "No se pudo recuperar la informacion de la operacion.";
       }
 
       loadPayment();

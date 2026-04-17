@@ -1,4 +1,42 @@
 services:
+  backend:
+    build:
+      context: ./backend
+    container_name: micuota-backend
+    restart: unless-stopped
+    security_opt:
+      - seccomp=unconfined
+    depends_on:
+      - postgres
+      - mailpit
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SERVER_PORT: 8080
+      DB_URL: jdbc:postgresql://postgres:5432/micuota
+      DB_USERNAME: micuota
+      DB_PASSWORD: micuota
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+      MAIL_SMTP_AUTH: "false"
+      MAIL_SMTP_STARTTLS: "false"
+      MAIL_FROM: no-reply@micuota.local
+      APP_DEMO_SEED_ENABLED: "true"
+      APP_CRM_API_KEY: micuota-crm-dev-key
+      APP_CRM_DEFAULT_OWNER: ventas@micuota.online
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: micuota-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "5500:80"
+
   postgres:
     image: postgres:16-alpine
     container_name: micuota-postgres
@@ -46,6 +84,38 @@ services:
     volumes:
       - metabase_data:/metabase-data
 
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:1.88.0
+    container_name: micuota-n8n
+    restart: unless-stopped
+    depends_on:
+      - mailpit
+      - backend
+    ports:
+      - "5678:5678"
+    environment:
+      GENERIC_TIMEZONE: ${N8N_TIMEZONE:-America/Montevideo}
+      TZ: ${N8N_TIMEZONE:-America/Montevideo}
+      N8N_HOST: ${N8N_HOST:-localhost}
+      N8N_PORT: 5678
+      N8N_PROTOCOL: http
+      WEBHOOK_URL: ${N8N_WEBHOOK_URL:-http://localhost:5678/}
+      N8N_SECURE_COOKIE: "false"
+      N8N_BASIC_AUTH_ACTIVE: "true"
+      N8N_BASIC_AUTH_USER: ${N8N_BASIC_AUTH_USER:-admin}
+      N8N_BASIC_AUTH_PASSWORD: ${N8N_BASIC_AUTH_PASSWORD:-admin123}
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:-micuota-local-dev-key-change-me}
+      N8N_EMAIL_MODE: ${N8N_EMAIL_MODE:-smtp}
+      N8N_SMTP_HOST: ${N8N_SMTP_HOST:-mailpit}
+      N8N_SMTP_PORT: ${N8N_SMTP_PORT:-1025}
+      N8N_SMTP_USER: ${N8N_SMTP_USER:-}
+      N8N_SMTP_PASS: ${N8N_SMTP_PASS:-}
+      N8N_SMTP_SENDER: ${N8N_SMTP_SENDER:-n8n@micuota.local}
+      N8N_SMTP_SSL: ${N8N_SMTP_SSL:-false}
+    volumes:
+      - n8n_data:/home/node/.n8n
+
 volumes:
   pgdata:
   metabase_data:
+  n8n_data:

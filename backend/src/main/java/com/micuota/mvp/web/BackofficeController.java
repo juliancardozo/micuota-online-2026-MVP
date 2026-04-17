@@ -63,8 +63,13 @@ public class BackofficeController {
         @Valid @RequestBody CreateBackofficeUserRequest request
     ) {
         AuthSessionService.SessionContext session = authSessionService.requireSession(token);
-        requireTenantAdmin(session);
-        return backofficeService.createUser(session.tenantId(), request);
+        if (session.role() == UserRole.TENANT_ADMIN) {
+            return backofficeService.createUser(session.tenantId(), request);
+        }
+        if (session.role() == UserRole.TEACHER && request.role() == UserRole.STUDENT) {
+            return backofficeService.createUser(session.tenantId(), request);
+        }
+        throw new IllegalArgumentException("Operacion permitida solo para TENANT_ADMIN o TEACHER creando STUDENT");
     }
 
     @GetMapping("/users")

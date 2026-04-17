@@ -28,5 +28,12 @@ import org.springframework.context.annotation.Configuration;
     description = "Token de sesion retornado por /api/auth/login o /api/auth/register-tenant. " +
         "Se envia en el header X-Auth-Token para endpoints privados."
 )
+@SecurityScheme(
+    name = "CrmBearerAuth",
+    type = SecuritySchemeType.HTTP,
+    scheme = "bearer",
+    bearerFormat = "API Key",
+    description = "API key tecnica para integraciones CRM y workflows de n8n."
+)
 public class OpenApiConfig {
 }

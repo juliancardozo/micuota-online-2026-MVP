@@ -7,260 +7,432 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="ui.css" />
   </head>
-  <body>
+  <body class="shell-ui">
     <div class="app-shell">
-      <header class="topbar">
+      <aside class="sidebar">
         <a class="brand" href="/landing.html">
           <span class="brand-dot"></span>
-          MiCuota.online
+          <span class="brand-copy">
+            <strong>MiCuota.online</strong>
+            <small>App shell de administracion</small>
+          </span>
         </a>
-        <nav class="nav-links">
-          <a href="/index.html">Demo pagos</a>
-          <a href="/profesor.html">Dashboard profesor</a>
-          <a href="/alumno.html">Dashboard alumno</a>
-          <a href="/landing.html" id="logout-link">Cerrar sesión</a>
-        </nav>
-      </header>
 
-      <section class="hero">
-        <span class="kicker">Backoffice operativo</span>
-        <h1>Todo tu flujo de cobro en una vista limpia y rápida.</h1>
-        <p>
-          Crea usuarios, cursos, asignaciones y cobros sin fricción. Compartí links y QR en segundos.
+        <p class="sidebar-copy">
+          Gestiona usuarios, cursos, cobros y suscripciones desde una estructura clara por secciones.
         </p>
-        <div class="pills" id="session-card"></div>
-      </section>
 
-      <main class="grid">
-        <section class="card span-4" id="admin-only-card">
-          <h2>Nuevo usuario</h2>
-          <p class="section-copy">Alta de profesor o alumno/paciente en este tenant.</p>
-          <form id="create-user-form">
-            <div class="field">
-              <label for="user-fullName">Nombre completo</label>
-              <input id="user-fullName" name="fullName" required />
-            </div>
-            <div class="field">
-              <label for="user-email">Email</label>
-              <input id="user-email" name="email" type="email" required />
-            </div>
-            <div class="field">
-              <label for="user-password">Contraseña</label>
-              <input id="user-password" name="password" type="password" required />
-            </div>
-            <div class="field">
-              <label for="user-role">Rol</label>
-              <select id="user-role" name="role" required>
-                <option value="STUDENT">Alumno / Paciente</option>
-                <option value="TEACHER">Profesor / Profesional</option>
-              </select>
-            </div>
-            <button type="submit">Crear usuario</button>
-          </form>
-          <p class="note" id="create-user-note"></p>
-        </section>
+        <div class="sidebar-block">
+          <p class="nav-group-label">Panel</p>
+          <nav class="shell-nav" id="sidebar-nav">
+            <a class="nav-link" href="#resumen">
+              <strong>Resumen</strong>
+              <span>Metricas y foco operativo</span>
+            </a>
+            <a class="nav-link" href="#usuarios">
+              <strong>Usuarios</strong>
+              <span>Altas y base del tenant</span>
+            </a>
+            <a class="nav-link" href="#cursos">
+              <strong>Cursos</strong>
+              <span>Oferta, asignaciones y contexto</span>
+            </a>
+            <a class="nav-link" href="#pagos">
+              <strong>Pagos</strong>
+              <span>Cobros unicos y operaciones</span>
+            </a>
+            <a class="nav-link" href="#suscripciones">
+              <strong>Suscripciones</strong>
+              <span>Recurrencia y seguimiento</span>
+            </a>
+            <a class="nav-link" href="#cuenta">
+              <strong>Account settings</strong>
+              <span>Sesion, tenant y accesos</span>
+            </a>
+          </nav>
+        </div>
 
-        <section class="card span-4">
-          <h2>Crear curso</h2>
-          <p class="section-copy">Asigná profesor desde una lista clara, no por ID manual.</p>
-          <form id="create-course-form">
-            <div class="field">
-              <label for="course-name">Nombre del curso</label>
-              <input id="course-name" name="name" required />
-            </div>
-            <div class="field">
-              <label for="course-description">Descripción</label>
-              <input id="course-description" name="description" required />
-            </div>
-            <div class="field">
-              <label for="course-teacher">Profesor</label>
-              <select id="course-teacher" name="teacherUserId" required></select>
-            </div>
-            <button type="submit">Crear curso</button>
-          </form>
-          <p class="note" id="create-course-note"></p>
-        </section>
+        <div class="sidebar-block">
+          <p class="nav-group-label">Otras vistas</p>
+          <nav class="shell-nav">
+            <a class="nav-link" href="/profesor.html">
+              <strong>Vista profesor</strong>
+              <span>Operacion por curso</span>
+            </a>
+            <a class="nav-link" href="/alumno.html">
+              <strong>Vista alumno</strong>
+              <span>Pagos y suscripciones</span>
+            </a>
+          </nav>
+        </div>
 
-        <section class="card span-4">
-          <h2>Asignar alumno a curso</h2>
-          <p class="section-copy">Flujo directo para vincular alumno/paciente con su curso.</p>
-          <form id="create-enrollment-form">
-            <div class="field">
-              <label for="enrollment-student">Alumno</label>
-              <select id="enrollment-student" name="studentUserId" required></select>
-            </div>
-            <div class="field">
-              <label for="enrollment-course">Curso</label>
-              <select id="enrollment-course" name="courseId" required></select>
-            </div>
-            <button type="submit">Asignar</button>
-          </form>
-          <p class="note" id="create-enrollment-note"></p>
-          <div class="stack" id="enrollments-list"></div>
-        </section>
-
-        <section class="card span-6">
-          <h2>Cobro único</h2>
-          <p class="section-copy">Elegí alumno y curso antes de generar para mantener trazabilidad.</p>
-          <form id="one-time-form">
-            <div class="mini-grid">
-              <div class="field">
-                <label for="ot-provider">Proveedor</label>
-                <select id="ot-provider" name="provider" required>
-                  <option value="MERCADOPAGO">MercadoPago</option>
-                  <option value="PROMETEO">Prometeo</option>
-                  <option value="WOOCOMMERCE">WooCommerce</option>
-                  <option value="STRIPE">Stripe</option>
-                  <option value="SQUARE">Square</option>
-                  <option value="PLEXO">Plexo</option>
-                </select>
-              </div>
-              <div class="field">
-                <label for="ot-currency">Moneda</label>
-                <input id="ot-currency" name="currency" value="UYU" required />
-              </div>
-            </div>
-            <div class="field">
-              <label for="ot-description">Descripción</label>
-              <input id="ot-description" name="description" value="Clase puntual" required />
-            </div>
-            <div class="mini-grid">
-              <div class="field">
-                <label for="ot-amount">Monto</label>
-                <input id="ot-amount" name="amount" type="number" min="1" step="1" value="900" required />
-              </div>
-              <div class="field">
-                <label for="ot-student">Alumno</label>
-                <select id="ot-student" name="studentUserId"></select>
-              </div>
-            </div>
-            <div class="mini-grid">
-              <div class="field">
-                <label for="ot-course">Curso</label>
-                <select id="ot-course" name="courseId"></select>
-              </div>
-              <div class="field">
-                <label for="ot-email">Email pagador</label>
-                <input id="ot-email" name="payerEmail" type="email" placeholder="Se completa al elegir alumno" />
-              </div>
-            </div>
-            <button type="submit">Generar link + QR</button>
-          </form>
-          <p class="note" id="one-time-note"></p>
-          <div class="result stack" id="one-time-result"></div>
-        </section>
-
-        <section class="card span-6">
-          <h2>Suscripción</h2>
-          <p class="section-copy">Creá mensualidades recurrentes con contexto de alumno y curso.</p>
-          <form id="subscription-form">
-            <div class="mini-grid">
-              <div class="field">
-                <label for="sub-provider">Proveedor</label>
-                <select id="sub-provider" name="provider" required>
-                  <option value="MERCADOPAGO">MercadoPago</option>
-                  <option value="PROMETEO">Prometeo</option>
-                  <option value="WOOCOMMERCE">WooCommerce</option>
-                  <option value="STRIPE">Stripe</option>
-                  <option value="SQUARE">Square</option>
-                  <option value="PLEXO">Plexo</option>
-                </select>
-              </div>
-              <div class="field">
-                <label for="sub-currency">Moneda</label>
-                <input id="sub-currency" name="currency" value="UYU" required />
-              </div>
-            </div>
-            <div class="field">
-              <label for="sub-description">Descripción</label>
-              <input id="sub-description" name="description" value="Cuota mensual" required />
-            </div>
-            <div class="mini-grid">
-              <div class="field">
-                <label for="sub-amount">Monto</label>
-                <input id="sub-amount" name="amount" type="number" min="1" step="1" value="2500" required />
-              </div>
-              <div class="field">
-                <label for="sub-student">Alumno</label>
-                <select id="sub-student" name="studentUserId"></select>
-              </div>
-            </div>
-            <div class="mini-grid">
-              <div class="field">
-                <label for="sub-course">Curso</label>
-                <select id="sub-course" name="courseId"></select>
-              </div>
-              <div class="field">
-                <label for="sub-email">Email pagador</label>
-                <input id="sub-email" name="payerEmail" type="email" placeholder="Se completa al elegir alumno" />
-              </div>
-            </div>
-            <button type="submit">Generar suscripción + QR</button>
-          </form>
-          <p class="note" id="subscription-note"></p>
-          <div class="result stack" id="subscription-result"></div>
-        </section>
-
-        <section class="card span-6">
-          <h2>Operaciones recientes</h2>
-          <p class="section-copy">Filtrá por curso para revisar cobros rápido.</p>
-          <div class="mini-grid">
-            <div class="field">
-              <label for="payments-course-filter">Curso</label>
-              <select id="payments-course-filter"></select>
-            </div>
-            <div class="field">
-              <label>&nbsp;</label>
-              <button id="refresh-payments" type="button">Actualizar operaciones</button>
+        <div class="sidebar-footer">
+          <div class="mini-profile" id="sidebar-profile">
+            <strong>Sesion pendiente</strong>
+            <div class="pill-row">
+              <span class="pill">Token</span>
+              <span class="pill">Cargando</span>
             </div>
           </div>
-          <div class="stack" id="payments-list"></div>
-        </section>
+          <div class="actions-row">
+            <a class="btn btn-secondary" href="/landing.html">Landing</a>
+            <button class="btn-danger" id="logout-link" type="button">Cerrar sesion</button>
+          </div>
+        </div>
+      </aside>
 
-        <section class="card span-6">
-          <h2>Compartir rápido</h2>
-          <p class="section-copy">Elegí curso y copiá al instante un link/QR de operación reciente.</p>
-          <div class="mini-grid">
-            <div class="field">
-              <label for="quick-share-course">Curso</label>
-              <select id="quick-share-course"></select>
+      <div class="shell-content">
+        <header class="shell-header">
+          <div class="header-copy">
+            <span class="overline">Backoffice admin</span>
+            <h1 id="page-title">Operacion central del tenant</h1>
+            <p>
+              Una shell clara y editorial para trabajar por contexto: menu lateral, cabezal con
+              usuario y filtros rapidos para moverte entre tenant, cursos y cobros sin perder foco.
+            </p>
+          </div>
+
+          <div class="header-meta">
+            <div class="selector-group" id="tenant-selector-wrap">
+              <label for="tenant-switcher">Tenant operativo</label>
+              <select id="tenant-switcher"></select>
+              <span class="helper-text">Cambiar tenant te lleva al login del contexto elegido.</span>
             </div>
-            <div class="field">
-              <label>&nbsp;</label>
-              <button id="load-quick-share" type="button">Buscar último cobro</button>
+            <div class="selector-group">
+              <label>Usuario actual</label>
+              <div class="pill-row" id="header-user-pills"></div>
             </div>
           </div>
-          <div class="result stack" id="quick-share-result"></div>
+        </header>
+
+        <section class="hero-panel" id="resumen">
+          <div class="hero-grid">
+            <div class="meta-stack">
+              <div>
+                <span class="overline">Centro de control</span>
+                <h2 id="hero-title">Administra usuarios, cursos y cobros desde un solo lugar</h2>
+              </div>
+              <p class="section-copy">
+                Esta vista prioriza el trabajo diario del administrador: altas de usuarios,
+                asignacion a cursos, cobros unicos, suscripciones y revisiones rapidas de operaciones.
+              </p>
+              <div class="pills" id="session-pills"></div>
+            </div>
+            <div class="split-grid" id="summary-cards"></div>
+          </div>
         </section>
 
-        <section class="card span-12">
-          <h2>Visión general</h2>
-          <p class="section-copy">Referencias rápidas de profesores, alumnos y cursos activos.</p>
-          <div class="grid" style="margin-top: 0;">
-            <div class="span-4">
-              <h3 style="margin:0 0 8px; font-size: 0.98rem; color: var(--muted);">Profesores</h3>
-              <div class="stack" id="teachers-list"></div>
+        <section class="shell-section" id="usuarios">
+          <div class="section-head">
+            <div class="section-head-copy">
+              <h2>Usuarios</h2>
+              <p class="section-copy">Crea profesores o alumnos y revisa la composicion del tenant.</p>
             </div>
-            <div class="span-4">
-              <h3 style="margin:0 0 8px; font-size: 0.98rem; color: var(--muted);">Alumnos</h3>
-              <div class="stack" id="students-list"></div>
+          </div>
+
+          <div class="section-grid">
+            <article class="surface-card span-5" id="admin-only-card">
+              <h3>Nuevo usuario</h3>
+              <form id="create-user-form">
+                <div class="field">
+                  <label for="user-fullName">Nombre completo</label>
+                  <input id="user-fullName" name="fullName" required />
+                </div>
+                <div class="field">
+                  <label for="user-email">Email</label>
+                  <input id="user-email" name="email" type="email" required />
+                </div>
+                <div class="field">
+                  <label for="user-password">Contrasena</label>
+                  <input id="user-password" name="password" type="password" required />
+                </div>
+                <div class="field">
+                  <label for="user-role">Rol</label>
+                  <select id="user-role" name="role" required>
+                    <option value="STUDENT">Alumno / Paciente</option>
+                    <option value="TEACHER">Profesor / Profesional</option>
+                  </select>
+                </div>
+                <div class="form-actions">
+                  <button type="submit">Crear usuario</button>
+                </div>
+              </form>
+              <p class="note" id="create-user-note"></p>
+            </article>
+
+            <article class="surface-card span-7">
+              <h3>Base actual</h3>
+              <div class="split-grid">
+                <div class="list-card">
+                  <h4>Profesores</h4>
+                  <div class="stack" id="teachers-list"></div>
+                </div>
+                <div class="list-card">
+                  <h4>Alumnos</h4>
+                  <div class="stack" id="students-list"></div>
+                </div>
+                <div class="list-card">
+                  <h4>Estado</h4>
+                  <div class="stack" id="users-status-list"></div>
+                </div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="shell-section" id="cursos">
+          <div class="section-head">
+            <div class="section-head-copy">
+              <h2>Cursos</h2>
+              <p class="section-copy">Gestiona cursos, seleccion de profesor y asignacion de alumnos.</p>
             </div>
-            <div class="span-4">
-              <h3 style="margin:0 0 8px; font-size: 0.98rem; color: var(--muted);">Cursos</h3>
+          </div>
+
+          <div class="section-grid">
+            <article class="surface-card span-4">
+              <h3>Crear curso</h3>
+              <form id="create-course-form">
+                <div class="field">
+                  <label for="course-name">Nombre del curso</label>
+                  <input id="course-name" name="name" required />
+                </div>
+                <div class="field">
+                  <label for="course-description">Descripcion</label>
+                  <input id="course-description" name="description" required />
+                </div>
+                <div class="field">
+                  <label for="course-teacher">Profesor</label>
+                  <select id="course-teacher" name="teacherUserId" required></select>
+                </div>
+                <div class="form-actions">
+                  <button type="submit">Crear curso</button>
+                </div>
+              </form>
+              <p class="note" id="create-course-note"></p>
+            </article>
+
+            <article class="surface-card span-4">
+              <h3>Asignar alumno</h3>
+              <form id="create-enrollment-form">
+                <div class="field">
+                  <label for="enrollment-student">Alumno</label>
+                  <select id="enrollment-student" name="studentUserId" required></select>
+                </div>
+                <div class="field">
+                  <label for="enrollment-course">Curso</label>
+                  <select id="enrollment-course" name="courseId" required></select>
+                </div>
+                <div class="form-actions">
+                  <button type="submit">Asignar</button>
+                </div>
+              </form>
+              <p class="note" id="create-enrollment-note"></p>
+            </article>
+
+            <article class="surface-card span-4">
+              <h3>Asignaciones recientes</h3>
+              <div class="stack" id="enrollments-list"></div>
+            </article>
+
+            <article class="surface-card span-12">
+              <h3>Cursos activos</h3>
               <div class="stack" id="courses-list"></div>
-            </div>
+            </article>
           </div>
         </section>
-      </main>
+
+        <section class="shell-section" id="pagos">
+          <div class="section-head">
+            <div class="section-head-copy">
+              <h2>Pagos</h2>
+              <p class="section-copy">Crea cobros unicos, filtra operaciones y comparte el ultimo link.</p>
+            </div>
+          </div>
+
+          <div class="section-grid">
+            <article class="surface-card span-6">
+              <h3>Cobro unico</h3>
+              <form id="one-time-form">
+                <div class="mini-grid">
+                  <div class="field">
+                    <label for="ot-provider">Proveedor</label>
+                    <select id="ot-provider" name="provider" required>
+                      <option value="MERCADOPAGO">MercadoPago</option>
+                      <option value="PROMETEO">Prometeo</option>
+                      <option value="WOOCOMMERCE">WooCommerce</option>
+                      <option value="STRIPE">Stripe</option>
+                      <option value="SQUARE">Square</option>
+                      <option value="PLEXO">Plexo</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="ot-currency">Moneda</label>
+                    <input id="ot-currency" name="currency" value="UYU" required />
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="ot-description">Descripcion</label>
+                  <input id="ot-description" name="description" value="Clase puntual" required />
+                </div>
+                <div class="mini-grid">
+                  <div class="field">
+                    <label for="ot-amount">Monto</label>
+                    <input id="ot-amount" name="amount" type="number" min="1" step="1" value="900" required />
+                  </div>
+                  <div class="field">
+                    <label for="ot-student">Alumno</label>
+                    <select id="ot-student" name="studentUserId"></select>
+                  </div>
+                </div>
+                <div class="mini-grid">
+                  <div class="field">
+                    <label for="ot-course">Curso</label>
+                    <select id="ot-course" name="courseId"></select>
+                  </div>
+                  <div class="field">
+                    <label for="ot-email">Email pagador</label>
+                    <input id="ot-email" name="payerEmail" type="email" placeholder="Se completa al elegir alumno" />
+                  </div>
+                </div>
+                <div class="form-actions">
+                  <button type="submit">Generar link + QR</button>
+                </div>
+              </form>
+              <p class="note" id="one-time-note"></p>
+              <div class="stack result" id="one-time-result"></div>
+            </article>
+
+            <article class="surface-card span-6">
+              <h3>Operaciones y quick share</h3>
+              <div class="mini-grid">
+                <div class="field">
+                  <label for="payments-course-filter">Curso</label>
+                  <select id="payments-course-filter"></select>
+                </div>
+                <div class="field">
+                  <label for="quick-share-course">Quick share</label>
+                  <select id="quick-share-course"></select>
+                </div>
+              </div>
+              <div class="actions-row">
+                <button id="refresh-payments" type="button">Actualizar operaciones</button>
+                <button id="load-quick-share" type="button">Buscar ultimo cobro</button>
+              </div>
+              <div class="stack" id="payments-list"></div>
+              <div class="stack result" id="quick-share-result"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="shell-section" id="suscripciones">
+          <div class="section-head">
+            <div class="section-head-copy">
+              <h2>Suscripciones</h2>
+              <p class="section-copy">Activa recurrencia mensual y revisa el historico suscripto.</p>
+            </div>
+          </div>
+
+          <div class="section-grid">
+            <article class="surface-card span-6">
+              <h3>Nueva suscripcion</h3>
+              <form id="subscription-form">
+                <div class="mini-grid">
+                  <div class="field">
+                    <label for="sub-provider">Proveedor</label>
+                    <select id="sub-provider" name="provider" required>
+                      <option value="MERCADOPAGO">MercadoPago</option>
+                      <option value="PROMETEO">Prometeo</option>
+                      <option value="WOOCOMMERCE">WooCommerce</option>
+                      <option value="STRIPE">Stripe</option>
+                      <option value="SQUARE">Square</option>
+                      <option value="PLEXO">Plexo</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="sub-currency">Moneda</label>
+                    <input id="sub-currency" name="currency" value="UYU" required />
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="sub-description">Descripcion</label>
+                  <input id="sub-description" name="description" value="Cuota mensual" required />
+                </div>
+                <div class="mini-grid">
+                  <div class="field">
+                    <label for="sub-amount">Monto</label>
+                    <input id="sub-amount" name="amount" type="number" min="1" step="1" value="2500" required />
+                  </div>
+                  <div class="field">
+                    <label for="sub-student">Alumno</label>
+                    <select id="sub-student" name="studentUserId"></select>
+                  </div>
+                </div>
+                <div class="mini-grid">
+                  <div class="field">
+                    <label for="sub-course">Curso</label>
+                    <select id="sub-course" name="courseId"></select>
+                  </div>
+                  <div class="field">
+                    <label for="sub-email">Email pagador</label>
+                    <input id="sub-email" name="payerEmail" type="email" placeholder="Se completa al elegir alumno" />
+                  </div>
+                </div>
+                <div class="form-actions">
+                  <button type="submit">Generar suscripcion + QR</button>
+                </div>
+              </form>
+              <p class="note" id="subscription-note"></p>
+              <div class="stack result" id="subscription-result"></div>
+            </article>
+
+            <article class="surface-card span-6">
+              <h3>Suscripciones recientes</h3>
+              <div class="stack" id="subscriptions-list"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="shell-section" id="cuenta">
+          <div class="section-head">
+            <div class="section-head-copy">
+              <h2>Account settings</h2>
+              <p class="section-copy">Datos de usuario, tenant, sesion actual y cambio de contexto.</p>
+            </div>
+          </div>
+
+          <div class="account-grid">
+            <article class="account-block">
+              <h3>Perfil</h3>
+              <div class="account-list" id="account-profile"></div>
+            </article>
+            <article class="account-block">
+              <h3>Tenant y acceso</h3>
+              <div class="account-list" id="account-tenant"></div>
+            </article>
+            <article class="account-block">
+              <h3>Acciones</h3>
+              <div class="actions-row">
+                <button class="btn-secondary" id="switch-tenant-button" type="button">Cambiar tenant</button>
+                <button class="btn-danger" id="logout-button" type="button">Cerrar sesion</button>
+              </div>
+              <p class="helper-text">
+                El cambio de tenant limpia la sesion actual y te lleva al login con el slug elegido.
+              </p>
+            </article>
+          </div>
+        </section>
+      </div>
     </div>
 
     <script>
       const API_BASE = "http://localhost:8080";
+      const RECENT_TENANTS_KEY = "micuota.recentTenants";
+      const PREFERRED_TENANT_KEY = "micuota.preferredTenantSlug";
       const urlToken = new URLSearchParams(window.location.search).get("token");
       const token = urlToken || localStorage.getItem("micuota.authToken");
       const tenantSlug = localStorage.getItem("micuota.tenantSlug") || "(sin slug)";
@@ -270,28 +442,42 @@
       }
 
       const state = {
+        profile: null,
         users: { teachers: [], students: [] },
         courses: [],
-        enrollments: []
+        enrollments: [],
+        payments: []
       };
-
-      const sessionCard = document.getElementById("session-card");
-      const adminOnlyCard = document.getElementById("admin-only-card");
 
       const createUserForm = document.getElementById("create-user-form");
       const createCourseForm = document.getElementById("create-course-form");
       const createEnrollmentForm = document.getElementById("create-enrollment-form");
       const oneTimeForm = document.getElementById("one-time-form");
       const subscriptionForm = document.getElementById("subscription-form");
-      const logoutLink = document.getElementById("logout-link");
+      const adminOnlyCard = document.getElementById("admin-only-card");
 
       function logout() {
         localStorage.removeItem("micuota.authToken");
-        localStorage.removeItem("micuota.tenantSlug");
-        window.location.href = "/landing.html";
+        window.location.href = `/landing.html?tenantSlug=${encodeURIComponent(localStorage.getItem("micuota.tenantSlug") || "")}`;
       }
 
-      function setText(target, message, hasError) {
+      function rememberTenant(slug) {
+        if (!slug || slug === "(sin slug)") return;
+        const current = JSON.parse(localStorage.getItem(RECENT_TENANTS_KEY) || "[]");
+        const next = [slug, ...current.filter((item) => item !== slug)].slice(0, 8);
+        localStorage.setItem(RECENT_TENANTS_KEY, JSON.stringify(next));
+        localStorage.setItem(PREFERRED_TENANT_KEY, slug);
+      }
+
+      function getRecentTenants() {
+        const stored = JSON.parse(localStorage.getItem(RECENT_TENANTS_KEY) || "[]");
+        if (!stored.includes(tenantSlug) && tenantSlug !== "(sin slug)") {
+          stored.unshift(tenantSlug);
+        }
+        return stored.filter(Boolean);
+      }
+
+      function setNote(target, message, hasError) {
         target.textContent = message;
         target.className = hasError ? "note error" : "note ok";
       }
@@ -315,20 +501,205 @@
         entries.forEach((entry) => select.appendChild(buildOption(String(entry.value), entry.label)));
       }
 
+      function setActiveNav() {
+        const hash = window.location.hash || "#resumen";
+        document.querySelectorAll("#sidebar-nav .nav-link").forEach((link) => {
+          link.classList.toggle("active", link.getAttribute("href") === hash);
+        });
+      }
+
+      function renderSidebarProfile() {
+        const profile = state.profile;
+        document.getElementById("sidebar-profile").innerHTML = profile
+          ? `
+              <strong>${profile.fullName}</strong>
+              <div class="pill-row">
+                <span class="pill">${profile.role}</span>
+                <span class="pill">${tenantSlug}</span>
+              </div>
+            `
+          : `
+              <strong>Sesion pendiente</strong>
+              <div class="pill-row">
+                <span class="pill">Token</span>
+                <span class="pill">Cargando</span>
+              </div>
+            `;
+      }
+
+      function renderHeader() {
+        const profile = state.profile;
+        document.getElementById("page-title").textContent = profile
+          ? `${profile.fullName}, panel operativo del tenant`
+          : "Operacion central del tenant";
+        document.getElementById("hero-title").textContent = profile
+          ? `${profile.fullName}, administra ${tenantSlug} con foco por modulo`
+          : "Administra usuarios, cursos y cobros desde un solo lugar";
+        document.getElementById("session-pills").innerHTML = profile
+          ? [
+              `<span class="pill">Tenant: ${tenantSlug}</span>`,
+              `<span class="pill">Rol: ${profile.role}</span>`,
+              `<span class="pill">Usuario: ${profile.email}</span>`,
+              `<span class="pill">User ID: ${profile.userId}</span>`
+            ].join("")
+          : "";
+        document.getElementById("header-user-pills").innerHTML = profile
+          ? [
+              `<span class="pill">${profile.fullName}</span>`,
+              `<span class="pill">${profile.role}</span>`
+            ].join("")
+          : "";
+        renderSidebarProfile();
+      }
+
+      function renderTenantSelector() {
+        const selector = document.getElementById("tenant-switcher");
+        const recent = getRecentTenants();
+        selector.innerHTML = "";
+        recent.forEach((slug) => selector.appendChild(buildOption(slug, slug)));
+        if (!recent.length) {
+          selector.appendChild(buildOption(tenantSlug, tenantSlug));
+        }
+        selector.value = tenantSlug;
+
+        if (state.profile && state.profile.role !== "TENANT_ADMIN" && state.profile.role !== "ADMIN") {
+          document.getElementById("tenant-selector-wrap").style.display = "none";
+        }
+      }
+
+      function renderSummaryCards() {
+        const oneTime = state.payments.filter((payment) => payment.flowType === "ONE_TIME");
+        const subscriptions = state.payments.filter((payment) => payment.flowType === "SUBSCRIPTION");
+        document.getElementById("summary-cards").innerHTML = [
+          {
+            title: "Profesores",
+            value: state.users.teachers.length,
+            note: "Usuarios docentes activos"
+          },
+          {
+            title: "Alumnos",
+            value: state.users.students.length,
+            note: "Base asignable a cursos"
+          },
+          {
+            title: "Cursos",
+            value: state.courses.length,
+            note: "Oferta disponible en el tenant"
+          },
+          {
+            title: "Cobros",
+            value: state.payments.length,
+            note: `${oneTime.length} unicos · ${subscriptions.length} suscripciones`
+          }
+        ]
+          .map((item) => {
+            return `
+              <article class="stat-card">
+                <small>${item.title}</small>
+                <strong>${item.value}</strong>
+                <span>${item.note}</span>
+              </article>
+            `;
+          })
+          .join("");
+      }
+
+      function renderUsers() {
+        const renderUserCard = (user) => {
+          return `<div class="item"><strong>${user.fullName}</strong><br /><small>#${user.id} · ${user.email}</small></div>`;
+        };
+
+        document.getElementById("teachers-list").innerHTML = state.users.teachers.length
+          ? state.users.teachers.map(renderUserCard).join("")
+          : "<div class='empty-state'>Sin profesores registrados.</div>";
+
+        document.getElementById("students-list").innerHTML = state.users.students.length
+          ? state.users.students.map(renderUserCard).join("")
+          : "<div class='empty-state'>Sin alumnos registrados.</div>";
+
+        document.getElementById("users-status-list").innerHTML = [
+          `<div class="item"><strong>Total usuarios visibles</strong><br /><small>${state.users.teachers.length + state.users.students.length}</small></div>`,
+          `<div class="item"><strong>Tenant</strong><br /><small>${tenantSlug}</small></div>`,
+          `<div class="item"><strong>Sesion</strong><br /><small>${state.profile ? state.profile.role : "Sin perfil"}</small></div>`
+        ].join("");
+      }
+
+      function renderCourses() {
+        document.getElementById("courses-list").innerHTML = state.courses.length
+          ? state.courses
+              .map((course) => {
+                return `<div class="item"><strong>${course.name}</strong><br /><small>#${course.id} · ${course.description} · ${course.teacherName}</small></div>`;
+              })
+              .join("")
+          : "<div class='empty-state'>No hay cursos creados todavia.</div>";
+
+        document.getElementById("enrollments-list").innerHTML = state.enrollments.length
+          ? state.enrollments
+              .map((enrollment) => {
+                return `<div class="item"><strong>${enrollment.studentName}</strong><br /><small>${enrollment.courseName}</small></div>`;
+              })
+              .join("")
+          : "<div class='empty-state'>Aun no hay asignaciones.</div>";
+      }
+
+      function renderPayments() {
+        const courseId = document.getElementById("payments-course-filter").value;
+        const filtered = courseId
+          ? state.payments.filter((payment) => String(payment.courseId || "") === courseId)
+          : state.payments;
+        const oneTime = filtered.filter((payment) => payment.flowType === "ONE_TIME");
+        const subscriptions = filtered.filter((payment) => payment.flowType === "SUBSCRIPTION");
+
+        document.getElementById("payments-list").innerHTML = [
+          oneTime.length
+            ? oneTime
+                .map((payment) => {
+                  return `<div class="item"><span class="tag">${payment.flowType}</span><br /><strong>#${payment.id} · ${payment.currency} ${payment.amount}</strong><br /><small>${payment.description} · ${payment.status}${payment.courseId ? ` · curso #${payment.courseId}` : ""}</small></div>`;
+                })
+                .join("")
+            : "<div class='empty-state'>No hay pagos unicos para el filtro actual.</div>",
+          subscriptions.length
+            ? `<div class="item"><strong>Suscripciones en este filtro</strong><br /><small>${subscriptions.length}</small></div>`
+            : ""
+        ].join("");
+
+        document.getElementById("subscriptions-list").innerHTML = subscriptions.length
+          ? subscriptions
+              .map((payment) => {
+                return `<div class="item"><span class="tag">${payment.flowType}</span><br /><strong>#${payment.id} · ${payment.currency} ${payment.amount}</strong><br /><small>${payment.description} · ${payment.status}${payment.courseId ? ` · curso #${payment.courseId}` : ""}</small></div>`;
+              })
+              .join("")
+          : "<div class='empty-state'>No hay suscripciones creadas para el filtro actual.</div>";
+      }
+
+      function renderAccountSettings() {
+        if (!state.profile) return;
+
+        document.getElementById("account-profile").innerHTML = [
+          `<div><small>Nombre</small><strong>${state.profile.fullName}</strong></div>`,
+          `<div><small>Email</small><strong>${state.profile.email}</strong></div>`,
+          `<div><small>Rol</small><strong>${state.profile.role}</strong></div>`
+        ].join("");
+
+        document.getElementById("account-tenant").innerHTML = [
+          `<div><small>Tenant slug</small><strong>${tenantSlug}</strong></div>`,
+          `<div><small>Tenant ID</small><strong>${state.profile.tenantId}</strong></div>`,
+          `<div><small>User ID</small><strong>${state.profile.userId}</strong></div>`
+        ].join("");
+      }
+
       function fillUserAndCourseSelectors() {
-        const teacherOptions = state.users.teachers.map((t) => ({ value: t.id, label: `#${t.id} ${t.fullName}` }));
-        const studentOptions = state.users.students.map((s) => ({ value: s.id, label: `#${s.id} ${s.fullName}` }));
-        const courseOptions = state.courses.map((c) => ({ value: c.id, label: `#${c.id} ${c.name}` }));
+        const teacherOptions = state.users.teachers.map((teacher) => ({ value: teacher.id, label: `#${teacher.id} ${teacher.fullName}` }));
+        const studentOptions = state.users.students.map((student) => ({ value: student.id, label: `#${student.id} ${student.fullName}` }));
+        const courseOptions = state.courses.map((course) => ({ value: course.id, label: `#${course.id} ${course.name}` }));
 
         fillSelect(document.getElementById("course-teacher"), teacherOptions, "Selecciona profesor", false);
         fillSelect(document.getElementById("enrollment-student"), studentOptions, "Selecciona alumno", false);
         fillSelect(document.getElementById("enrollment-course"), courseOptions, "Selecciona curso", false);
-
         fillSelect(document.getElementById("ot-student"), studentOptions, "Sin alumno asignado", true);
         fillSelect(document.getElementById("sub-student"), studentOptions, "Sin alumno asignado", true);
         fillSelect(document.getElementById("ot-course"), courseOptions, "Sin curso", true);
         fillSelect(document.getElementById("sub-course"), courseOptions, "Sin curso", true);
-
         fillSelect(document.getElementById("payments-course-filter"), courseOptions, "Todos los cursos", true);
         fillSelect(document.getElementById("quick-share-course"), courseOptions, "Selecciona curso", false);
       }
@@ -350,12 +721,9 @@
       function setBackofficeEnabled(enabled) {
         [createUserForm, createCourseForm, createEnrollmentForm, oneTimeForm, subscriptionForm].forEach((form) => {
           if (!form) return;
-          form.querySelectorAll("input, select, button").forEach((el) => {
-            el.disabled = !enabled;
+          form.querySelectorAll("input, select, button").forEach((element) => {
+            element.disabled = !enabled;
           });
-        });
-        document.querySelectorAll("button").forEach((button) => {
-          button.disabled = button.disabled || !enabled;
         });
       }
 
@@ -382,46 +750,6 @@
         return data;
       }
 
-      function showSessionError(message, target) {
-        const isSessionError = /Sesion invalida o expirada|Token de sesion requerido|Token no encontrado/i.test(message);
-        if (!isSessionError) {
-          setText(target, message, true);
-          return;
-        }
-        setBackofficeEnabled(false);
-        target.className = "note error";
-        target.innerHTML = `${message}. Volvé a <a href="/landing.html">landing</a> para iniciar sesión.`;
-      }
-
-      function fillUsersCards() {
-        const teachersNode = document.getElementById("teachers-list");
-        const studentsNode = document.getElementById("students-list");
-        teachersNode.innerHTML = state.users.teachers.length
-          ? state.users.teachers.map((u) => `<div class="item"><strong>${u.fullName}</strong><br /><small>#${u.id} · ${u.email}</small></div>`).join("")
-          : "<div class=\"item\">Sin profesores.</div>";
-        studentsNode.innerHTML = state.users.students.length
-          ? state.users.students.map((u) => `<div class="item"><strong>${u.fullName}</strong><br /><small>#${u.id} · ${u.email}</small></div>`).join("")
-          : "<div class=\"item\">Sin alumnos.</div>";
-      }
-
-      function fillCoursesCard() {
-        const coursesNode = document.getElementById("courses-list");
-        coursesNode.innerHTML = state.courses.length
-          ? state.courses
-              .map((c) => `<div class="item"><strong>${c.name}</strong><br /><small>#${c.id} · ${c.description} · ${c.teacherName}</small></div>`)
-              .join("")
-          : "<div class=\"item\">Sin cursos.</div>";
-      }
-
-      function fillEnrollmentsCard() {
-        const enrollmentsNode = document.getElementById("enrollments-list");
-        enrollmentsNode.innerHTML = state.enrollments.length
-          ? state.enrollments
-              .map((e) => `<div class="item"><strong>${e.studentName}</strong> en <strong>${e.courseName}</strong></div>`)
-              .join("")
-          : "<div class=\"item\">Sin asignaciones.</div>";
-      }
-
       async function loadUsers() {
         const [teachers, students] = await Promise.all([
           apiGet("/api/backoffice/users?role=TEACHER"),
@@ -429,60 +757,81 @@
         ]);
         state.users.teachers = teachers;
         state.users.students = students;
-        fillUsersCards();
       }
 
       async function loadCourses() {
         state.courses = await apiGet("/api/backoffice/courses");
-        fillCoursesCard();
       }
 
       async function loadEnrollments() {
         state.enrollments = await apiGet("/api/backoffice/enrollments");
-        fillEnrollmentsCard();
       }
 
       async function loadPayments() {
-        const target = document.getElementById("payments-list");
-        const courseId = document.getElementById("payments-course-filter").value;
-        target.innerHTML = "<div class='item'>Cargando operaciones...</div>";
-        try {
-          const path = courseId ? `/api/backoffice/payments/by-course?courseId=${courseId}` : "/api/backoffice/payments";
-          const payments = await apiGet(path);
-          target.innerHTML = payments.length
-            ? payments
-                .map((op) => `<div class="item"><strong>#${op.id}</strong> ${op.flowType} · ${op.currency} ${op.amount} · ${op.status}${op.courseId ? ` · curso #${op.courseId}` : ""}</div>`)
-                .join("")
-            : "<div class='item'>Sin operaciones para el filtro seleccionado.</div>";
-        } catch (error) {
-          target.innerHTML = `<div class='item error'>${error.message}</div>`;
-        }
+        state.payments = await apiGet("/api/backoffice/payments");
+      }
+
+      async function refreshAllData() {
+        await loadUsers();
+        await loadCourses();
+        await loadEnrollments();
+        await loadPayments();
+        fillUserAndCourseSelectors();
+        renderSummaryCards();
+        renderUsers();
+        renderCourses();
+        renderPayments();
       }
 
       async function loadQuickShare() {
         const target = document.getElementById("quick-share-result");
         const courseId = document.getElementById("quick-share-course").value;
         if (!courseId) {
-          target.innerHTML = "<div class='item'>Selecciona un curso.</div>";
+          target.innerHTML = "<div class='empty-state'>Selecciona un curso.</div>";
           return;
         }
-        target.innerHTML = "<div class='item'>Buscando último cobro...</div>";
+
+        target.innerHTML = "<div class='item'>Buscando ultimo cobro...</div>";
         try {
           const operations = await apiGet(`/api/backoffice/payments/by-course?courseId=${courseId}`);
           if (!operations.length) {
-            target.innerHTML = "<div class='item'>No hay cobros en este curso todavía.</div>";
+            target.innerHTML = "<div class='empty-state'>No hay cobros en este curso todavia.</div>";
             return;
           }
-          const op = operations[0];
-          const appUrl = `${window.location.origin}/pago.html?operationId=${op.id}`;
+
+          const operation = operations[0];
+          const appUrl = `${window.location.origin}/pago.html?operationId=${operation.id}`;
           target.innerHTML = [
-            `<div class='item'><strong>Último cobro #${op.id}</strong> · ${op.currency} ${op.amount}</div>`,
+            `<div class='item'><strong>Ultimo cobro #${operation.id}</strong><br /><small>${operation.currency} ${operation.amount} · ${operation.flowType}</small></div>`,
             `<div class='item'><strong>Compartir:</strong> <a href='${appUrl}' target='_blank' rel='noopener noreferrer'>${appUrl}</a></div>`,
-            createQrMarkup(op.checkoutUrl)
+            createQrMarkup(operation.checkoutUrl)
           ].join("");
         } catch (error) {
           target.innerHTML = `<div class='item error'>${error.message}</div>`;
         }
+      }
+
+      function showSessionError(message, target) {
+        const isSessionError = /Sesion invalida o expirada|Token de sesion requerido|Token no encontrado/i.test(message);
+        if (!isSessionError) {
+          setNote(target, message, true);
+          return;
+        }
+        setBackofficeEnabled(false);
+        target.className = "note error";
+        target.innerHTML = `${message}. Vuelve a <a href="/landing.html">landing</a> para iniciar sesion.`;
+      }
+
+      function switchTenant() {
+        const nextTenant = document.getElementById("tenant-switcher").value;
+        if (!nextTenant || nextTenant === tenantSlug) {
+          window.location.href = `/landing.html?tenantSlug=${encodeURIComponent(tenantSlug)}`;
+          return;
+        }
+        localStorage.setItem("micuota.tenantSlug", nextTenant);
+        localStorage.setItem(PREFERRED_TENANT_KEY, nextTenant);
+        localStorage.removeItem("micuota.authToken");
+        window.location.href = `/landing.html?tenantSlug=${encodeURIComponent(nextTenant)}`;
       }
 
       async function bootstrap() {
@@ -491,55 +840,54 @@
           return;
         }
 
-        sessionCard.innerHTML = `<span class="pill">Token activo</span><span class="pill">Tenant: ${tenantSlug}</span>`;
+        rememberTenant(tenantSlug);
+        setActiveNav();
 
         try {
-          const profile = await apiGet("/api/auth/me");
-          sessionCard.innerHTML += `<span class="pill">Rol: ${profile.role}</span><span class="pill">Usuario: ${profile.fullName}</span>`;
-          if (profile.role !== "TENANT_ADMIN") {
-            adminOnlyCard.style.display = "none";
+          state.profile = await apiGet("/api/auth/me");
+          if (state.profile.role !== "TENANT_ADMIN" && state.profile.role !== "ADMIN") {
+            window.location.href = "/landing.html";
+            return;
           }
 
-          await loadUsers();
-          await loadCourses();
-          await loadEnrollments();
-          fillUserAndCourseSelectors();
-          await loadPayments();
+          renderHeader();
+          renderTenantSelector();
+          renderAccountSettings();
+          await refreshAllData();
         } catch (error) {
           logout();
         }
       }
 
-      logoutLink.addEventListener("click", (event) => {
-        event.preventDefault();
-        logout();
-      });
-
-      document.getElementById("payments-course-filter").addEventListener("change", loadPayments);
-      document.getElementById("refresh-payments").addEventListener("click", loadPayments);
+      window.addEventListener("hashchange", setActiveNav);
+      document.getElementById("logout-link").addEventListener("click", logout);
+      document.getElementById("logout-button").addEventListener("click", logout);
+      document.getElementById("switch-tenant-button").addEventListener("click", switchTenant);
+      document.getElementById("tenant-switcher").addEventListener("change", switchTenant);
+      document.getElementById("payments-course-filter").addEventListener("change", renderPayments);
+      document.getElementById("refresh-payments").addEventListener("click", refreshAllData);
       document.getElementById("load-quick-share").addEventListener("click", loadQuickShare);
 
       document.getElementById("ot-student").addEventListener("change", (event) => {
-        const selected = state.users.students.find((s) => String(s.id) === event.target.value);
-        if (selected) document.getElementById("ot-email").value = selected.email;
+        const selected = state.users.students.find((student) => String(student.id) === event.target.value);
+        document.getElementById("ot-email").value = selected ? selected.email : "";
       });
 
       document.getElementById("sub-student").addEventListener("change", (event) => {
-        const selected = state.users.students.find((s) => String(s.id) === event.target.value);
-        if (selected) document.getElementById("sub-email").value = selected.email;
+        const selected = state.users.students.find((student) => String(student.id) === event.target.value);
+        document.getElementById("sub-email").value = selected ? selected.email : "";
       });
 
       createUserForm.addEventListener("submit", async (event) => {
         event.preventDefault();
         const note = document.getElementById("create-user-note");
-        setText(note, "Creando usuario...", false);
+        setNote(note, "Creando usuario...", false);
         try {
           const payload = Object.fromEntries(new FormData(event.target).entries());
           await apiPost("/api/backoffice/users", payload);
-          setText(note, "Usuario creado correctamente.", false);
+          setNote(note, "Usuario creado correctamente.", false);
           event.target.reset();
-          await loadUsers();
-          fillUserAndCourseSelectors();
+          await refreshAllData();
         } catch (error) {
           showSessionError(error.message, note);
         }
@@ -548,15 +896,14 @@
       createCourseForm.addEventListener("submit", async (event) => {
         event.preventDefault();
         const note = document.getElementById("create-course-note");
-        setText(note, "Creando curso...", false);
+        setNote(note, "Creando curso...", false);
         try {
           const payload = Object.fromEntries(new FormData(event.target).entries());
           payload.teacherUserId = Number(payload.teacherUserId);
           await apiPost("/api/backoffice/courses", payload);
-          setText(note, "Curso creado correctamente.", false);
+          setNote(note, "Curso creado correctamente.", false);
           event.target.reset();
-          await loadCourses();
-          fillUserAndCourseSelectors();
+          await refreshAllData();
         } catch (error) {
           showSessionError(error.message, note);
         }
@@ -565,14 +912,14 @@
       createEnrollmentForm.addEventListener("submit", async (event) => {
         event.preventDefault();
         const note = document.getElementById("create-enrollment-note");
-        setText(note, "Asignando alumno al curso...", false);
+        setNote(note, "Asignando alumno...", false);
         try {
           const payload = Object.fromEntries(new FormData(event.target).entries());
           payload.courseId = Number(payload.courseId);
           payload.studentUserId = Number(payload.studentUserId);
           await apiPost("/api/backoffice/enrollments", payload);
-          setText(note, "Asignación realizada.", false);
-          await loadEnrollments();
+          setNote(note, "Asignacion realizada.", false);
+          await refreshAllData();
         } catch (error) {
           showSessionError(error.message, note);
         }
@@ -582,7 +929,7 @@
         event.preventDefault();
         const note = document.getElementById("one-time-note");
         const result = document.getElementById("one-time-result");
-        setText(note, "Generando pago único...", false);
+        setNote(note, "Generando pago unico...", false);
         result.innerHTML = "";
 
         try {
@@ -594,10 +941,10 @@
           else delete payload.courseId;
           if (!payload.payerEmail) delete payload.payerEmail;
 
-          const op = await apiPost("/api/backoffice/payments/one-time", payload);
-          setText(note, `Pago único #${op.id} creado.`, false);
-          result.innerHTML = createClientMarkup(op.id) + createQrMarkup(op.checkoutUrl) + callbacksMarkup(op.id);
-          await loadPayments();
+          const operation = await apiPost("/api/backoffice/payments/one-time", payload);
+          setNote(note, `Pago unico #${operation.id} creado.`, false);
+          result.innerHTML = createClientMarkup(operation.id) + createQrMarkup(operation.checkoutUrl) + callbacksMarkup(operation.id);
+          await refreshAllData();
         } catch (error) {
           showSessionError(error.message, note);
         }
@@ -607,7 +954,7 @@
         event.preventDefault();
         const note = document.getElementById("subscription-note");
         const result = document.getElementById("subscription-result");
-        setText(note, "Generando suscripción...", false);
+        setNote(note, "Generando suscripcion...", false);
         result.innerHTML = "";
 
         try {
@@ -619,10 +966,10 @@
           else delete payload.courseId;
           if (!payload.payerEmail) delete payload.payerEmail;
 
-          const op = await apiPost("/api/backoffice/payments/subscriptions", payload);
-          setText(note, `Suscripción #${op.id} creada.`, false);
-          result.innerHTML = createClientMarkup(op.id) + createQrMarkup(op.checkoutUrl) + callbacksMarkup(op.id);
-          await loadPayments();
+          const operation = await apiPost("/api/backoffice/payments/subscriptions", payload);
+          setNote(note, `Suscripcion #${operation.id} creada.`, false);
+          result.innerHTML = createClientMarkup(operation.id) + createQrMarkup(operation.checkoutUrl) + callbacksMarkup(operation.id);
+          await refreshAllData();
         } catch (error) {
           showSessionError(error.message, note);
         }

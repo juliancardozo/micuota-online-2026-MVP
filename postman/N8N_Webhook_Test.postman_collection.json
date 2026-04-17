@@ -1,0 +1,61 @@
+{
+  "info": {
+    "name": "MiCuota n8n - Webhook Test Events",
+    "_postman_id": "6d4f2e4a-0ddf-4a88-b2a8-34d44517f8b9",
+    "description": "Coleccion separada para disparar eventos de prueba en n8n (webhook-test). Requiere que el workflow este en modo 'Listen for test event'.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "n8nBaseUrl", "value": "http://localhost:5678" },
+    { "key": "webhookPath", "value": "saas/leads/capture" },
+    { "key": "tenantSlug", "value": "tenant-demo" },
+    { "key": "source", "value": "postman-test" }
+  ],
+  "item": [
+    {
+      "name": "00 - n8n Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{n8nBaseUrl}}/healthz",
+          "host": ["{{n8nBaseUrl}}"],
+          "path": ["healthz"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "01 - POST Webhook Test Lead Capture",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status valido para test webhook', function () {",
+              "  pm.expect([200, 201, 202, 204, 404]).to.include(pm.response.code);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"event\": \"lead.capture\",\n  \"tenantSlug\": \"{{tenantSlug}}\",\n  \"lead\": {\n    \"fullName\": \"Lead Postman Test\",\n    \"email\": \"lead.test+{{$timestamp}}@micuota.online\",\n    \"phone\": \"+59800000000\",\n    \"source\": \"{{source}}\",\n    \"interest\": \"Curso Demo\"\n  },\n  \"metadata\": {\n    \"trigger\": \"manual-postman\",\n    \"sentAt\": \"{{$isoTimestamp}}\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{n8nBaseUrl}}/webhook-test/{{webhookPath}}",
+          "host": ["{{n8nBaseUrl}}"],
+          "path": ["webhook-test", "{{webhookPath}}"]
+        }
+      },
+      "response": []
+    }
+  ]
+}

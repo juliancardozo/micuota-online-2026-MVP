@@ -7,51 +7,196 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="ui.css" />
   </head>
-  <body>
+  <body class="shell-ui">
     <div class="app-shell">
-      <header class="topbar">
+      <aside class="sidebar">
         <a class="brand" href="/landing.html">
           <span class="brand-dot"></span>
-          MiCuota.online
+          <span class="brand-copy">
+            <strong>MiCuota.online</strong>
+            <small>Workspace del alumno</small>
+          </span>
         </a>
-        <nav class="nav-links">
-          <a href="/landing.html">Inicio</a>
-          <a href="/pago.html">Pago directo</a>
-          <a href="/landing.html" id="logout-link">Cerrar sesión</a>
-        </nav>
-      </header>
 
-      <section class="hero">
-        <span class="kicker">Dashboard alumno</span>
-        <h1 id="welcome-title">Tus cuotas y pagos en una sola vista.</h1>
-        <p>
-          Revisa cursos activos, estado de pagos y links para completar cada cobro en segundos.
+        <p class="sidebar-copy">
+          Revisa cursos, pagos y suscripciones desde un menu simple con foco por curso.
         </p>
-        <div class="pills" id="session-pills"></div>
-      </section>
 
-      <main class="grid">
-        <section class="card span-12">
-          <h2>Mis cursos</h2>
-          <p class="section-copy">Todo lo que cursas o tienes asignado en este momento.</p>
-          <div class="stack" id="courses-list"></div>
+        <div class="sidebar-block">
+          <p class="nav-group-label">Menu</p>
+          <nav class="shell-nav" id="sidebar-nav">
+            <a class="nav-link" href="#resumen">
+              <strong>Resumen</strong>
+              <span>Estado general</span>
+            </a>
+            <a class="nav-link" href="#cursos">
+              <strong>Cursos</strong>
+              <span>Tus cursos activos</span>
+            </a>
+            <a class="nav-link" href="#pagos">
+              <strong>Pagos</strong>
+              <span>Pagos puntuales</span>
+            </a>
+            <a class="nav-link" href="#suscripciones">
+              <strong>Suscripciones</strong>
+              <span>Cuotas recurrentes</span>
+            </a>
+            <a class="nav-link" href="#cuenta">
+              <strong>Account settings</strong>
+              <span>Sesion y contexto</span>
+            </a>
+          </nav>
+        </div>
+
+        <div class="sidebar-block">
+          <p class="nav-group-label">Accesos</p>
+          <nav class="shell-nav">
+            <a class="nav-link" href="/landing.html">
+              <strong>Inicio</strong>
+              <span>Volver a la landing</span>
+            </a>
+            <a class="nav-link" href="/pago.html">
+              <strong>Pago directo</strong>
+              <span>Abrir una operacion puntual</span>
+            </a>
+          </nav>
+        </div>
+
+        <div class="sidebar-footer">
+          <div class="mini-profile" id="sidebar-profile"></div>
+          <div class="actions-row">
+            <a class="btn btn-secondary" href="/landing.html">Landing</a>
+            <button class="btn-danger" id="logout-link" type="button">Cerrar sesion</button>
+          </div>
+        </div>
+      </aside>
+
+      <div class="shell-content">
+        <header class="shell-header">
+          <div class="header-copy">
+            <span class="overline">Dashboard alumno</span>
+            <h1 id="page-title">Tus cuotas y pagos en una sola vista</h1>
+            <p>
+              Selecciona un curso para filtrar mejor y separar lo que es pago puntual de lo que es
+              suscripcion.
+            </p>
+          </div>
+
+          <div class="header-meta">
+            <div class="selector-group">
+              <label for="course-filter">Curso foco</label>
+              <select id="course-filter"></select>
+              <span class="helper-text">Puedes volver a ver todos los cursos cuando quieras.</span>
+            </div>
+            <div class="selector-group">
+              <label>Usuario actual</label>
+              <div class="pill-row" id="header-user-pills"></div>
+            </div>
+          </div>
+        </header>
+
+        <section class="hero-panel" id="resumen">
+          <div class="hero-grid">
+            <div class="meta-stack">
+              <div>
+                <span class="overline">Workspace personal</span>
+                <h2 id="hero-title">Todo lo que debes en una sola vista</h2>
+              </div>
+              <p class="section-copy">
+                Esta shell organiza tu experiencia por curso para que veas rapido que pagar, que ya
+                esta cubierto y que corresponde a una suscripcion.
+              </p>
+              <div class="pills" id="session-pills"></div>
+            </div>
+            <div class="split-grid" id="summary-cards"></div>
+          </div>
         </section>
 
-        <section class="card span-12">
-          <h2>Pagos</h2>
-          <p class="section-copy">Abre el link correspondiente para completar o revisar cada pago.</p>
-          <div class="stack" id="payments-list"></div>
+        <section class="shell-section" id="cursos">
+          <div class="section-head">
+            <div class="section-head-copy">
+              <h2>Cursos</h2>
+              <p class="section-copy">Tus cursos activos o asignados en este tenant.</p>
+            </div>
+          </div>
+
+          <div class="section-grid">
+            <article class="surface-card span-12">
+              <h3>Mis cursos</h3>
+              <div class="stack" id="courses-list"></div>
+            </article>
+          </div>
         </section>
-      </main>
+
+        <section class="shell-section" id="pagos">
+          <div class="section-head">
+            <div class="section-head-copy">
+              <h2>Pagos</h2>
+              <p class="section-copy">Pagos puntuales pendientes o historicos del curso seleccionado.</p>
+            </div>
+          </div>
+
+          <div class="section-grid">
+            <article class="surface-card span-12">
+              <h3>Pagos disponibles</h3>
+              <div class="stack" id="payments-list"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="shell-section" id="suscripciones">
+          <div class="section-head">
+            <div class="section-head-copy">
+              <h2>Suscripciones</h2>
+              <p class="section-copy">Cuotas recurrentes y renovaciones del curso elegido.</p>
+            </div>
+          </div>
+
+          <div class="section-grid">
+            <article class="surface-card span-12">
+              <h3>Suscripciones activas</h3>
+              <div class="stack" id="subscriptions-list"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="shell-section" id="cuenta">
+          <div class="section-head">
+            <div class="section-head-copy">
+              <h2>Account settings</h2>
+              <p class="section-copy">Referencia de sesion, curso elegido y accesos rapidos.</p>
+            </div>
+          </div>
+
+          <div class="account-grid">
+            <article class="account-block">
+              <h3>Perfil</h3>
+              <div class="account-list" id="account-profile"></div>
+            </article>
+            <article class="account-block">
+              <h3>Contexto</h3>
+              <div class="account-list" id="account-context"></div>
+            </article>
+            <article class="account-block">
+              <h3>Acciones</h3>
+              <div class="actions-row">
+                <button class="btn-secondary" id="reset-course-button" type="button">Ver todos los cursos</button>
+                <button class="btn-danger" id="logout-button" type="button">Cerrar sesion</button>
+              </div>
+            </article>
+          </div>
+        </section>
+      </div>
     </div>
 
     <script>
       const API_BASE = "http://localhost:8080";
+      const COURSE_FILTER_KEY = "micuota.student.selectedCourseId";
       const urlToken = new URLSearchParams(window.location.search).get("token");
       const token = urlToken || localStorage.getItem("micuota.authToken");
       const tenantSlug = localStorage.getItem("micuota.tenantSlug") || "(sin slug)";
@@ -60,10 +205,23 @@
         localStorage.setItem("micuota.authToken", urlToken);
       }
 
+      const state = {
+        profile: null,
+        dashboard: null,
+        courses: [],
+        payments: []
+      };
+
       function logout() {
         localStorage.removeItem("micuota.authToken");
-        localStorage.removeItem("micuota.tenantSlug");
-        window.location.href = "/landing.html";
+        window.location.href = `/landing.html?tenantSlug=${encodeURIComponent(localStorage.getItem("micuota.tenantSlug") || "")}`;
+      }
+
+      function setActiveNav() {
+        const hash = window.location.hash || "#resumen";
+        document.querySelectorAll("#sidebar-nav .nav-link").forEach((link) => {
+          link.classList.toggle("active", link.getAttribute("href") === hash);
+        });
       }
 
       async function apiGet(path) {
@@ -75,25 +233,168 @@
         return data;
       }
 
-      function fillCourses(courses) {
-        const target = document.getElementById("courses-list");
-        target.innerHTML = courses.length
-          ? courses
-              .map((c) => `<div class="item"><strong>${c.name}</strong><br /><small>${c.description} · Profesor: ${c.teacherName}</small></div>`)
-              .join("")
-          : "<div class='item'>Aún no tienes cursos asignados.</div>";
+      function getSelectedCourseId() {
+        return localStorage.getItem(COURSE_FILTER_KEY) || "";
       }
 
-      function fillPayments(payments) {
-        const target = document.getElementById("payments-list");
-        target.innerHTML = payments.length
-          ? payments
-              .map((p) => {
-                const appUrl = p.checkoutUrl.startsWith("http") ? p.checkoutUrl : `${window.location.origin}${p.checkoutUrl}`;
-                return `<div class="item"><strong>${p.description}</strong><br /><small>${p.courseName} · ${p.currency} ${p.amount} · ${p.status}</small><br /><a href="${appUrl}" target="_blank" rel="noopener noreferrer">Pagar / ver detalle</a></div>`;
+      function setSelectedCourseId(value) {
+        if (!value) {
+          localStorage.removeItem(COURSE_FILTER_KEY);
+          return;
+        }
+        localStorage.setItem(COURSE_FILTER_KEY, value);
+      }
+
+      function getSelectedCourse() {
+        const courseId = getSelectedCourseId();
+        return state.courses.find((course) => String(course.id) === courseId) || null;
+      }
+
+      function getFilteredPayments() {
+        const selectedCourse = getSelectedCourse();
+        if (!selectedCourse) return state.payments;
+        return state.payments.filter((payment) => payment.courseName === selectedCourse.name);
+      }
+
+      function renderSidebarProfile() {
+        document.getElementById("sidebar-profile").innerHTML = state.profile
+          ? `
+              <strong>${state.profile.fullName}</strong>
+              <div class="pill-row">
+                <span class="pill">${state.profile.role}</span>
+                <span class="pill">${tenantSlug}</span>
+              </div>
+            `
+          : `
+              <strong>Sesion pendiente</strong>
+              <div class="pill-row">
+                <span class="pill">Cargando</span>
+              </div>
+            `;
+      }
+
+      function renderHeader() {
+        const selectedCourse = getSelectedCourse();
+        document.getElementById("page-title").textContent = state.profile
+          ? `${state.profile.fullName}, tus pagos en una sola vista`
+          : "Tus pagos en una sola vista";
+        document.getElementById("hero-title").textContent = selectedCourse
+          ? `Curso foco: ${selectedCourse.name}`
+          : "Todo lo que debes en una sola vista";
+        document.getElementById("session-pills").innerHTML = state.profile
+          ? [
+              `<span class="pill">Tenant: ${tenantSlug}</span>`,
+              `<span class="pill">Rol: ${state.profile.role}</span>`,
+              `<span class="pill">Usuario: ${state.profile.fullName}</span>`
+            ].join("")
+          : "";
+        document.getElementById("header-user-pills").innerHTML = state.profile
+          ? [
+              `<span class="pill">${state.profile.fullName}</span>`,
+              `<span class="pill">${selectedCourse ? selectedCourse.name : "Todos los cursos"}</span>`
+            ].join("")
+          : "";
+        renderSidebarProfile();
+      }
+
+      function renderCourseFilter() {
+        const select = document.getElementById("course-filter");
+        select.innerHTML = "";
+        select.appendChild(new Option("Todos los cursos", ""));
+        state.courses.forEach((course) => {
+          select.appendChild(new Option(`${course.name} (#${course.id})`, String(course.id)));
+        });
+        select.value = getSelectedCourseId();
+      }
+
+      function renderSummaryCards() {
+        const filtered = getFilteredPayments();
+        const oneTime = filtered.filter((payment) => payment.flowType === "ONE_TIME");
+        const subscriptions = filtered.filter((payment) => payment.flowType === "SUBSCRIPTION");
+        document.getElementById("summary-cards").innerHTML = [
+          {
+            title: "Cursos",
+            value: getSelectedCourse() ? 1 : state.courses.length,
+            note: getSelectedCourse() ? "Curso seleccionado" : "Todos tus cursos"
+          },
+          {
+            title: "Pagos",
+            value: oneTime.length,
+            note: "Cobros unicos visibles"
+          },
+          {
+            title: "Suscripciones",
+            value: subscriptions.length,
+            note: "Cobros recurrentes visibles"
+          },
+          {
+            title: "Pendientes",
+            value: filtered.filter((payment) => payment.status === "PENDING").length,
+            note: "Operaciones pendientes"
+          }
+        ]
+          .map((item) => `<article class="stat-card"><small>${item.title}</small><strong>${item.value}</strong><span>${item.note}</span></article>`)
+          .join("");
+      }
+
+      function renderCourses() {
+        const selectedCourse = getSelectedCourse();
+        const visibleCourses = selectedCourse ? [selectedCourse] : state.courses;
+        document.getElementById("courses-list").innerHTML = visibleCourses.length
+          ? visibleCourses
+              .map((course) => `<div class="item"><strong>${course.name}</strong><br /><small>${course.description} · Profesor: ${course.teacherName}</small></div>`)
+              .join("")
+          : "<div class='empty-state'>Aun no tienes cursos asignados.</div>";
+      }
+
+      function renderPayments() {
+        const filtered = getFilteredPayments();
+        const oneTime = filtered.filter((payment) => payment.flowType === "ONE_TIME");
+        const subscriptions = filtered.filter((payment) => payment.flowType === "SUBSCRIPTION");
+
+        document.getElementById("payments-list").innerHTML = oneTime.length
+          ? oneTime
+              .map((payment) => {
+                const appUrl = payment.checkoutUrl.startsWith("http") ? payment.checkoutUrl : `${window.location.origin}${payment.checkoutUrl}`;
+                return `<div class="item"><span class="tag">${payment.flowType}</span><br /><strong>${payment.description}</strong><br /><small>${payment.courseName} · ${payment.currency} ${payment.amount} · ${payment.status}</small><br /><a href="${appUrl}" target="_blank" rel="noopener noreferrer">Pagar / ver detalle</a></div>`;
               })
               .join("")
-          : "<div class='item'>No hay pagos registrados por ahora.</div>";
+          : "<div class='empty-state'>No hay pagos puntuales para este filtro.</div>";
+
+        document.getElementById("subscriptions-list").innerHTML = subscriptions.length
+          ? subscriptions
+              .map((payment) => {
+                const appUrl = payment.checkoutUrl.startsWith("http") ? payment.checkoutUrl : `${window.location.origin}${payment.checkoutUrl}`;
+                return `<div class="item"><span class="tag">${payment.flowType}</span><br /><strong>${payment.description}</strong><br /><small>${payment.courseName} · ${payment.currency} ${payment.amount} · ${payment.status}</small><br /><a href="${appUrl}" target="_blank" rel="noopener noreferrer">Ver suscripcion</a></div>`;
+              })
+              .join("")
+          : "<div class='empty-state'>No hay suscripciones para este filtro.</div>";
+      }
+
+      function renderAccountSettings() {
+        const selectedCourse = getSelectedCourse();
+        document.getElementById("account-profile").innerHTML = state.profile
+          ? [
+              `<div><small>Nombre</small><strong>${state.profile.fullName}</strong></div>`,
+              `<div><small>Email</small><strong>${state.profile.email}</strong></div>`,
+              `<div><small>Rol</small><strong>${state.profile.role}</strong></div>`
+            ].join("")
+          : "";
+
+        document.getElementById("account-context").innerHTML = [
+          `<div><small>Tenant</small><strong>${tenantSlug}</strong></div>`,
+          `<div><small>Curso actual</small><strong>${selectedCourse ? selectedCourse.name : "Todos los cursos"}</strong></div>`,
+          `<div><small>Operaciones visibles</small><strong>${getFilteredPayments().length}</strong></div>`
+        ].join("");
+      }
+
+      function rerender() {
+        renderHeader();
+        renderCourseFilter();
+        renderSummaryCards();
+        renderCourses();
+        renderPayments();
+        renderAccountSettings();
       }
 
       async function bootstrap() {
@@ -102,37 +403,45 @@
           return;
         }
 
+        setActiveNav();
+
         try {
-          const me = await apiGet("/api/auth/me");
-          if (me.role !== "STUDENT") {
+          state.profile = await apiGet("/api/auth/me");
+          if (state.profile.role !== "STUDENT") {
             window.location.href = "/landing.html";
             return;
           }
 
-          document.getElementById("session-pills").innerHTML = [
-            `<span class="pill">Tenant: ${tenantSlug}</span>`,
-            `<span class="pill">Rol: ${me.role}</span>`,
-            `<span class="pill">Usuario: ${me.fullName}</span>`
-          ].join("");
-          document.getElementById("welcome-title").textContent = `${me.fullName}, tus cuotas y pagos en una sola vista.`;
+          state.dashboard = await apiGet("/api/backoffice/dashboard/student");
+          state.courses = state.dashboard.enrolledCourses || [];
+          state.payments = state.dashboard.payments || [];
 
-          const dashboard = await apiGet("/api/backoffice/dashboard/student");
-          fillCourses(dashboard.enrolledCourses || []);
-          fillPayments(dashboard.payments || []);
+          if (getSelectedCourseId() && !state.courses.some((course) => String(course.id) === getSelectedCourseId())) {
+            setSelectedCourseId("");
+          }
+
+          rerender();
         } catch (error) {
           if (/Sesion invalida o expirada|Token de sesion requerido|Token no encontrado/i.test(error.message)) {
             logout();
             return;
           }
-          document.getElementById("courses-list").innerHTML = `<div class='item error'>${error.message}</div>`;
-          document.getElementById("payments-list").innerHTML = "";
+          document.getElementById("summary-cards").innerHTML = `<div class='empty-state error'>${error.message}</div>`;
         }
       }
 
-      document.getElementById("logout-link").addEventListener("click", (event) => {
-        event.preventDefault();
-        logout();
+      window.addEventListener("hashchange", setActiveNav);
+      document.getElementById("logout-link").addEventListener("click", logout);
+      document.getElementById("logout-button").addEventListener("click", logout);
+      document.getElementById("reset-course-button").addEventListener("click", () => {
+        setSelectedCourseId("");
+        rerender();
       });
+      document.getElementById("course-filter").addEventListener("change", (event) => {
+        setSelectedCourseId(event.target.value);
+        rerender();
+      });
+
       bootstrap();
     </script>
     <script src="/chatbot.js"></script>

@@ -1,0 +1,610 @@
+{
+  "info": {
+    "name": "MiCuota API - Onboarding Flows",
+    "_postman_id": "8c52956f-54e1-4e17-9466-f04b7bdbeb5d",
+    "description": "Coleccion Postman para onboarding completo de MiCuota: registro de tenant, creacion de usuarios, cursos, inscripciones, pagos, callbacks y dashboards por rol.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "tenantSlug", "value": "" },
+    { "key": "tenantId", "value": "" },
+    { "key": "adminEmail", "value": "" },
+    { "key": "adminPassword", "value": "DemoMicuota123" },
+    { "key": "tenantAdminToken", "value": "" },
+    { "key": "teacherEmail", "value": "" },
+    { "key": "teacherPassword", "value": "DemoProfesor123" },
+    { "key": "teacherUserId", "value": "" },
+    { "key": "studentEmail", "value": "" },
+    { "key": "studentPassword", "value": "DemoAlumno123" },
+    { "key": "studentUserId", "value": "" },
+    { "key": "courseId", "value": "" },
+    { "key": "enrollmentId", "value": "" },
+    { "key": "paymentOperationId", "value": "" },
+    { "key": "paymentProviderReference", "value": "" },
+    { "key": "subscriptionOperationId", "value": "" },
+    { "key": "subscriptionProviderReference", "value": "" },
+    { "key": "checkoutUrl", "value": "" },
+    { "key": "teacherToken", "value": "" },
+    { "key": "studentToken", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "00 - Healthcheck",
+      "item": [
+        {
+          "name": "GET Swagger UI",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/swagger-ui/index.html",
+              "host": ["{{baseUrl}}"],
+              "path": ["swagger-ui", "index.html"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "01 - Tenant Onboarding (Admin)",
+      "item": [
+        {
+          "name": "POST Register Tenant",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const stamp = Date.now().toString();",
+                  "pm.collectionVariables.set('tenantSlug', `tenant-postman-${stamp}`);",
+                  "pm.collectionVariables.set('adminEmail', `admin.postman+${stamp}@micuota.online`);",
+                  "pm.collectionVariables.set('teacherEmail', `teacher.postman+${stamp}@micuota.online`);",
+                  "pm.collectionVariables.set('studentEmail', `student.postman+${stamp}@micuota.online`);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('tenantAdminToken', json.token);",
+                  "pm.collectionVariables.set('tenantId', String(json.tenantId));",
+                  "pm.collectionVariables.set('tenantSlug', json.tenantSlug);",
+                  "pm.test('Token presente', function () { pm.expect(json.token).to.be.a('string').and.not.empty; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenantName\": \"Tenant Postman\",\n  \"tenantSlug\": \"{{tenantSlug}}\",\n  \"fullName\": \"Admin Postman\",\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\",\n  \"mpAccessToken\": \"TEST-MP-TOKEN-POSTMAN\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register-tenant",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register-tenant"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET Auth Me (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-Auth-Token", "value": "{{tenantAdminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "me"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "02 - Team Setup (Teacher + Student)",
+      "item": [
+        {
+          "name": "POST Create Teacher",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('teacherUserId', String(json.id));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Auth-Token", "value": "{{tenantAdminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Profesor Postman\",\n  \"email\": \"{{teacherEmail}}\",\n  \"password\": \"{{teacherPassword}}\",\n  \"role\": \"TEACHER\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/backoffice/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "backoffice", "users"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST Create Student",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('studentUserId', String(json.id));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Auth-Token", "value": "{{tenantAdminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Alumno Postman\",\n  \"email\": \"{{studentEmail}}\",\n  \"password\": \"{{studentPassword}}\",\n  \"role\": \"STUDENT\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/backoffice/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "backoffice", "users"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET List Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-Auth-Token", "value": "{{tenantAdminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/backoffice/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "backoffice", "users"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "03 - Academic Setup (Course + Enrollment)",
+      "item": [
+        {
+          "name": "POST Create Course",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('courseId', String(json.id));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Auth-Token", "value": "{{tenantAdminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Curso Onboarding Postman\",\n  \"description\": \"Curso creado desde coleccion Postman\",\n  \"teacherUserId\": {{teacherUserId}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/backoffice/courses",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "backoffice", "courses"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST Enroll Student",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('enrollmentId', String(json.id));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Auth-Token", "value": "{{tenantAdminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": {{courseId}},\n  \"studentUserId\": {{studentUserId}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/backoffice/enrollments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "backoffice", "enrollments"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET List Courses",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-Auth-Token", "value": "{{tenantAdminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/backoffice/courses",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "backoffice", "courses"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET List Enrollments",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-Auth-Token", "value": "{{tenantAdminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/backoffice/enrollments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "backoffice", "enrollments"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "04 - Payments Onboarding",
+      "item": [
+        {
+          "name": "POST Login as Teacher (required for payments)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('teacherToken', json.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenantSlug\": \"{{tenantSlug}}\",\n  \"email\": \"{{teacherEmail}}\",\n  \"password\": \"{{teacherPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST Create One-Time Payment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('paymentOperationId', String(json.id));",
+                  "pm.collectionVariables.set('paymentProviderReference', json.providerReference);",
+                  "pm.collectionVariables.set('checkoutUrl', json.checkoutUrl);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Auth-Token", "value": "{{teacherToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"provider\": \"STRIPE\",\n  \"description\": \"Pago one-time desde Postman\",\n  \"amount\": 950,\n  \"currency\": \"UYU\",\n  \"payerEmail\": \"{{studentEmail}}\",\n  \"studentUserId\": {{studentUserId}},\n  \"courseId\": {{courseId}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/backoffice/payments/one-time",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "backoffice", "payments", "one-time"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST Create Subscription Payment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('subscriptionOperationId', String(json.id));",
+                  "pm.collectionVariables.set('subscriptionProviderReference', json.providerReference);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Auth-Token", "value": "{{teacherToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"provider\": \"SQUARE\",\n  \"description\": \"Suscripcion desde Postman\",\n  \"amount\": 2500,\n  \"currency\": \"UYU\",\n  \"payerEmail\": \"{{studentEmail}}\",\n  \"studentUserId\": {{studentUserId}},\n  \"courseId\": {{courseId}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/backoffice/payments/subscriptions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "backoffice", "payments", "subscriptions"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET List Payments",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-Auth-Token", "value": "{{teacherToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/backoffice/payments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "backoffice", "payments"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET List Payments By Course",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-Auth-Token", "value": "{{teacherToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/backoffice/payments/by-course?courseId={{courseId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "backoffice", "payments", "by-course"],
+              "query": [
+                { "key": "courseId", "value": "{{courseId}}" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET Public Payment View",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/public/payments/{{paymentOperationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "public", "payments", "{{paymentOperationId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "05 - Callback Simulation",
+      "item": [
+        {
+          "name": "GET Callback Pending By Reference",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/callbacks/pending/by-reference?providerReference={{paymentProviderReference}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "callbacks", "pending", "by-reference"],
+              "query": [
+                { "key": "providerReference", "value": "{{paymentProviderReference}}" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET Callback Success By Reference",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/callbacks/success/by-reference?providerReference={{paymentProviderReference}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "callbacks", "success", "by-reference"],
+              "query": [
+                { "key": "providerReference", "value": "{{paymentProviderReference}}" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET Callback Failure By OperationId",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/callbacks/failure?operationId={{subscriptionOperationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "callbacks", "failure"],
+              "query": [
+                { "key": "operationId", "value": "{{subscriptionOperationId}}" }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "06 - Role Logins & Dashboards",
+      "item": [
+        {
+          "name": "POST Login as Teacher",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('teacherToken', json.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenantSlug\": \"{{tenantSlug}}\",\n  \"email\": \"{{teacherEmail}}\",\n  \"password\": \"{{teacherPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET Professor Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-Auth-Token", "value": "{{teacherToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/backoffice/dashboard/professor",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "backoffice", "dashboard", "professor"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST Login as Student",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('studentToken', json.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenantSlug\": \"{{tenantSlug}}\",\n  \"email\": \"{{studentEmail}}\",\n  \"password\": \"{{studentPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET Student Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-Auth-Token", "value": "{{studentToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/backoffice/dashboard/student",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "backoffice", "dashboard", "student"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

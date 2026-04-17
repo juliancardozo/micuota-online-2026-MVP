@@ -1,0 +1,101 @@
+{
+  "name": "03 - Nurture and Follow-up",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "saas/leads/nurture",
+        "httpMethod": "POST",
+        "responseMode": "responseNode"
+      },
+      "id": "Webhook_Nurture",
+      "name": "Webhook Nurture",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [180, 280]
+    },
+    {
+      "parameters": {
+        "mode": "wait"
+      },
+      "id": "Wait_6h",
+      "name": "Wait 6h",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [410, 280]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{$json.body.email}}",
+        "subject": "Te ayudamos a activar tus cobros en minutos",
+        "message": "Hola, te compartimos una guia rapida para cobrar por link, QR y suscripciones en MiCuota."
+      },
+      "id": "Email_Sequence1",
+      "name": "Email Sequence 1",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [640, 220]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            { "value1": "={{$json.body.replied === true}}", "operation": "isTrue" }
+          ]
+        }
+      },
+      "id": "IF_Replied",
+      "name": "Lead Replied?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [640, 380]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.SLACK_WEBHOOK_URL}}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { text: 'Lead caliente requiere intervencion humana: ' + $json.body.email } }}"
+      },
+      "id": "Slack_HumanAlert",
+      "name": "Alert Human Team",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [890, 380]
+    },
+    {
+      "parameters": {
+        "responseBody": "={{ { \"ok\": true, \"nurtureStarted\": true } }}"
+      },
+      "id": "Respond_Nurture",
+      "name": "Respond Nurture",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1120, 280]
+    }
+  ],
+  "connections": {
+    "Webhook Nurture": {
+      "main": [[{ "node": "Wait 6h", "type": "main", "index": 0 }]]
+    },
+    "Wait 6h": {
+      "main": [
+        [{ "node": "Email Sequence 1", "type": "main", "index": 0 }],
+        [{ "node": "Lead Replied?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Email Sequence 1": {
+      "main": [[{ "node": "Respond Nurture", "type": "main", "index": 0 }]]
+    },
+    "Lead Replied?": {
+      "main": [
+        [{ "node": "Alert Human Team", "type": "main", "index": 0 }],
+        [{ "node": "Respond Nurture", "type": "main", "index": 0 }]
+      ]
+    },
+    "Alert Human Team": {
+      "main": [[{ "node": "Respond Nurture", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "active": false
+}

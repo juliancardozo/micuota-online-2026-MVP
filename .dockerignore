@@ -1,0 +1,7 @@
+.git
+.gitignore
+node_modules
+backend/target
+embedding-sdk-demo/node_modules
+embedding-sdk-demo/dist
+data

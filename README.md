@@ -196,6 +196,10 @@ Pack especifico de 3 dashboards (Tenants, Profesores/Alumnos y Pagos):
 - [analytics/metabase_3_dashboards_tenants_profesores_alumnos_pagos.sql](analytics/metabase_3_dashboards_tenants_profesores_alumnos_pagos.sql)
 - [analytics/metabase_3_dashboards_setup.md](analytics/metabase_3_dashboards_setup.md)
 
+Guia para charts interactivos y drill-through en Metabase:
+
+- [analytics/metabase_interactive_charts_drillthrough.md](analytics/metabase_interactive_charts_drillthrough.md)
+
 ### 2) Levantar frontend
 
 En la raiz del repo:
@@ -268,6 +272,36 @@ Notas:
 - `GET /api/callbacks/success?operationId=...`
 - `GET /api/callbacks/pending?operationId=...`
 - `GET /api/callbacks/failure?operationId=...`
+
+## Postman (onboarding guiado)
+
+Se incluye una coleccion de Postman con flujo completo de onboarding:
+
+- Registro de tenant y token admin.
+- Alta de profesor y alumno.
+- Creacion de curso e inscripcion.
+- Creacion de pagos (one-time y suscripcion).
+- Simulacion de callbacks por referencia.
+- Login por rol y dashboards de profesor/alumno.
+
+Archivos:
+
+- `postman/MiCuota_Onboarding.postman_collection.json`
+- `postman/MiCuota_Local.postman_environment.json`
+
+Uso rapido:
+
+1. Importar ambos archivos en Postman.
+2. Seleccionar environment `MiCuota Local`.
+3. Ejecutar requests en orden por carpeta (`00` a `06`).
+
+La coleccion guarda automaticamente variables de salida (token, IDs, referencias) para encadenar cada paso del onboarding sin edicion manual.
+
+## Branding visual landing
+
+Prompt pack de imagenes para mantener consistencia visual SaaS (azul profundo, blanco y acento amarillo):
+
+- [docs/landing-image-pack-prompts.md](docs/landing-image-pack-prompts.md)
 
 ## Swagger y OpenAPI
 
