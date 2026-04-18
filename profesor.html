@@ -270,6 +270,75 @@
               <h3>Asignaciones recientes</h3>
               <div class="stack" id="enrollments-list"></div>
             </article>
+
+            <article class="surface-card span-5">
+              <h3>Cuenta bancaria del alumno</h3>
+              <p class="section-copy">El alumno aloja su cuenta. La validas con Prometeo y queda asociada para simplificar futuros cobros.</p>
+              <form id="student-bank-account-form">
+                <div class="field">
+                  <label for="bank-student">Alumno</label>
+                  <select id="bank-student" name="studentUserId" required></select>
+                </div>
+                <div class="mini-grid">
+                  <div class="field">
+                    <label for="bank-account-holder">Titular</label>
+                    <input id="bank-account-holder" name="accountHolderName" placeholder="Nombre del alumno" />
+                  </div>
+                  <div class="field">
+                    <label for="bank-country-code">Pais</label>
+                    <input id="bank-country-code" name="countryCode" value="AR" required />
+                  </div>
+                </div>
+                <div class="mini-grid">
+                  <div class="field">
+                    <label for="bank-account-type">Tipo de cuenta</label>
+                    <select id="bank-account-type" name="accountType" required>
+                      <option value="CHECKING">Checking</option>
+                      <option value="SAVINGS">Savings</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="bank-account-number">Numero de cuenta</label>
+                    <input id="bank-account-number" name="accountNumber" placeholder="Solo para validacion" required />
+                  </div>
+                </div>
+                <div class="mini-grid">
+                  <div class="field">
+                    <label for="bank-bank-code">Codigo banco</label>
+                    <input id="bank-bank-code" name="bankCode" placeholder="Opcional segun pais" />
+                  </div>
+                  <div class="field">
+                    <label for="bank-branch-code">Sucursal</label>
+                    <input id="bank-branch-code" name="branchCode" placeholder="Opcional" />
+                  </div>
+                </div>
+                <div class="mini-grid">
+                  <div class="field">
+                    <label for="bank-document-type">Tipo documento</label>
+                    <input id="bank-document-type" name="documentType" placeholder="Opcional" />
+                  </div>
+                  <div class="field">
+                    <label for="bank-document-number">Documento</label>
+                    <input id="bank-document-number" name="documentNumber" placeholder="Opcional" />
+                  </div>
+                </div>
+                <div class="field checkbox-field">
+                  <label>
+                    <input id="bank-preferred" name="preferred" type="checkbox" checked />
+                    Dejarla como cuenta principal del alumno
+                  </label>
+                </div>
+                <div class="form-actions">
+                  <button type="submit">Validar y asociar</button>
+                </div>
+              </form>
+              <p class="note" id="student-bank-account-note"></p>
+            </article>
+
+            <article class="surface-card span-7">
+              <h3>Cuentas asociadas</h3>
+              <div class="stack" id="student-bank-accounts-list"></div>
+            </article>
           </div>
         </section>
 
@@ -469,12 +538,14 @@
         payments: [],
         students: [],
         enrollments: [],
+        studentBankAccounts: [],
         paymentSettings: null,
         paymentSearchQuery: ""
       };
       const createCourseForm = document.getElementById("create-course-form");
       const createStudentForm = document.getElementById("create-student-form");
       const assignStudentForm = document.getElementById("assign-student-form");
+      const studentBankAccountForm = document.getElementById("student-bank-account-form");
       const oneTimeForm = document.getElementById("one-time-form");
       const subscriptionForm = document.getElementById("subscription-form");
 
@@ -639,11 +710,16 @@
         const selectedCourse = getSelectedCourse();
         const assignCourse = document.getElementById("assign-course");
         const courseSelectors = [assignCourse, document.getElementById("ot-course"), document.getElementById("sub-course")];
-        const studentSelectors = [document.getElementById("assign-student"), document.getElementById("ot-student"), document.getElementById("sub-student")];
+        const studentSelectors = [
+          document.getElementById("assign-student"),
+          document.getElementById("ot-student"),
+          document.getElementById("sub-student"),
+          document.getElementById("bank-student")
+        ];
 
         studentSelectors.forEach((select, index) => {
           select.innerHTML = "";
-          if (index > 0) {
+          if (index > 0 && select.id !== "bank-student") {
             select.appendChild(new Option("Sin alumno", ""));
           }
           state.students.forEach((student) => {
@@ -716,9 +792,24 @@
       }
 
       function renderStudents() {
+        const accountsByStudent = new Map();
+        state.studentBankAccounts.forEach((account) => {
+          if (!accountsByStudent.has(account.studentUserId)) {
+            accountsByStudent.set(account.studentUserId, []);
+          }
+          accountsByStudent.get(account.studentUserId).push(account);
+        });
+
         document.getElementById("students-list").innerHTML = state.students.length
           ? state.students
-              .map((student) => `<div class="item"><strong>${student.fullName}</strong><br /><small>#${student.id} · ${student.email}</small></div>`)
+              .map((student) => {
+                const accounts = accountsByStudent.get(student.id) || [];
+                const preferred = accounts.find((account) => account.preferred) || accounts[0];
+                const accountMarkup = preferred
+                  ? `<div class="payment-tags"><span class="tag ${preferred.verificationStatus === "VERIFIED" ? "tag-status-success" : preferred.verificationStatus === "REJECTED" ? "tag-status-failure" : "tag-status-pending"}">${preferred.verificationStatus === "VERIFIED" ? "Cuenta validada" : preferred.verificationStatus === "REJECTED" ? "Cuenta rechazada" : "Cuenta en revision"}</span>${preferred.preferred ? '<span class="tag">Principal</span>' : ""}</div><small>${preferred.accountHolderName || student.fullName} · ${preferred.accountNumberMasked}</small>`
+                  : `<small>Sin cuenta bancaria asociada todavia.</small>`;
+                return `<div class="item"><strong>${student.fullName}</strong><br /><small>#${student.id} · ${student.email}</small><div class="stack compact-stack">${accountMarkup}</div></div>`;
+              })
               .join("")
           : "<div class='empty-state'>No hay alumnos cargados.</div>";
 
@@ -732,6 +823,35 @@
               .map((enrollment) => `<div class="item"><strong>${enrollment.studentName}</strong><br /><small>${enrollment.courseName}</small></div>`)
               .join("")
           : "<div class='empty-state'>No hay alumnos asignados para este filtro.</div>";
+
+        document.getElementById("student-bank-accounts-list").innerHTML = state.studentBankAccounts.length
+          ? state.studentBankAccounts
+              .map((account) => {
+                const statusLabel = account.verificationStatus === "VERIFIED"
+                  ? "Validada"
+                  : account.verificationStatus === "REJECTED"
+                    ? "Rechazada"
+                    : "En revision";
+                const statusClassName = account.verificationStatus === "VERIFIED"
+                  ? "tag-status-success"
+                  : account.verificationStatus === "REJECTED"
+                    ? "tag-status-failure"
+                    : "tag-status-pending";
+                return `
+                  <div class="item payment-item">
+                    <div class="payment-tags">
+                      <span class="tag ${statusClassName}">${statusLabel}</span>
+                      ${account.preferred ? '<span class="tag">Principal</span>' : ""}
+                    </div>
+                    <strong>${account.studentName}</strong>
+                    <small>${account.accountHolderName || account.studentName} · ${account.countryCode} · ${account.accountNumberMasked}</small>
+                    <small>${account.provider} · ${account.accountType}${account.bankCode ? ` · banco ${account.bankCode}` : ""}</small>
+                    <small>${account.providerMessage || "Cuenta asociada."}</small>
+                  </div>
+                `;
+              })
+              .join("")
+          : "<div class='empty-state'>Todavia no hay cuentas bancarias de alumnos asociadas.</div>";
       }
 
       function renderPendings() {
@@ -862,11 +982,12 @@
       }
 
       async function refreshDashboard() {
-        const [dashboard, students, enrollments, paymentSettings] = await Promise.all([
+        const [dashboard, students, enrollments, paymentSettings, studentBankAccounts] = await Promise.all([
           apiGet("/api/backoffice/dashboard/professor"),
           apiGet("/api/backoffice/users?role=STUDENT"),
           apiGet("/api/backoffice/enrollments"),
-          apiGet("/api/backoffice/payment-settings").catch(() => null)
+          apiGet("/api/backoffice/payment-settings").catch(() => null),
+          apiGet("/api/backoffice/student-bank-accounts").catch(() => [])
         ]);
         state.dashboard = dashboard;
         state.courses = dashboard.courses || [];
@@ -874,6 +995,7 @@
         state.students = students || [];
         state.enrollments = enrollments || [];
         state.paymentSettings = paymentSettings;
+        state.studentBankAccounts = studentBankAccounts || [];
 
         if (getSelectedCourseId() && !state.courses.some((course) => String(course.id) === getSelectedCourseId())) {
           setSelectedCourseId("");
@@ -934,6 +1056,10 @@
       document.getElementById("sub-student").addEventListener("change", (event) => {
         const selected = state.students.find((student) => String(student.id) === event.target.value);
         document.getElementById("sub-email").value = selected ? selected.email : "";
+      });
+      document.getElementById("bank-student").addEventListener("change", (event) => {
+        const selected = state.students.find((student) => String(student.id) === event.target.value);
+        document.getElementById("bank-account-holder").value = selected ? selected.fullName : "";
       });
       document.getElementById("payment-settings-form").addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -1016,6 +1142,29 @@
           await refreshDashboard();
         } catch (error) {
           setNote("assign-student-note", error.message, true);
+        }
+      });
+      studentBankAccountForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        setNote("student-bank-account-note", "Validando cuenta con Prometeo y asociando al alumno...");
+        try {
+          const payload = Object.fromEntries(new FormData(event.target).entries());
+          payload.studentUserId = Number(payload.studentUserId);
+          payload.preferred = document.getElementById("bank-preferred").checked;
+          const saved = await apiPost("/api/backoffice/student-bank-accounts", payload);
+          const humanStatus = saved.verificationStatus === "VERIFIED"
+            ? "validada"
+            : saved.verificationStatus === "REJECTED"
+              ? "rechazada"
+              : "en revision";
+          setNote("student-bank-account-note", `Cuenta ${humanStatus} y asociada a ${saved.studentName}.`);
+          event.target.reset();
+          document.getElementById("bank-country-code").value = "AR";
+          document.getElementById("bank-account-type").value = "CHECKING";
+          document.getElementById("bank-preferred").checked = true;
+          await refreshDashboard();
+        } catch (error) {
+          setNote("student-bank-account-note", error.message, true);
         }
       });
       oneTimeForm.addEventListener("submit", async (event) => {

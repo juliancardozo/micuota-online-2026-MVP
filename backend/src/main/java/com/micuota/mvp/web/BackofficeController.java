@@ -17,7 +17,10 @@ import com.micuota.mvp.service.UpdatePaymentSettingsRequest;
 import com.micuota.mvp.service.EnrollmentView;
 import com.micuota.mvp.service.PaymentService;
 import com.micuota.mvp.service.ProfessorDashboardView;
+import com.micuota.mvp.service.SaveStudentBankAccountRequest;
 import com.micuota.mvp.service.StudentDashboardView;
+import com.micuota.mvp.service.StudentBankAccountService;
+import com.micuota.mvp.service.StudentBankAccountView;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -45,17 +48,20 @@ public class BackofficeController {
     private final BackofficeService backofficeService;
     private final PaymentService paymentService;
     private final LaunchpadService launchpadService;
+    private final StudentBankAccountService studentBankAccountService;
 
     public BackofficeController(
         AuthSessionService authSessionService,
         BackofficeService backofficeService,
         PaymentService paymentService,
-        LaunchpadService launchpadService
+        LaunchpadService launchpadService,
+        StudentBankAccountService studentBankAccountService
     ) {
         this.authSessionService = authSessionService;
         this.backofficeService = backofficeService;
         this.paymentService = paymentService;
         this.launchpadService = launchpadService;
+        this.studentBankAccountService = studentBankAccountService;
     }
 
     @PostMapping("/users")
@@ -194,6 +200,28 @@ public class BackofficeController {
         AuthSessionService.SessionContext session = authSessionService.requireSession(token);
         requireTenantAdminOrTeacher(session);
         return backofficeService.updatePaymentSettings(session.tenantId(), session.userId(), request);
+    }
+
+    @GetMapping("/student-bank-accounts")
+    @Operation(summary = "Listar cuentas bancarias de alumnos", description = "Devuelve cuentas asociadas a alumnos del tenant, opcionalmente filtradas por alumno.")
+    public List<StudentBankAccountView> listStudentBankAccounts(
+        @RequestHeader("X-Auth-Token") String token,
+        @RequestParam(required = false) Long studentUserId
+    ) {
+        AuthSessionService.SessionContext session = authSessionService.requireSession(token);
+        requireTenantAdminOrTeacher(session);
+        return studentBankAccountService.listAccounts(session.tenantId(), studentUserId);
+    }
+
+    @PostMapping("/student-bank-accounts")
+    @Operation(summary = "Validar y asociar cuenta bancaria de alumno", description = "Valida la cuenta con Prometeo y la asocia al alumno para simplificar cobros posteriores.")
+    public StudentBankAccountView validateAndSaveStudentBankAccount(
+        @RequestHeader("X-Auth-Token") String token,
+        @Valid @RequestBody SaveStudentBankAccountRequest request
+    ) {
+        AuthSessionService.SessionContext session = authSessionService.requireSession(token);
+        requireTenantAdminOrTeacher(session);
+        return studentBankAccountService.validateAndSave(session.tenantId(), session.userId(), request);
     }
 
     @GetMapping("/dashboard/professor")
