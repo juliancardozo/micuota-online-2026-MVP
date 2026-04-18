@@ -78,6 +78,24 @@ body.landing-mp::before {
   box-shadow: 0 0 0 8px rgba(204, 90, 22, 0.08);
 }
 
+.lp-nav-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 2px;
+  padding: 4px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.48);
+  border: 1px solid rgba(93, 73, 43, 0.08);
+}
+
+.lp-nav-badge img {
+  display: block;
+  width: 190px;
+  max-width: 100%;
+  height: auto;
+  opacity: 0.94;
+}
+
 .lp-links {
   margin-left: auto;
   display: flex;
@@ -452,6 +470,73 @@ body.landing-mp::before {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+}
+
+.lp-use-case-grid {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.lp-use-case-card {
+  border: 1px solid var(--lp-line);
+  border-radius: var(--lp-radius-md);
+  background: rgba(255, 255, 255, 0.68);
+  padding: 20px;
+  box-shadow: 0 18px 34px rgba(33, 31, 26, 0.08);
+}
+
+.lp-use-case-head h3 {
+  margin: 8px 0 0;
+  font-size: 1.24rem;
+  line-height: 1.1;
+}
+
+.lp-use-case-tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(255, 229, 179, 0.88);
+  color: var(--lp-accent);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.lp-use-case-copy {
+  margin: 12px 0 0;
+  color: var(--lp-muted);
+  line-height: 1.6;
+}
+
+.lp-use-case-steps {
+  margin-top: 16px;
+  display: grid;
+  gap: 10px;
+}
+
+.lp-use-case-step {
+  padding: 14px 14px 14px 16px;
+  border-left: 3px solid rgba(204, 90, 22, 0.5);
+  border-radius: 0 14px 14px 0;
+  background: rgba(255, 248, 236, 0.78);
+}
+
+.lp-use-case-step strong {
+  display: block;
+  font-size: 0.96rem;
+}
+
+.lp-use-case-step span {
+  display: block;
+  margin-top: 4px;
+  color: var(--lp-muted);
+  font-size: 0.92rem;
+  line-height: 1.5;
 }
 
 .lp-benefits-visuals {
@@ -836,6 +921,7 @@ body.landing-mp .mc-chatbot-form input {
 
   .lp-hero,
   .lp-feature-grid,
+  .lp-use-case-grid,
   .lp-step-row,
   .lp-access,
   .lp-benefits-visuals,
@@ -865,6 +951,10 @@ body.landing-mp .mc-chatbot-form input {
     min-height: 66px;
   }
 
+  .lp-nav-badge {
+    margin-left: auto;
+  }
+
   .lp-btn-dark {
     margin-left: auto;
   }
@@ -873,6 +963,22 @@ body.landing-mp .mc-chatbot-form input {
 @media (max-width: 640px) {
   .lp-main {
     width: min(100vw - 16px, 100%);
+  }
+
+  .lp-nav {
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .lp-nav-badge {
+    order: 3;
+    width: 100%;
+    justify-content: flex-start;
+    margin-left: 0;
+  }
+
+  .lp-nav-badge img {
+    width: 170px;
   }
 
   .lp-hero-copy,
