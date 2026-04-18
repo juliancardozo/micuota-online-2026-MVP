@@ -334,6 +334,10 @@ body.shell-ui button {
   background: linear-gradient(135deg, #b13e53 0%, #d6667a 100%);
 }
 
+.quick-collect-btn {
+  width: 100%;
+}
+
 .shell-content {
   display: grid;
   gap: 18px;
@@ -535,6 +539,10 @@ body.shell-ui textarea:focus {
   gap: 14px;
 }
 
+.payments-search-field {
+  width: min(360px, 100%);
+}
+
 .section-head-copy {
   display: grid;
   gap: 8px;
@@ -637,6 +645,26 @@ body.shell-ui textarea:focus {
   word-break: break-all;
 }
 
+.payment-item {
+  gap: 10px;
+}
+
+.payment-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.compact-actions {
+  gap: 8px;
+}
+
+.compact-btn {
+  min-height: 34px;
+  padding: 0 10px;
+  font-size: 0.82rem;
+}
+
 .result img {
   max-width: 220px;
   border-radius: 12px;
@@ -673,6 +701,26 @@ body.shell-ui textarea:focus {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
+}
+
+.tag-status-created {
+  color: #805115;
+  background: rgba(255, 240, 214, 0.9);
+}
+
+.tag-status-pending {
+  color: #8a6415;
+  background: rgba(255, 245, 199, 0.92);
+}
+
+.tag-status-success {
+  color: #1f6c4a;
+  background: rgba(218, 248, 229, 0.96);
+}
+
+.tag-status-failure {
+  color: #a53f53;
+  background: rgba(255, 229, 234, 0.96);
 }
 
 .account-grid {
@@ -757,6 +805,10 @@ body.shell-ui textarea:focus {
   .account-grid,
   .split-grid {
     grid-template-columns: 1fr;
+  }
+
+  .payments-search-field {
+    width: 100%;
   }
 
   .admin-summary-grid,

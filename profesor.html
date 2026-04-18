@@ -27,12 +27,18 @@
           Controla tus cursos, pagos y suscripciones desde una shell enfocada en la operacion diaria.
         </p>
 
+        <a class="btn btn-primary quick-collect-btn" href="#pagos">Cobrar ahora</a>
+
         <div class="sidebar-block">
           <p class="nav-group-label">Menu</p>
           <nav class="shell-nav" id="sidebar-nav">
             <a class="nav-link" href="#resumen">
               <strong>Resumen</strong>
               <span>Metricas por curso</span>
+            </a>
+            <a class="nav-link" href="#cuenta">
+              <strong>Account settings</strong>
+              <span>Alias, sesion y accesos</span>
             </a>
             <a class="nav-link" href="#cursos">
               <strong>Cursos</strong>
@@ -49,10 +55,6 @@
             <a class="nav-link" href="#suscripciones">
               <strong>Suscripciones</strong>
               <span>Flujo recurrente</span>
-            </a>
-            <a class="nav-link" href="#cuenta">
-              <strong>Account settings</strong>
-              <span>Sesion y accesos</span>
             </a>
           </nav>
         </div>
@@ -95,7 +97,7 @@
             <div class="selector-group">
               <label for="course-filter">Curso foco</label>
               <select id="course-filter"></select>
-              <span class="helper-text">El filtro se recuerda en este navegador.</span>
+              <span class="helper-text" id="selected-course-badge">Estas viendo todos los cursos.</span>
             </div>
             <div class="selector-group">
               <label>Usuario actual</label>
@@ -118,6 +120,50 @@
               <div class="pills" id="session-pills"></div>
             </div>
             <div class="split-grid" id="summary-cards"></div>
+          </div>
+        </section>
+
+        <section class="shell-section" id="cuenta">
+          <div class="section-head">
+            <div class="section-head-copy">
+              <h2>Account settings</h2>
+              <p class="section-copy">Configura primero tu alias, banco y contexto operativo antes de crear cobros.</p>
+            </div>
+          </div>
+
+          <div class="account-grid">
+            <article class="account-block">
+              <h3>Perfil</h3>
+              <div class="account-list" id="account-profile"></div>
+            </article>
+            <article class="account-block">
+              <h3>Contexto</h3>
+              <div class="account-list" id="account-context"></div>
+            </article>
+            <article class="account-block">
+              <h3>Cobro manual AR</h3>
+              <form id="payment-settings-form">
+                <div class="field">
+                  <label for="transfer-alias">Alias</label>
+                  <input id="transfer-alias" name="transferAlias" placeholder="ej: micuota.paula" />
+                </div>
+                <div class="field">
+                  <label for="transfer-bank-name">Banco</label>
+                  <input id="transfer-bank-name" name="transferBankName" placeholder="ej: Banco Galicia" />
+                </div>
+                <div class="form-actions">
+                  <button type="submit">Guardar alias</button>
+                </div>
+              </form>
+              <p class="note" id="payment-settings-note"></p>
+            </article>
+            <article class="account-block">
+              <h3>Acciones</h3>
+              <div class="actions-row">
+                <button class="btn-secondary" id="reset-course-button" type="button">Ver todos los cursos</button>
+                <button class="btn-danger" id="logout-button" type="button">Cerrar sesion</button>
+              </div>
+            </article>
           </div>
         </section>
 
@@ -222,6 +268,10 @@
             <div class="section-head-copy">
               <h2>Pagos</h2>
               <p class="section-copy">Crea pagos y revisa operaciones del curso seleccionado o de toda tu operacion.</p>
+            </div>
+            <div class="field payments-search-field">
+              <label for="payments-search">Buscar en cobros visibles</label>
+              <input id="payments-search" type="search" placeholder="Ej: pendiente, clase puntual, curso guitarra" />
             </div>
           </div>
 
@@ -365,49 +415,6 @@
           </div>
         </section>
 
-        <section class="shell-section" id="cuenta">
-          <div class="section-head">
-            <div class="section-head-copy">
-              <h2>Account settings</h2>
-              <p class="section-copy">Referencia de sesion, tenant y curso seleccionado.</p>
-            </div>
-          </div>
-
-          <div class="account-grid">
-            <article class="account-block">
-              <h3>Perfil</h3>
-              <div class="account-list" id="account-profile"></div>
-            </article>
-            <article class="account-block">
-              <h3>Contexto</h3>
-              <div class="account-list" id="account-context"></div>
-            </article>
-            <article class="account-block">
-              <h3>Cobro manual AR</h3>
-              <form id="payment-settings-form">
-                <div class="field">
-                  <label for="transfer-alias">Alias</label>
-                  <input id="transfer-alias" name="transferAlias" placeholder="ej: micuota.paula" />
-                </div>
-                <div class="field">
-                  <label for="transfer-bank-name">Banco</label>
-                  <input id="transfer-bank-name" name="transferBankName" placeholder="ej: Banco Galicia" />
-                </div>
-                <div class="form-actions">
-                  <button type="submit">Guardar alias</button>
-                </div>
-              </form>
-              <p class="note" id="payment-settings-note"></p>
-            </article>
-            <article class="account-block">
-              <h3>Acciones</h3>
-              <div class="actions-row">
-                <button class="btn-secondary" id="reset-course-button" type="button">Ver todos los cursos</button>
-                <button class="btn-danger" id="logout-button" type="button">Cerrar sesion</button>
-              </div>
-            </article>
-          </div>
-        </section>
       </div>
     </div>
 
@@ -429,7 +436,8 @@
         payments: [],
         students: [],
         enrollments: [],
-        paymentSettings: null
+        paymentSettings: null,
+        paymentSearchQuery: ""
       };
       const createCourseForm = document.getElementById("create-course-form");
       const createStudentForm = document.getElementById("create-student-form");
@@ -498,6 +506,37 @@
         localStorage.setItem(COURSE_FILTER_KEY, value);
       }
 
+      function normalizeText(value) {
+        return String(value || "")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase();
+      }
+
+      function humanStatus(status) {
+        if (status === "SUCCESS") return "Pagado";
+        if (status === "PENDING") return "Pendiente";
+        if (status === "FAILURE") return "Fallido";
+        return "Creado";
+      }
+
+      function statusClass(status) {
+        if (status === "SUCCESS") return "tag-status-success";
+        if (status === "PENDING") return "tag-status-pending";
+        if (status === "FAILURE") return "tag-status-failure";
+        return "tag-status-created";
+      }
+
+      async function copyToClipboard(text) {
+        if (!text) return false;
+        try {
+          await navigator.clipboard.writeText(text);
+          return true;
+        } catch (_error) {
+          return false;
+        }
+      }
+
       function getFilteredPayments() {
         const selectedCourse = getSelectedCourse();
         if (!selectedCourse) return state.payments;
@@ -547,6 +586,9 @@
               `<span class="pill">🎓 ${selectedCourse ? selectedCourse.name : "Todos los cursos"}</span>`
             ].join("")
           : "";
+        document.getElementById("selected-course-badge").textContent = selectedCourse
+          ? `Trabajando en: ${selectedCourse.name}`
+          : "Estas viendo todos los cursos.";
         renderSidebarProfile();
       }
 
@@ -658,7 +700,14 @@
       }
 
       function renderPayments() {
-        const filtered = getFilteredPayments();
+        const searchQuery = normalizeText(state.paymentSearchQuery);
+        const filtered = getFilteredPayments().filter((payment) => {
+          if (!searchQuery) return true;
+          const searchable = normalizeText(
+            [payment.description, payment.courseName, payment.status, payment.flowType, payment.currency, payment.amount].join(" ")
+          );
+          return searchable.includes(searchQuery);
+        });
         const oneTime = filtered.filter((payment) => payment.flowType === "ONE_TIME");
         const subscriptions = filtered.filter((payment) => payment.flowType === "SUBSCRIPTION");
 
@@ -666,7 +715,20 @@
           ? oneTime
               .map((payment) => {
                 const paymentAppUrl = `${window.location.origin}/pago.html?operationId=${payment.operationId}`;
-                return `<div class="item"><span class="tag">${payment.flowType}</span><br /><strong>${payment.description}</strong><br /><small>${payment.courseName} · ${payment.currency} ${payment.amount} · ${payment.status}</small><br /><a href="${paymentAppUrl}" target="_blank" rel="noopener noreferrer">Abrir pago</a></div>`;
+                return `
+                  <div class="item payment-item">
+                    <div class="payment-tags">
+                      <span class="tag">Cobro puntual</span>
+                      <span class="tag ${statusClass(payment.status)}">${humanStatus(payment.status)}</span>
+                    </div>
+                    <strong>${payment.description}</strong>
+                    <small>${payment.courseName} · ${payment.currency} ${payment.amount}</small>
+                    <div class="actions-row compact-actions">
+                      <a href="${paymentAppUrl}" target="_blank" rel="noopener noreferrer">Abrir pago</a>
+                      <button type="button" class="btn-secondary compact-btn copy-action" data-copy-url="${paymentAppUrl}" data-note-target="one-time-note">Copiar link</button>
+                    </div>
+                  </div>
+                `;
               })
               .join("")
           : "<div class='empty-state'>No hay pagos unicos para este filtro.</div>";
@@ -675,7 +737,20 @@
           ? subscriptions
               .map((payment) => {
                 const paymentAppUrl = `${window.location.origin}/pago.html?operationId=${payment.operationId}`;
-                return `<div class="item"><span class="tag">${payment.flowType}</span><br /><strong>${payment.description}</strong><br /><small>${payment.courseName} · ${payment.currency} ${payment.amount} · ${payment.status}</small><br /><a href="${paymentAppUrl}" target="_blank" rel="noopener noreferrer">Abrir suscripcion</a></div>`;
+                return `
+                  <div class="item payment-item">
+                    <div class="payment-tags">
+                      <span class="tag">Cobro recurrente</span>
+                      <span class="tag ${statusClass(payment.status)}">${humanStatus(payment.status)}</span>
+                    </div>
+                    <strong>${payment.description}</strong>
+                    <small>${payment.courseName} · ${payment.currency} ${payment.amount}</small>
+                    <div class="actions-row compact-actions">
+                      <a href="${paymentAppUrl}" target="_blank" rel="noopener noreferrer">Abrir suscripcion</a>
+                      <button type="button" class="btn-secondary compact-btn copy-action" data-copy-url="${paymentAppUrl}" data-note-target="subscription-note">Copiar link</button>
+                    </div>
+                  </div>
+                `;
               })
               .join("")
           : "<div class='empty-state'>No hay suscripciones para este filtro.</div>";
@@ -885,7 +960,8 @@
           const appUrl = `${window.location.origin}/pago.html?operationId=${operation.id}`;
           document.getElementById("one-time-result").innerHTML = [
             `<div class="item"><strong>Link alumno:</strong> <a href="${appUrl}" target="_blank" rel="noopener noreferrer">${appUrl}</a></div>`,
-            `<div class="item"><strong>Link proveedor:</strong> <a href="${operation.checkoutUrl}" target="_blank" rel="noopener noreferrer">${operation.checkoutUrl}</a></div>`
+            `<div class="item"><strong>Link proveedor:</strong> <a href="${operation.checkoutUrl}" target="_blank" rel="noopener noreferrer">${operation.checkoutUrl}</a></div>`,
+            `<div class="item"><button type="button" class="btn-secondary compact-btn copy-action" data-copy-url="${appUrl}" data-note-target="one-time-note">Copiar link para alumno</button></div>`
           ].join("");
           await refreshDashboard();
         } catch (error) {
@@ -906,12 +982,24 @@
           const appUrl = `${window.location.origin}/pago.html?operationId=${operation.id}`;
           document.getElementById("subscription-result").innerHTML = [
             `<div class="item"><strong>Link alumno:</strong> <a href="${appUrl}" target="_blank" rel="noopener noreferrer">${appUrl}</a></div>`,
-            `<div class="item"><strong>Link proveedor:</strong> <a href="${operation.checkoutUrl}" target="_blank" rel="noopener noreferrer">${operation.checkoutUrl}</a></div>`
+            `<div class="item"><strong>Link proveedor:</strong> <a href="${operation.checkoutUrl}" target="_blank" rel="noopener noreferrer">${operation.checkoutUrl}</a></div>`,
+            `<div class="item"><button type="button" class="btn-secondary compact-btn copy-action" data-copy-url="${appUrl}" data-note-target="subscription-note">Copiar link para alumno</button></div>`
           ].join("");
           await refreshDashboard();
         } catch (error) {
           setNote("subscription-note", error.message, true);
         }
+      });
+      document.getElementById("payments-search").addEventListener("input", (event) => {
+        state.paymentSearchQuery = event.target.value || "";
+        renderPayments();
+      });
+      document.addEventListener("click", async (event) => {
+        const trigger = event.target.closest(".copy-action");
+        if (!trigger) return;
+        const copied = await copyToClipboard(trigger.dataset.copyUrl || "");
+        const noteTarget = trigger.dataset.noteTarget || "one-time-note";
+        setNote(noteTarget, copied ? "Link copiado. Ya lo puedes reenviar." : "No se pudo copiar el link.", !copied);
       });
 
       bootstrap();
