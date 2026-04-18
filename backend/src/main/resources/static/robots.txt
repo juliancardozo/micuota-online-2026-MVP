@@ -1,0 +1,6 @@
+User-agent: *
+Disallow: /api/
+Disallow: /sandbox/
+Allow: /
+
+Sitemap: https://micuota.online/sitemap.xml

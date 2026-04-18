@@ -14,5 +14,8 @@ COPY swagger.html /usr/share/nginx/html/swagger.html
 COPY app.js /usr/share/nginx/html/app.js
 COPY chatbot.js /usr/share/nginx/html/chatbot.js
 COPY session-telemetry.js /usr/share/nginx/html/session-telemetry.js
+COPY robots.txt /usr/share/nginx/html/robots.txt
+COPY sitemap.xml /usr/share/nginx/html/sitemap.xml
+COPY llms.txt /usr/share/nginx/html/llms.txt
 
 EXPOSE 80

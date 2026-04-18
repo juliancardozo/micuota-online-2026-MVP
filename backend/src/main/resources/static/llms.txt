@@ -1,0 +1,12 @@
+# MiCuota.online
+
+MiCuota ayuda a profesores y profesionales independientes a cobrar pagos recurrentes o periódicos sin perseguir a nadie.
+
+## Qué resuelve
+- Cobrar con links y QR en segundos
+- Saber quién está al día y quién no
+- Ordenar cobros semanales/mensuales por grupos y personas
+- Compartir links por WhatsApp, mail u otro canal
+
+## Notas de crawling
+- Evitar indexar endpoints bajo /api/ y rutas sandbox.
