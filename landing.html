@@ -282,6 +282,46 @@
         </div>
       </section>
 
+      <section class="lp-section lp-interested-section" id="interesados">
+        <div class="lp-interested-grid">
+          <div class="lp-interested-copy">
+            <h2>Lista de interesados</h2>
+            <p>
+              Si aun no quieres crear tenant, deja tus datos y te enviamos una campana de onboarding
+              para ayudarte a cobrar sin perseguir pagos.
+            </p>
+            <ul>
+              <li>Guia de primeros pasos por email</li>
+              <li>Buenas practicas de cobro semanal y mensual</li>
+              <li>Recomendaciones para reducir seguimiento manual</li>
+            </ul>
+          </div>
+          <div class="lp-login-card">
+            <div class="lp-card-head">
+              <p class="lp-overline">CRM</p>
+              <h3>Quiero ser contactado</h3>
+            </div>
+            <form id="interested-form">
+              <div class="field">
+                <label for="interestedFullName">Nombre completo</label>
+                <input id="interestedFullName" name="fullName" placeholder="ej: Paula Rodriguez" required />
+              </div>
+              <div class="field">
+                <label for="interestedEmail">Email</label>
+                <input id="interestedEmail" name="email" type="email" placeholder="tu@email.com" required />
+              </div>
+              <div class="field">
+                <label for="interestedPhone">Telefono (opcional)</label>
+                <input id="interestedPhone" name="phone" placeholder="ej: +598 99 123 456" />
+              </div>
+              <input type="hidden" name="source" value="LANDING_INTERESTED_LIST" />
+              <button type="submit" class="lp-btn lp-btn-primary lp-btn-full">Sumarme a interesados</button>
+            </form>
+            <p id="interested-note" class="note"></p>
+          </div>
+        </div>
+      </section>
+
       <section class="lp-section lp-final-cta-visual">
         <div class="lp-final-cta-copy">
           <h2>Menos seguimiento. Mas tiempo para tu trabajo real.</h2>
@@ -479,6 +519,23 @@
 
       document.querySelectorAll("[data-demo-role]").forEach((button) => {
         button.addEventListener("click", () => fillDemoCredentials(button.dataset.demoRole));
+      });
+
+      document.getElementById("interested-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const note = document.getElementById("interested-note");
+        setNote(note, "Guardando tu interes en CRM...", false);
+
+        const formData = new FormData(event.target);
+        const payload = Object.fromEntries(formData.entries());
+
+        try {
+          const result = await postJson("/api/public/leads/interested", payload);
+          setNote(note, result.message || "Te agregamos a la lista de interesados.", false);
+          event.target.reset();
+        } catch (error) {
+          setNote(note, error.message, true);
+        }
       });
     </script>
     <script src="/chatbot.js"></script>

@@ -696,6 +696,28 @@ body.landing-mp::before {
   gap: 16px;
 }
 
+.lp-interested-section {
+  display: grid;
+  gap: 14px;
+}
+
+.lp-interested-grid {
+  display: grid;
+  grid-template-columns: 1fr 0.9fr;
+  gap: 16px;
+}
+
+.lp-interested-copy p {
+  margin: 10px 0 12px;
+}
+
+.lp-interested-copy ul {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 8px;
+}
+
 .lp-access-stack {
   display: grid;
   gap: 16px;
@@ -924,6 +946,7 @@ body.landing-mp .mc-chatbot-form input {
   .lp-use-case-grid,
   .lp-step-row,
   .lp-access,
+  .lp-interested-grid,
   .lp-benefits-visuals,
   .lp-final-cta-visual {
     grid-template-columns: 1fr;

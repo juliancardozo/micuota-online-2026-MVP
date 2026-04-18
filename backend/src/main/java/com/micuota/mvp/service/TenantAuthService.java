@@ -21,18 +21,24 @@ public class TenantAuthService {
     private final UserRepository userRepository;
     private final TeacherProfileRepository teacherProfileRepository;
     private final AuthSessionService authSessionService;
+    private final CrmLeadService crmLeadService;
+    private final OnboardingEmailService onboardingEmailService;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     public TenantAuthService(
         TenantRepository tenantRepository,
         UserRepository userRepository,
         TeacherProfileRepository teacherProfileRepository,
-        AuthSessionService authSessionService
+        AuthSessionService authSessionService,
+        CrmLeadService crmLeadService,
+        OnboardingEmailService onboardingEmailService
     ) {
         this.tenantRepository = tenantRepository;
         this.userRepository = userRepository;
         this.teacherProfileRepository = teacherProfileRepository;
         this.authSessionService = authSessionService;
+        this.crmLeadService = crmLeadService;
+        this.onboardingEmailService = onboardingEmailService;
     }
 
     @Transactional
@@ -67,7 +73,29 @@ public class TenantAuthService {
         teacherProfileRepository.save(profile);
 
         String token = authSessionService.createSession(tenant.getId(), admin.getId(), admin.getRole());
-        return new AuthResponse(token, tenant.getId(), tenant.getSlug(), admin.getId(), admin.getRole(), resolveDashboardUrl(admin.getRole(), token));
+        String dashboardUrl = resolveDashboardUrl(admin.getRole(), token);
+
+        CrmLeadService.LeadCaptureResult leadCaptureResult = crmLeadService.captureInterestedLead(
+            new CreateLeadRequest(
+                request.email(),
+                null,
+                request.fullName(),
+                "LANDING_TENANT_REGISTRATION"
+            )
+        );
+
+        if (leadCaptureResult.newLead()) {
+            onboardingEmailService.sendNewLeadCampaignEmail(leadCaptureResult.lead());
+        }
+        onboardingEmailService.sendNewTenantWelcomeEmail(
+            request.email(),
+            request.fullName(),
+            request.tenantName(),
+            tenant.getSlug(),
+            dashboardUrl
+        );
+
+        return new AuthResponse(token, tenant.getId(), tenant.getSlug(), admin.getId(), admin.getRole(), dashboardUrl);
     }
 
     @Transactional

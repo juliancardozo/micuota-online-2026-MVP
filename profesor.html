@@ -24,37 +24,47 @@
         </a>
 
         <p class="sidebar-copy">
-          Controla tus cursos, pagos y suscripciones desde una shell enfocada en la operacion diaria.
+          Opera desde personas, grupos, pendientes y cobros. La parte tecnica queda atras para que cobres sin perseguir a nadie.
         </p>
 
-        <a class="btn btn-primary quick-collect-btn" href="#pagos">Cobrar ahora</a>
+        <a class="btn btn-primary quick-collect-btn" href="#cobros">Cobrar ahora</a>
 
         <div class="sidebar-block">
-          <p class="nav-group-label">Menu</p>
+          <p class="nav-group-label">Operacion diaria</p>
           <nav class="shell-nav" id="sidebar-nav">
             <a class="nav-link" href="#resumen">
               <strong>Resumen</strong>
-              <span>Metricas por curso</span>
+              <span>Que necesita accion</span>
+            </a>
+            <a class="nav-link" href="#personas">
+              <strong>Personas</strong>
+              <span>Alumnos y asignaciones</span>
+            </a>
+            <a class="nav-link" href="#grupos">
+              <strong>Grupos</strong>
+              <span>Cursos y contexto</span>
+            </a>
+            <a class="nav-link" href="#pendientes">
+              <strong>Pendientes</strong>
+              <span>Quien no esta al dia</span>
+            </a>
+            <a class="nav-link" href="#cobros">
+              <strong>Cobros</strong>
+              <span>Compartir links y QR</span>
+            </a>
+          </nav>
+        </div>
+
+        <div class="sidebar-block">
+          <p class="nav-group-label">Segundo plano</p>
+          <nav class="shell-nav">
+            <a class="nav-link" href="#suscripciones">
+              <strong>Cobros recurrentes</strong>
+              <span>Seguimiento de continuidad</span>
             </a>
             <a class="nav-link" href="#cuenta">
-              <strong>Account settings</strong>
+              <strong>Como cobras</strong>
               <span>Alias, sesion y accesos</span>
-            </a>
-            <a class="nav-link" href="#cursos">
-              <strong>Cursos</strong>
-              <span>Base academica activa</span>
-            </a>
-            <a class="nav-link" href="#alumnos">
-              <strong>Alumnos</strong>
-              <span>Altas y asignaciones</span>
-            </a>
-            <a class="nav-link" href="#pagos">
-              <strong>Pagos</strong>
-              <span>Operaciones recientes</span>
-            </a>
-            <a class="nav-link" href="#suscripciones">
-              <strong>Suscripciones</strong>
-              <span>Flujo recurrente</span>
             </a>
           </nav>
         </div>
@@ -85,11 +95,11 @@
       <div class="shell-content">
         <header class="shell-header">
           <div class="header-copy">
-            <span class="overline">Dashboard profesor</span>
+            <span class="overline">Operacion del profesor</span>
             <h1 id="page-title">Tu operacion en tiempo real</h1>
             <p>
-              Filtra por curso, revisa pagos y separa claramente cobros unicos de suscripciones para
-              no perder trazabilidad.
+              Filtra por grupo, detecta pendientes y comparte cobros sin tener que pensar en
+              transacciones, proveedores ni estructuras tecnicas.
             </p>
           </div>
 
@@ -110,12 +120,12 @@
           <div class="hero-grid">
             <div class="meta-stack">
               <div>
-                <span class="overline">Operacion docente</span>
-                <h2 id="hero-title">Tus cobros y cursos en una sola vista</h2>
+                <span class="overline">Operacion diaria</span>
+                <h2 id="hero-title">Personas, grupos, pendientes y cobros en una sola vista</h2>
               </div>
               <p class="section-copy">
-                Usa el selector de curso para entrar en contexto rapido, revisar links activos y ver
-                el mix entre pagos puntuales y recurrentes.
+                Usa el selector de grupo para entrar en contexto rapido, ver quien falta, cobrar
+                ahora y sostener continuidad sin friccion social.
               </p>
               <div class="pills" id="session-pills"></div>
             </div>
@@ -126,8 +136,8 @@
         <section class="shell-section" id="cuenta">
           <div class="section-head">
             <div class="section-head-copy">
-              <h2>Account settings</h2>
-              <p class="section-copy">Configura primero tu alias, banco y contexto operativo antes de crear cobros.</p>
+              <h2>Como cobras</h2>
+              <p class="section-copy">Configura tu alias, banco y contexto operativo. Importa, pero no deberia distraerte del trabajo diario.</p>
             </div>
           </div>
 
@@ -167,11 +177,11 @@
           </div>
         </section>
 
-        <section class="shell-section" id="cursos">
+        <section class="shell-section" id="grupos">
           <div class="section-head">
             <div class="section-head-copy">
-              <h2>Cursos</h2>
-              <p class="section-copy">Selecciona uno arriba o revisa la cartera completa de cursos.</p>
+              <h2>Grupos y cursos</h2>
+              <p class="section-copy">Selecciona uno arriba o revisa toda tu base activa para mantener contexto sin perder tiempo.</p>
             </div>
           </div>
 
@@ -201,11 +211,11 @@
           </div>
         </section>
 
-        <section class="shell-section" id="alumnos">
+        <section class="shell-section" id="personas">
           <div class="section-head">
             <div class="section-head-copy">
-              <h2>Alumnos</h2>
-              <p class="section-copy">Crea alumnos rapido y asignalos al curso seleccionado sin salir del dashboard.</p>
+              <h2>Personas</h2>
+              <p class="section-copy">Crea alumnos rapido, asignalos al grupo correcto y manten una base limpia para cobrar sin friccion.</p>
             </div>
           </div>
 
@@ -252,7 +262,7 @@
             </article>
 
             <article class="surface-card span-4">
-              <h3>Base de alumnos</h3>
+              <h3>Base de personas</h3>
               <div class="stack" id="students-list"></div>
             </article>
 
@@ -263,11 +273,32 @@
           </div>
         </section>
 
-        <section class="shell-section" id="pagos">
+        <section class="shell-section" id="pendientes">
           <div class="section-head">
             <div class="section-head-copy">
-              <h2>Pagos</h2>
-              <p class="section-copy">Crea pagos y revisa operaciones del curso seleccionado o de toda tu operacion.</p>
+              <h2>Pendientes</h2>
+              <p class="section-copy">Todo lo que requiere seguimiento: cobros no completados, en revision o listos para reenviar.</p>
+            </div>
+          </div>
+
+          <div class="section-grid">
+            <article class="surface-card span-4">
+              <h3>Vista rapida</h3>
+              <div class="stack" id="pending-summary-list"></div>
+            </article>
+
+            <article class="surface-card span-8">
+              <h3>Personas a seguir</h3>
+              <div class="stack" id="pending-payments-list"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="shell-section" id="cobros">
+          <div class="section-head">
+            <div class="section-head-copy">
+              <h2>Cobros</h2>
+              <p class="section-copy">Genera links, comparte QR y revisa cobros visibles sin perder el contexto del grupo actual.</p>
             </div>
             <div class="field payments-search-field">
               <label for="payments-search">Buscar en cobros visibles</label>
@@ -277,7 +308,7 @@
 
           <div class="section-grid">
             <article class="surface-card span-6">
-              <h3>Crear pago</h3>
+              <h3>Cobrar una vez</h3>
               <form id="one-time-form">
                 <div class="mini-grid">
                   <div class="field">
@@ -321,7 +352,7 @@
                   </div>
                 </div>
                 <div class="form-actions">
-                  <button type="submit">Crear pago unico</button>
+                  <button type="submit">Generar link de cobro</button>
                 </div>
               </form>
               <p class="note" id="one-time-note"></p>
@@ -329,7 +360,7 @@
             </article>
 
             <article class="surface-card span-6">
-              <h3>Crear suscripcion</h3>
+              <h3>Cobrar cada semana o mes</h3>
               <form id="subscription-form">
                 <div class="mini-grid">
                   <div class="field">
@@ -373,7 +404,7 @@
                   </div>
                 </div>
                 <div class="form-actions">
-                  <button type="submit">Crear suscripcion</button>
+                  <button type="submit">Generar cobro recurrente</button>
                 </div>
               </form>
               <p class="note" id="subscription-note"></p>
@@ -383,17 +414,17 @@
             <article class="surface-card span-12">
               <h3>Acciones rapidas</h3>
               <p class="section-copy">
-                Usa estas acciones para mantener el contexto del curso actual y actualizar la operacion sin perderte.
+                Usa estas acciones para mantener el contexto del grupo actual y moverte rapido entre cobro, seguimiento y personas.
               </p>
               <div class="actions-row">
-                <button id="refresh-payments" type="button">Actualizar pagos</button>
-                <button class="btn-secondary" id="reset-course-button-secondary" type="button">Ver todos los cursos</button>
-                <button class="btn-secondary" id="go-students" type="button">Ir a alumnos</button>
+                <button id="refresh-payments" type="button">Actualizar cobros</button>
+                <button class="btn-secondary" id="reset-course-button-secondary" type="button">Ver todos los grupos</button>
+                <button class="btn-secondary" id="go-students" type="button">Ir a personas</button>
               </div>
             </article>
 
             <article class="surface-card span-12">
-              <h3>Pagos recientes</h3>
+              <h3>Cobros recientes</h3>
               <div class="stack" id="payments-list"></div>
             </article>
           </div>
@@ -402,14 +433,14 @@
         <section class="shell-section" id="suscripciones">
           <div class="section-head">
             <div class="section-head-copy">
-              <h2>Suscripciones</h2>
-              <p class="section-copy">Recurrencia activa vinculada al curso elegido.</p>
+              <h2>Cobros recurrentes</h2>
+              <p class="section-copy">Recurrencia activa vinculada al grupo elegido. Importante, pero secundaria frente al seguimiento diario.</p>
             </div>
           </div>
 
           <div class="section-grid">
             <article class="surface-card span-12">
-              <h3>Suscripciones recientes</h3>
+              <h3>Cobros recurrentes recientes</h3>
               <div class="stack" id="subscriptions-list"></div>
             </article>
           </div>
@@ -453,7 +484,7 @@
 
       function setActiveNav() {
         const hash = window.location.hash || "#resumen";
-        document.querySelectorAll("#sidebar-nav .nav-link").forEach((link) => {
+        document.querySelectorAll(".sidebar .nav-link[href^='#']").forEach((link) => {
           link.classList.toggle("active", link.getAttribute("href") === hash);
         });
       }
@@ -568,11 +599,11 @@
       function renderHeader() {
         const selectedCourse = getSelectedCourse();
         document.getElementById("page-title").textContent = state.profile
-          ? `${state.profile.fullName}, tu operacion en tiempo real`
+          ? `${state.profile.fullName}, opera sin perder de vista a tus personas`
           : "Tu operacion en tiempo real";
         document.getElementById("hero-title").textContent = selectedCourse
-          ? `Curso foco: ${selectedCourse.name}`
-          : "Tus cobros y cursos en una sola vista";
+          ? `Grupo foco: ${selectedCourse.name}`
+          : "Personas, grupos, pendientes y cobros en una sola vista";
         document.getElementById("session-pills").innerHTML = state.profile
           ? [
               `<span class="pill">Tenant: ${tenantSlug}</span>`,
@@ -583,19 +614,19 @@
         document.getElementById("header-user-pills").innerHTML = state.profile
           ? [
               `<span class="pill">👤 ${state.profile.fullName}</span>`,
-              `<span class="pill">🎓 ${selectedCourse ? selectedCourse.name : "Todos los cursos"}</span>`
+              `<span class="pill">🎓 ${selectedCourse ? selectedCourse.name : "Todos los grupos"}</span>`
             ].join("")
           : "";
         document.getElementById("selected-course-badge").textContent = selectedCourse
           ? `Trabajando en: ${selectedCourse.name}`
-          : "Estas viendo todos los cursos.";
+          : "Estas viendo todos los grupos.";
         renderSidebarProfile();
       }
 
       function renderCourseFilter() {
         const select = document.getElementById("course-filter");
         select.innerHTML = "";
-        select.appendChild(new Option("Todos los cursos", ""));
+        select.appendChild(new Option("Todos los grupos", ""));
         state.courses.forEach((course) => {
           select.appendChild(new Option(`${course.name} (#${course.id})`, String(course.id)));
         });
@@ -639,27 +670,28 @@
         const filtered = getFilteredPayments();
         const subscriptions = filtered.filter((payment) => payment.flowType === "SUBSCRIPTION");
         const oneTime = filtered.filter((payment) => payment.flowType === "ONE_TIME");
+        const pending = filtered.filter((payment) => payment.status !== "SUCCESS");
         const selectedCourse = getSelectedCourse();
         document.getElementById("summary-cards").innerHTML = [
           {
-            title: "Paso 1",
-            value: state.courses.length ? "Listo" : "Crear",
-            note: state.courses.length ? "Ya tienes oferta cargada" : "Crea tu primer curso"
+            title: "Personas",
+            value: state.students.length,
+            note: state.students.length ? "Base activa para cobrar" : "Carga tu primera persona"
           },
           {
-            title: "Paso 2",
-            value: state.students.length ? "Listo" : "Cargar",
-            note: state.students.length ? "Ya tienes alumnos cargados" : "Carga tu primer alumno"
+            title: "Grupos",
+            value: state.courses.length,
+            note: state.courses.length ? "Espacios activos para trabajar" : "Crea tu primer grupo"
           },
           {
-            title: "Paso 3",
-            value: oneTime.length + subscriptions.length ? "Listo" : "Cobrar",
-            note: oneTime.length + subscriptions.length ? "Ya tienes links listos" : "Genera el primer link"
+            title: "Pendientes",
+            value: pending.length,
+            note: pending.length ? "Requieren seguimiento" : "Nada urgente por resolver"
           },
           {
-            title: "Foco",
-            value: selectedCourse ? selectedCourse.name : "Elegir curso",
-            note: selectedCourse ? "Todo el panel sigue este curso" : "Marca un curso para trabajar mas rapido"
+            title: "Cobros",
+            value: oneTime.length + subscriptions.length,
+            note: `${oneTime.length} puntuales · ${subscriptions.length} recurrentes`
           }
         ]
           .map((item) => {
@@ -674,11 +706,11 @@
           ? state.courses
               .map((course) => {
                 const isFocused = selectedCourse && String(selectedCourse.id) === String(course.id);
-                const focusTag = isFocused ? `<span class="tag tag-status-created">Curso foco</span><br />` : "";
+                const focusTag = isFocused ? `<span class="tag tag-status-created">Grupo foco</span><br />` : "";
                 return `<div class="item"><strong>${course.name}</strong><br />${focusTag}<small>#${course.id} · ${course.description} · ${course.teacherName}</small></div>`;
               })
               .join("")
-          : "<div class='empty-state'>No hay cursos disponibles.</div>";
+          : "<div class='empty-state'>No hay grupos disponibles.</div>";
       }
 
       function renderStudents() {
@@ -698,6 +730,42 @@
               .map((enrollment) => `<div class="item"><strong>${enrollment.studentName}</strong><br /><small>${enrollment.courseName}</small></div>`)
               .join("")
           : "<div class='empty-state'>No hay alumnos asignados para este filtro.</div>";
+      }
+
+      function renderPendings() {
+        const filtered = getFilteredPayments().filter((payment) => payment.status !== "SUCCESS");
+        const created = filtered.filter((payment) => payment.status === "CREATED");
+        const reviewing = filtered.filter((payment) => payment.status === "PENDING");
+        const failed = filtered.filter((payment) => payment.status === "FAILURE");
+
+        document.getElementById("pending-summary-list").innerHTML = [
+          `<div class="item"><strong>${filtered.length}</strong><br /><small>Cobros con seguimiento pendiente</small></div>`,
+          `<div class="item"><strong>${created.length}</strong><br /><small>Listos para reenviar o compartir</small></div>`,
+          `<div class="item"><strong>${reviewing.length}</strong><br /><small>En revision del medio de cobro</small></div>`,
+          `<div class="item"><strong>${failed.length}</strong><br /><small>No completados</small></div>`
+        ].join("");
+
+        document.getElementById("pending-payments-list").innerHTML = filtered.length
+          ? filtered
+              .map((payment) => {
+                const paymentAppUrl = `${window.location.origin}/pago.html?operationId=${payment.operationId}`;
+                return `
+                  <div class="item payment-item">
+                    <div class="payment-tags">
+                      <span class="tag">${payment.flowType === "SUBSCRIPTION" ? "Recurrente" : "Puntual"}</span>
+                      <span class="tag ${statusClass(payment.status)}">${humanStatus(payment.status)}</span>
+                    </div>
+                    <strong>${payment.description}</strong>
+                    <small>${payment.courseName} · ${payment.currency} ${payment.amount}</small>
+                    <div class="actions-row compact-actions">
+                      <a href="${paymentAppUrl}" target="_blank" rel="noopener noreferrer">Abrir cobro</a>
+                      <button type="button" class="btn-secondary compact-btn copy-action" data-copy-url="${paymentAppUrl}" data-note-target="one-time-note">Copiar link</button>
+                    </div>
+                  </div>
+                `;
+              })
+              .join("")
+          : "<div class='empty-state'>No hay pendientes. Tus cobros visibles estan al dia.</div>";
       }
 
       function renderPayments() {
@@ -725,14 +793,14 @@
                     <strong>${payment.description}</strong>
                     <small>${payment.courseName} · ${payment.currency} ${payment.amount}</small>
                     <div class="actions-row compact-actions">
-                      <a href="${paymentAppUrl}" target="_blank" rel="noopener noreferrer">Abrir pago</a>
+                      <a href="${paymentAppUrl}" target="_blank" rel="noopener noreferrer">Abrir cobro</a>
                       <button type="button" class="btn-secondary compact-btn copy-action" data-copy-url="${paymentAppUrl}" data-note-target="one-time-note">Copiar link</button>
                     </div>
                   </div>
                 `;
               })
               .join("")
-          : "<div class='empty-state'>No hay pagos unicos para este filtro.</div>";
+          : "<div class='empty-state'>No hay cobros puntuales para este filtro.</div>";
 
         document.getElementById("subscriptions-list").innerHTML = subscriptions.length
           ? subscriptions
@@ -747,14 +815,14 @@
                     <strong>${payment.description}</strong>
                     <small>${payment.courseName} · ${payment.currency} ${payment.amount}</small>
                     <div class="actions-row compact-actions">
-                      <a href="${paymentAppUrl}" target="_blank" rel="noopener noreferrer">Abrir suscripcion</a>
+                      <a href="${paymentAppUrl}" target="_blank" rel="noopener noreferrer">Abrir cobro recurrente</a>
                       <button type="button" class="btn-secondary compact-btn copy-action" data-copy-url="${paymentAppUrl}" data-note-target="subscription-note">Copiar link</button>
                     </div>
                   </div>
                 `;
               })
               .join("")
-          : "<div class='empty-state'>No hay suscripciones para este filtro.</div>";
+          : "<div class='empty-state'>No hay cobros recurrentes para este filtro.</div>";
       }
 
       function renderAccountSettings() {
@@ -769,10 +837,10 @@
 
         document.getElementById("account-context").innerHTML = [
           `<div><small>Tenant</small><strong>${tenantSlug}</strong></div>`,
-          `<div><small>Curso actual</small><strong>${selectedCourse ? selectedCourse.name : "Todos los cursos"}</strong></div>`,
-          `<div><small>Total visible</small><strong>${getFilteredPayments().length} operaciones</strong></div>`,
-          `<div><small>Alumnos</small><strong>${state.students.length}</strong></div>`,
-          `<div><small>Alias AR</small><strong>${state.paymentSettings?.transferAlias || "No configurado"}</strong></div>`
+          `<div><small>Grupo actual</small><strong>${selectedCourse ? selectedCourse.name : "Todos los grupos"}</strong></div>`,
+          `<div><small>Total visible</small><strong>${getFilteredPayments().length} cobros</strong></div>`,
+          `<div><small>Personas</small><strong>${state.students.length}</strong></div>`,
+          `<div><small>Alias AR</small><strong>${state.paymentSettings?.transferAlias || "Todavia no configurado"}</strong></div>`
         ].join("");
 
         document.getElementById("transfer-alias").value = state.paymentSettings?.transferAlias || "";
@@ -786,6 +854,7 @@
         renderSummaryCards();
         renderCourses();
         renderStudents();
+        renderPendings();
         renderPayments();
         renderAccountSettings();
       }
@@ -853,7 +922,7 @@
         rerender();
       });
       document.getElementById("go-students").addEventListener("click", () => {
-        window.location.hash = "#alumnos";
+        window.location.hash = "#personas";
         setActiveNav();
       });
       document.getElementById("ot-student").addEventListener("change", (event) => {

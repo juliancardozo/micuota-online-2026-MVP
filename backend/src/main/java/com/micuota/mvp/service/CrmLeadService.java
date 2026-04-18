@@ -10,6 +10,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class CrmLeadService {
 
+    public record LeadCaptureResult(LeadView lead, boolean newLead) {
+    }
+
     private final LeadRepository leadRepository;
     private final String defaultOwner;
     private final SaasMetricsService saasMetricsService;
@@ -25,6 +28,14 @@ public class CrmLeadService {
     }
 
     public LeadView saveLead(CreateLeadRequest request) {
+        return upsertLead(request, "NEW", false).lead();
+    }
+
+    public LeadCaptureResult captureInterestedLead(CreateLeadRequest request) {
+        return upsertLead(request, "INTERESTED", true);
+    }
+
+    private LeadCaptureResult upsertLead(CreateLeadRequest request, String statusForNewLead, boolean forceInterestedStatus) {
         OffsetDateTime now = OffsetDateTime.now();
         Lead lead = leadRepository.findByEmailIgnoreCase(request.email())
             .orElseGet(Lead::new);
@@ -38,12 +49,14 @@ public class CrmLeadService {
 
         if (isNewLead) {
             lead.setCreatedAt(now);
-            lead.setStatus("NEW");
+            lead.setStatus(statusForNewLead);
+        } else if (forceInterestedStatus) {
+            lead.setStatus("INTERESTED");
         }
 
         Lead saved = leadRepository.save(lead);
         saasMetricsService.recordLeadCaptured(saved.getSource(), isNewLead);
-        return LeadView.from(saved);
+        return new LeadCaptureResult(LeadView.from(saved), isNewLead);
     }
 
     public LeadSearchResponse searchByEmail(String email) {
