@@ -213,6 +213,7 @@
       };
 
       function logout() {
+        window.MicuotaSessionTelemetry?.logout();
         localStorage.removeItem("micuota.authToken");
         window.location.href = `/landing.html?tenantSlug=${encodeURIComponent(localStorage.getItem("micuota.tenantSlug") || "")}`;
       }
@@ -444,6 +445,7 @@
 
       bootstrap();
     </script>
+    <script src="/session-telemetry.js"></script>
     <script src="/chatbot.js"></script>
   </body>
 </html>

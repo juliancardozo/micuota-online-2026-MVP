@@ -47,10 +47,11 @@
             mas tiempo en lo que realmente haces bien.
           </p>
           <div class="lp-cta-row">
-            <a class="lp-btn lp-btn-primary" href="/index.html">Probar experiencia de pago</a>
-            <a class="lp-btn lp-btn-light" href="#acceso">Entrar al panel</a>
+            <a class="lp-btn lp-btn-primary" href="#registro">Empezar gratis</a>
+            <a class="lp-btn lp-btn-light" href="/index.html">Probar experiencia de pago</a>
           </div>
           <ul class="lp-trust-list">
+            <li>Plan free para aprender con tus primeros 50 clientes</li>
             <li>Checkout claro en celular</li>
             <li>Estado de cobros en tiempo real</li>
             <li>Onboarding guiado con asistente</li>
@@ -228,40 +229,93 @@
 
       <section id="acceso" class="lp-section lp-access">
         <div class="lp-access-copy">
-          <h2>Ingresa a tu panel</h2>
-          <p>
-            Acceso seguro por tenant y redireccion inteligente segun el perfil de cada usuario.
-          </p>
+          <h2>Empieza gratis. Sigue 3 hitos. Cobra hoy.</h2>
+          <p>Primero crea tu tenant. Luego tu curso. Luego tu link de cobro para compartir.</p>
           <ul>
-            <li>Administrador: control de cursos, pagos y usuarios.</li>
-            <li>Profesor: vista de cobros y resumen de comisiones.</li>
-            <li>Alumno: pagos y estado de suscripciones.</li>
+            <li>1. Crea tenant gratis</li>
+            <li>2. Carga curso y clientes</li>
+            <li>3. Genera y comparte tu cobro</li>
           </ul>
         </div>
-        <div class="lp-login-card">
-          <form id="login-form">
-            <div class="field">
-              <label for="loginTenantSlug">Slug del tenant</label>
-              <input id="loginTenantSlug" name="tenantSlug" placeholder="ej: centro-fitness" required />
+        <div class="lp-access-stack">
+          <div class="lp-login-card" id="registro">
+            <div class="lp-card-head">
+              <p class="lp-overline">Self-service</p>
+              <h3>Crea tu tenant gratis</h3>
             </div>
-            <div class="field">
-              <label for="loginEmail">Email</label>
-              <input id="loginEmail" name="email" type="email" placeholder="tu@email.com" required />
+            <div class="lp-primary-path">
+              <span class="lp-primary-badge">Primera opcion</span>
+              <p>Si todavia no tienes cuenta, empieza aqui.</p>
             </div>
-            <div class="field">
-              <label for="loginPassword">Contrasena</label>
-              <input id="loginPassword" name="password" type="password" required />
+            <form id="register-form">
+              <div class="field">
+                <label for="registerTenantName">Nombre de tu negocio</label>
+                <input id="registerTenantName" name="tenantName" placeholder="ej: Centro Fitness Norte" required />
+              </div>
+              <div class="field">
+                <label for="registerTenantSlug">Slug del tenant</label>
+                <input id="registerTenantSlug" name="tenantSlug" placeholder="ej: centro-fitness-norte" required />
+              </div>
+              <div class="field">
+                <label for="registerFullName">Tu nombre</label>
+                <input id="registerFullName" name="fullName" placeholder="ej: Paula Rodriguez" required />
+              </div>
+              <div class="field">
+                <label for="registerEmail">Email</label>
+                <input id="registerEmail" name="email" type="email" placeholder="tu@email.com" required />
+              </div>
+              <div class="field">
+                <label for="registerPassword">Contrasena</label>
+                <input id="registerPassword" name="password" type="password" minlength="8" required />
+              </div>
+              <button type="submit" class="lp-btn lp-btn-primary lp-btn-full">Crear cuenta free</button>
+            </form>
+            <p id="register-note" class="note"></p>
+            <p class="lp-small-note">Entras directo al panel para completar tenant, curso y cobro.</p>
+          </div>
+
+          <div class="lp-login-card">
+            <div class="lp-card-head">
+              <p class="lp-overline">Acceso</p>
+              <h3>Ingresa a tu panel</h3>
             </div>
-            <button type="submit" class="lp-btn lp-btn-primary lp-btn-full">Entrar</button>
-          </form>
-          <p id="login-note" class="note"></p>
-          <p class="lp-small-note">Al iniciar sesion vas directo al dashboard correcto.</p>
+            <div class="lp-demo-box">
+              <strong>Accesos demo rapidos</strong>
+              <div class="lp-demo-actions">
+                <button class="lp-btn lp-btn-demo" type="button" data-demo-role="admin">Admin tenant</button>
+                <button class="lp-btn lp-btn-demo" type="button" data-demo-role="teacher">Teacher</button>
+                <button class="lp-btn lp-btn-demo" type="button" data-demo-role="student">Alumno</button>
+                <button class="lp-btn lp-btn-demo" type="button" data-demo-role="platform-admin">Platform admin</button>
+              </div>
+              <p class="lp-small-note">
+                Tenant demo: <strong>demo-academia</strong> · password: <strong>demo</strong>
+              </p>
+            </div>
+            <form id="login-form">
+              <div class="field">
+                <label for="loginTenantSlug">Slug del tenant</label>
+                <input id="loginTenantSlug" name="tenantSlug" placeholder="ej: centro-fitness" required />
+              </div>
+              <div class="field">
+                <label for="loginEmail">Email</label>
+                <input id="loginEmail" name="email" type="email" placeholder="tu@email.com" required />
+              </div>
+              <div class="field">
+                <label for="loginPassword">Contrasena</label>
+                <input id="loginPassword" name="password" type="password" required />
+              </div>
+              <button type="submit" class="lp-btn lp-btn-light lp-btn-full">Entrar</button>
+            </form>
+            <p id="login-note" class="note"></p>
+            <p class="lp-small-note">Al iniciar sesion vas directo al dashboard correcto.</p>
+          </div>
         </div>
       </section>
     </main>
 
     <script>
       const API_BASE = "http://localhost:8080";
+      const FIRST_TENANT_REDIRECT_KEY = "micuota.firstTenantRedirect";
       const tenantInput = document.getElementById("loginTenantSlug");
       const preferredTenant =
         new URLSearchParams(window.location.search).get("tenantSlug") ||
@@ -278,6 +332,25 @@
         element.className = hasError ? "note error" : "note ok";
       }
 
+      function storeSession(result) {
+        localStorage.setItem("micuota.authToken", result.token);
+        localStorage.setItem("micuota.tenantSlug", result.tenantSlug);
+        localStorage.setItem("micuota.preferredTenantSlug", result.tenantSlug);
+      }
+
+      function fillDemoCredentials(role) {
+        const demoMap = {
+          admin: "admin@micuota.online",
+          teacher: "teacher@micuota.online",
+          student: "student@micuota.online",
+          "platform-admin": "platform-admin@micuota.online"
+        };
+        tenantInput.value = "demo-academia";
+        document.getElementById("loginEmail").value = demoMap[role] || "";
+        document.getElementById("loginPassword").value = "demo";
+        document.getElementById("login-note").textContent = "";
+      }
+
       async function postJson(path, payload) {
         const response = await fetch(`${API_BASE}${path}`, {
           method: "POST",
@@ -292,24 +365,46 @@
         return data;
       }
 
+      document.getElementById("register-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const note = document.getElementById("register-note");
+        setNote(note, "Creando tu tenant free...", false);
+
+        const formData = new FormData(event.target);
+        const payload = Object.fromEntries(formData.entries());
+
+        try {
+          const result = await postJson("/api/auth/register-tenant", payload);
+          storeSession(result);
+          sessionStorage.setItem(FIRST_TENANT_REDIRECT_KEY, result.tenantSlug);
+          tenantInput.value = result.tenantSlug;
+          setNote(note, "Cuenta creada. Entrando al launchpad...", false);
+          window.location.href = result.backofficeUrl;
+        } catch (error) {
+          setNote(note, error.message, true);
+        }
+      });
+
       document.getElementById("login-form").addEventListener("submit", async (event) => {
         event.preventDefault();
         const note = document.getElementById("login-note");
-        setNote(note, "Iniciando sesión...", false);
+        setNote(note, "Iniciando sesion...", false);
 
         const formData = new FormData(event.target);
         const payload = Object.fromEntries(formData.entries());
 
         try {
           const result = await postJson("/api/auth/login", payload);
-          localStorage.setItem("micuota.authToken", result.token);
-          localStorage.setItem("micuota.tenantSlug", result.tenantSlug);
-          localStorage.setItem("micuota.preferredTenantSlug", result.tenantSlug);
-          setNote(note, "Sesión iniciada. Redirigiendo...", false);
+          storeSession(result);
+          setNote(note, "Sesion iniciada. Redirigiendo...", false);
           window.location.href = result.backofficeUrl;
         } catch (error) {
           setNote(note, error.message, true);
         }
+      });
+
+      document.querySelectorAll("[data-demo-role]").forEach((button) => {
+        button.addEventListener("click", () => fillDemoCredentials(button.dataset.demoRole));
       });
     </script>
     <script src="/chatbot.js"></script>

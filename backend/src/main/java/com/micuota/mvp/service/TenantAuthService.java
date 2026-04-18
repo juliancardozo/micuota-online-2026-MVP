@@ -70,7 +70,7 @@ public class TenantAuthService {
         return new AuthResponse(token, tenant.getId(), tenant.getSlug(), admin.getId(), admin.getRole(), resolveDashboardUrl(admin.getRole(), token));
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public AuthResponse login(LoginRequest request) {
         Tenant tenant = tenantRepository.findBySlug(normalizeSlug(request.tenantSlug()))
             .orElseThrow(() -> new IllegalArgumentException("Tenant no encontrado"));
@@ -95,7 +95,8 @@ public class TenantAuthService {
 
     private String resolveDashboardUrl(UserRole role, String token) {
         return switch (role) {
-            case TENANT_ADMIN, ADMIN -> "/backoffice.html?token=" + token;
+            case TENANT_ADMIN -> "/backoffice.html?token=" + token;
+            case ADMIN -> "/admin.html?token=" + token;
             case TEACHER -> "/profesor.html?token=" + token;
             case STUDENT -> "/alumno.html?token=" + token;
         };

@@ -7,4 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface CourseRepository extends JpaRepository<Course, Long> {
     List<Course> findByTenantIdOrderByCreatedAtDesc(Long tenantId);
     List<Course> findByTenantIdAndTeacherIdOrderByCreatedAtDesc(Long tenantId, Long teacherUserId);
+    long countByTenantId(Long tenantId);
 }

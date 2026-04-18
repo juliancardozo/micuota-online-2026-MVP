@@ -12,12 +12,15 @@ public class CrmLeadService {
 
     private final LeadRepository leadRepository;
     private final String defaultOwner;
+    private final SaasMetricsService saasMetricsService;
 
     public CrmLeadService(
         LeadRepository leadRepository,
+        SaasMetricsService saasMetricsService,
         @Value("${app.crm.default-owner:ventas@micuota.online}") String defaultOwner
     ) {
         this.leadRepository = leadRepository;
+        this.saasMetricsService = saasMetricsService;
         this.defaultOwner = defaultOwner;
     }
 
@@ -38,7 +41,9 @@ public class CrmLeadService {
             lead.setStatus("NEW");
         }
 
-        return LeadView.from(leadRepository.save(lead));
+        Lead saved = leadRepository.save(lead);
+        saasMetricsService.recordLeadCaptured(saved.getSource(), isNewLead);
+        return LeadView.from(saved);
     }
 
     public LeadSearchResponse searchByEmail(String email) {

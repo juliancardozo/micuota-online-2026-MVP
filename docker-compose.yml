@@ -84,6 +84,36 @@ services:
     volumes:
       - metabase_data:/metabase-data
 
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: micuota-prometheus
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: micuota-grafana
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    ports:
+      - "3002:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin123}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./monitoring/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+
   n8n:
     image: docker.n8n.io/n8nio/n8n:1.88.0
     container_name: micuota-n8n
@@ -118,4 +148,6 @@ services:
 volumes:
   pgdata:
   metabase_data:
+  prometheus_data:
+  grafana_data:
   n8n_data:

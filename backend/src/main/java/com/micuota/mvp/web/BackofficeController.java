@@ -10,6 +10,10 @@ import com.micuota.mvp.service.CreateBackofficePaymentRequest;
 import com.micuota.mvp.service.CreateCourseRequest;
 import com.micuota.mvp.service.CreateEnrollmentRequest;
 import com.micuota.mvp.domain.PaymentOperation;
+import com.micuota.mvp.service.LaunchpadService;
+import com.micuota.mvp.service.LaunchpadView;
+import com.micuota.mvp.service.PaymentSettingsView;
+import com.micuota.mvp.service.UpdatePaymentSettingsRequest;
 import com.micuota.mvp.service.EnrollmentView;
 import com.micuota.mvp.service.PaymentService;
 import com.micuota.mvp.service.ProfessorDashboardView;
@@ -40,15 +44,18 @@ public class BackofficeController {
     private final AuthSessionService authSessionService;
     private final BackofficeService backofficeService;
     private final PaymentService paymentService;
+    private final LaunchpadService launchpadService;
 
     public BackofficeController(
         AuthSessionService authSessionService,
         BackofficeService backofficeService,
-        PaymentService paymentService
+        PaymentService paymentService,
+        LaunchpadService launchpadService
     ) {
         this.authSessionService = authSessionService;
         this.backofficeService = backofficeService;
         this.paymentService = paymentService;
+        this.launchpadService = launchpadService;
     }
 
     @PostMapping("/users")
@@ -160,6 +167,33 @@ public class BackofficeController {
         AuthSessionService.SessionContext session = authSessionService.requireSession(token);
         requireTenantAdminOrTeacher(session);
         return backofficeService.listEnrollments(session.tenantId());
+    }
+
+    @GetMapping("/launchpad")
+    @Operation(summary = "Launchpad freemium", description = "Resume activacion, checklist y siguientes pasos para los primeros usuarios del tenant.")
+    public LaunchpadView launchpad(@RequestHeader("X-Auth-Token") String token) {
+        AuthSessionService.SessionContext session = authSessionService.requireSession(token);
+        requireTenantAdminOrTeacher(session);
+        return launchpadService.buildTenantLaunchpad(session.tenantId());
+    }
+
+    @GetMapping("/payment-settings")
+    @Operation(summary = "Ver configuracion de cobro manual", description = "Devuelve alias y banco para transferencias manuales del usuario autenticado.")
+    public PaymentSettingsView paymentSettings(@RequestHeader("X-Auth-Token") String token) {
+        AuthSessionService.SessionContext session = authSessionService.requireSession(token);
+        requireTenantAdminOrTeacher(session);
+        return backofficeService.getPaymentSettings(session.tenantId(), session.userId());
+    }
+
+    @PostMapping("/payment-settings")
+    @Operation(summary = "Actualizar configuracion de cobro manual", description = "Actualiza alias y banco para transferencias manuales del usuario autenticado.")
+    public PaymentSettingsView updatePaymentSettings(
+        @RequestHeader("X-Auth-Token") String token,
+        @RequestBody UpdatePaymentSettingsRequest request
+    ) {
+        AuthSessionService.SessionContext session = authSessionService.requireSession(token);
+        requireTenantAdminOrTeacher(session);
+        return backofficeService.updatePaymentSettings(session.tenantId(), session.userId(), request);
     }
 
     @GetMapping("/dashboard/professor")

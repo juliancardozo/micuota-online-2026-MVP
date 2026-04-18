@@ -50,6 +50,17 @@ public class SeedDataConfig {
                     return userRepository.save(user);
                 });
 
+            userRepository.findByTenantIdAndEmail(tenant.getId(), "platform-admin@micuota.online")
+                .orElseGet(() -> {
+                    User user = new User();
+                    user.setEmail("platform-admin@micuota.online");
+                    user.setPasswordHash("demo");
+                    user.setFullName("Platform Admin");
+                    user.setRole(UserRole.ADMIN);
+                    user.setTenant(tenant);
+                    return userRepository.save(user);
+                });
+
             teacherProfileRepository.findByUserId(adminUser.getId())
                 .orElseGet(() -> {
                     TeacherProfile profile = new TeacherProfile();
@@ -58,6 +69,8 @@ public class SeedDataConfig {
                     profile.setMpAccessToken("TEST-MP-TOKEN-ADMIN");
                     profile.setPrometeoApiKey("TEST-PROMETEO-KEY-ADMIN");
                     profile.setWooCommerceApiKey("TEST-WC-KEY-ADMIN");
+                    profile.setTransferAlias("micuota.admin.ar");
+                    profile.setTransferBankName("Banco Demo AR");
                     return teacherProfileRepository.save(profile);
                 });
 
@@ -80,6 +93,8 @@ public class SeedDataConfig {
                     profile.setMpAccessToken("TEST-MP-TOKEN");
                     profile.setPrometeoApiKey("TEST-PROMETEO-KEY");
                     profile.setWooCommerceApiKey("TEST-WC-KEY");
+                    profile.setTransferAlias("profe.demo.ar");
+                    profile.setTransferBankName("Banco Aula AR");
                     return teacherProfileRepository.save(profile);
                 });
 

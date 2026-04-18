@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MiCuota | Admin SaaS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="ui.css" />
+  </head>
+  <body class="shell-ui admin-ui">
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="brand" href="/landing.html">
+          <span class="brand-dot"></span>
+          <span class="brand-copy">
+            <strong>MiCuota.online</strong>
+            <small>Admin SaaS dashboard</small>
+          </span>
+        </a>
+
+        <p class="sidebar-copy">
+          Vista global para seguir sesiones, ingresos, tendencias y leads del sistema completo.
+        </p>
+
+        <div class="sidebar-block">
+          <p class="nav-group-label">Panel</p>
+          <nav class="shell-nav" id="sidebar-nav">
+            <a class="nav-link" href="#resumen">
+              <strong>Resumen</strong>
+              <span>KPIs de la plataforma</span>
+            </a>
+            <a class="nav-link" href="#tendencias">
+              <strong>Tendencias</strong>
+              <span>Revenue, sesiones y leads</span>
+            </a>
+            <a class="nav-link" href="#leads">
+              <strong>Leads</strong>
+              <span>Embudo propio del SaaS</span>
+            </a>
+            <a class="nav-link" href="#tenants">
+              <strong>Tenants</strong>
+              <span>Top cuentas por ingresos</span>
+            </a>
+            <a class="nav-link" href="#cuenta">
+              <strong>Cuenta</strong>
+              <span>Sesion y accesos</span>
+            </a>
+          </nav>
+        </div>
+
+        <div class="sidebar-footer">
+          <div class="mini-profile" id="sidebar-profile">
+            <strong>Sesion pendiente</strong>
+            <div class="pill-row">
+              <span class="pill">Admin</span>
+              <span class="pill">Cargando</span>
+            </div>
+          </div>
+          <div class="actions-row">
+            <a class="btn btn-secondary" href="/landing.html">Landing</a>
+            <button class="btn-danger" id="logout-button" type="button">Cerrar sesion</button>
+          </div>
+        </div>
+      </aside>
+
+      <div class="shell-content">
+        <header class="shell-header">
+          <div class="header-copy">
+            <span class="overline">Admin MiCuota</span>
+            <h1 id="page-title">Sistema completo</h1>
+            <p>
+              Este panel concentra las metricas del SaaS: sesiones, cursos, ingresos, leads y
+              tendencias para operar el negocio y detectar palancas de crecimiento.
+            </p>
+          </div>
+          <div class="header-meta">
+            <div class="selector-group">
+              <label>Estado actual</label>
+              <div class="pill-row" id="header-pills"></div>
+            </div>
+          </div>
+        </header>
+
+        <section class="hero-panel" id="resumen">
+          <div class="meta-stack admin-hero-copy">
+            <div>
+              <span class="overline">Dashboard global</span>
+              <h2 id="hero-title">Metricas clave del sistema</h2>
+            </div>
+            <p class="section-copy">
+              Seguimiento ejecutivo de uso, monetizacion y pipeline de leads propios del SaaS.
+            </p>
+          </div>
+          <div class="admin-summary-grid" id="summary-cards"></div>
+        </section>
+
+        <section class="shell-section" id="tendencias">
+          <div class="section-head">
+            <div class="section-head-copy">
+              <h2>Tendencias</h2>
+              <p class="section-copy">Vista mensual de ingresos exitosos, sesiones iniciadas y leads creados.</p>
+            </div>
+          </div>
+          <div class="section-grid">
+            <article class="surface-card span-12">
+              <h3>Ultimos 6 meses</h3>
+              <div class="admin-compact-grid" id="trend-list"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="shell-section" id="leads">
+          <div class="section-head">
+            <div class="section-head-copy">
+              <h2>Leads del SaaS</h2>
+              <p class="section-copy">Embudo propio separado del core transaccional.</p>
+            </div>
+          </div>
+          <div class="section-grid">
+            <article class="surface-card span-6">
+              <h3>Estados</h3>
+              <div class="admin-compact-grid" id="lead-status-list"></div>
+            </article>
+            <article class="surface-card span-6">
+              <h3>Fuentes</h3>
+              <div class="admin-compact-grid" id="lead-source-list"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="shell-section" id="tenants">
+          <div class="section-head">
+            <div class="section-head-copy">
+              <h2>Top tenants</h2>
+              <p class="section-copy">Cuentas con mayor monto cobrado y actividad relevante.</p>
+            </div>
+          </div>
+          <div class="section-grid">
+            <article class="surface-card span-12">
+              <h3>Ranking</h3>
+              <div class="admin-compact-grid" id="top-tenants-list"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="shell-section" id="cuenta">
+          <div class="section-head">
+            <div class="section-head-copy">
+              <h2>Cuenta</h2>
+              <p class="section-copy">Contexto de sesion del administrador global.</p>
+            </div>
+          </div>
+          <div class="account-grid">
+            <article class="account-block">
+              <h3>Perfil</h3>
+              <div class="account-list" id="account-profile"></div>
+            </article>
+            <article class="account-block">
+              <h3>Sesion</h3>
+              <div class="account-list" id="account-context"></div>
+            </article>
+            <article class="account-block">
+              <h3>Acciones</h3>
+              <div class="actions-row">
+                <a class="btn btn-secondary" href="/backoffice.html">Backoffice</a>
+                <button class="btn-danger" id="logout-button-secondary" type="button">Cerrar sesion</button>
+              </div>
+            </article>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <script>
+      const API_BASE = "http://localhost:8080";
+      const urlToken = new URLSearchParams(window.location.search).get("token");
+      const token = urlToken || localStorage.getItem("micuota.authToken");
+      const tenantSlug = localStorage.getItem("micuota.tenantSlug") || "(sin slug)";
+
+      if (urlToken) {
+        localStorage.setItem("micuota.authToken", urlToken);
+      }
+
+      const state = {
+        profile: null,
+        dashboard: null
+      };
+
+      function setActiveNav() {
+        const hash = window.location.hash || "#resumen";
+        document.querySelectorAll("#sidebar-nav .nav-link").forEach((link) => {
+          link.classList.toggle("active", link.getAttribute("href") === hash);
+        });
+      }
+
+      function logout() {
+        window.MicuotaSessionTelemetry?.logout();
+        localStorage.removeItem("micuota.authToken");
+        window.location.href = `/landing.html?tenantSlug=${encodeURIComponent(localStorage.getItem("micuota.tenantSlug") || "")}`;
+      }
+
+      async function apiGet(path) {
+        const response = await fetch(`${API_BASE}${path}`, {
+          headers: { "X-Auth-Token": token }
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Error de API");
+        return data;
+      }
+
+      function renderSummary() {
+        const dashboard = state.dashboard;
+        document.getElementById("summary-cards").innerHTML = [
+          { title: "Tenants", value: dashboard.totalTenants, note: "Cuentas creadas" },
+          { title: "Usuarios", value: dashboard.totalUsers, note: "Usuarios del sistema" },
+          { title: "Cursos", value: dashboard.totalCourses, note: "Cursos totales" },
+          { title: "Inscripciones", value: dashboard.totalEnrollments, note: "Enrollments totales" },
+          { title: "Revenue SUCCESS", value: `UYU ${dashboard.totalRevenueSuccess}`, note: "Ingresos efectivamente cobrados" },
+          { title: "Revenue total", value: `UYU ${dashboard.totalRevenueAllStatuses}`, note: "Todos los estados" },
+          { title: "Sesiones activas", value: dashboard.activeSessions, note: "Ultimos 5 minutos" },
+          { title: "Duracion promedio", value: `${dashboard.avgSessionDurationMinutes} min`, note: "Promedio ultimos 30 dias" },
+          { title: "Leads", value: dashboard.totalLeads, note: "Leads en esquema CRM" },
+          { title: "Sesiones 30d", value: dashboard.sessionsStartedLast30Days, note: "Inicios de sesion recientes" }
+        ]
+          .map((item) => `<article class="stat-card admin-stat-card"><small>${item.title}</small><strong>${item.value}</strong><span>${item.note}</span></article>`)
+          .join("");
+      }
+
+      function renderTrends() {
+        document.getElementById("trend-list").innerHTML = state.dashboard.trends
+          .map((trend) => {
+            return `<div class="item"><strong>${trend.period}</strong><br /><small>Revenue SUCCESS: UYU ${trend.revenueSuccess}</small><br /><small>Sesiones iniciadas: ${trend.sessionsStarted}</small><br /><small>Leads creados: ${trend.leadsCreated}</small></div>`;
+          })
+          .join("");
+      }
+
+      function renderLeads() {
+        document.getElementById("lead-status-list").innerHTML = state.dashboard.leadStatusBreakdown.length
+          ? state.dashboard.leadStatusBreakdown
+              .map((row) => `<div class="item"><strong>${row.status}</strong><br /><small>${row.total} leads</small></div>`)
+              .join("")
+          : "<div class='empty-state'>Sin leads registrados.</div>";
+
+        document.getElementById("lead-source-list").innerHTML = state.dashboard.leadSourceBreakdown.length
+          ? state.dashboard.leadSourceBreakdown
+              .map((row) => `<div class="item"><strong>${row.source}</strong><br /><small>${row.total} leads</small></div>`)
+              .join("")
+          : "<div class='empty-state'>Sin fuentes registradas.</div>";
+      }
+
+      function renderTopTenants() {
+        document.getElementById("top-tenants-list").innerHTML = state.dashboard.topTenants.length
+          ? state.dashboard.topTenants
+              .map((tenant) => {
+                return `<div class="item"><strong>${tenant.tenantName}</strong><br /><small>${tenant.tenantSlug} · Revenue SUCCESS: UYU ${tenant.totalRevenueSuccess}</small><br /><small>${tenant.successfulPayments} pagos exitosos · ${tenant.totalCourses} cursos</small></div>`;
+              })
+              .join("")
+          : "<div class='empty-state'>Aun no hay tenants con revenue SUCCESS.</div>";
+      }
+
+      function renderAccount() {
+        document.getElementById("page-title").textContent = state.profile.fullName;
+        document.getElementById("hero-title").textContent = `Vista global de MiCuota para ${state.profile.fullName}`;
+        document.getElementById("header-pills").innerHTML = [
+          `<span class="pill">${state.profile.role}</span>`,
+          `<span class="pill">${tenantSlug}</span>`,
+          `<span class="pill">${state.dashboard.generatedAt}</span>`
+        ].join("");
+        document.getElementById("sidebar-profile").innerHTML = `
+          <strong>${state.profile.fullName}</strong>
+          <div class="pill-row">
+            <span class="pill">${state.profile.role}</span>
+            <span class="pill">${tenantSlug}</span>
+          </div>
+        `;
+        document.getElementById("account-profile").innerHTML = [
+          `<div><small>Nombre</small><strong>${state.profile.fullName}</strong></div>`,
+          `<div><small>Email</small><strong>${state.profile.email}</strong></div>`,
+          `<div><small>Rol</small><strong>${state.profile.role}</strong></div>`
+        ].join("");
+        document.getElementById("account-context").innerHTML = [
+          `<div><small>Tenant slug</small><strong>${tenantSlug}</strong></div>`,
+          `<div><small>Tenant ID</small><strong>${state.profile.tenantId}</strong></div>`,
+          `<div><small>User ID</small><strong>${state.profile.userId}</strong></div>`
+        ].join("");
+      }
+
+      async function bootstrap() {
+        if (!token) {
+          logout();
+          return;
+        }
+
+        setActiveNav();
+
+        try {
+          state.profile = await apiGet("/api/auth/me");
+          if (state.profile.role !== "ADMIN") {
+            window.location.href = "/backoffice.html";
+            return;
+          }
+          state.dashboard = await apiGet("/api/admin/system-dashboard");
+          renderAccount();
+          renderSummary();
+          renderTrends();
+          renderLeads();
+          renderTopTenants();
+        } catch (error) {
+          logout();
+        }
+      }
+
+      window.addEventListener("hashchange", setActiveNav);
+      document.getElementById("logout-button").addEventListener("click", logout);
+      document.getElementById("logout-button-secondary").addEventListener("click", logout);
+      bootstrap();
+    </script>
+    <script src="/session-telemetry.js"></script>
+  </body>
+</html>

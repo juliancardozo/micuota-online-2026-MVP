@@ -7,6 +7,7 @@ import com.micuota.mvp.service.AuthSessionService;
 import com.micuota.mvp.service.AuthResponse;
 import com.micuota.mvp.service.LoginRequest;
 import com.micuota.mvp.service.RegisterTenantRequest;
+import com.micuota.mvp.service.SessionActivityService;
 import com.micuota.mvp.service.TenantAuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -30,15 +31,18 @@ public class AuthController {
 
     private final TenantAuthService tenantAuthService;
     private final AuthSessionService authSessionService;
+    private final SessionActivityService sessionActivityService;
     private final UserRepository userRepository;
 
     public AuthController(
         TenantAuthService tenantAuthService,
         AuthSessionService authSessionService,
+        SessionActivityService sessionActivityService,
         UserRepository userRepository
     ) {
         this.tenantAuthService = tenantAuthService;
         this.authSessionService = authSessionService;
+        this.sessionActivityService = sessionActivityService;
         this.userRepository = userRepository;
     }
 
@@ -82,6 +86,7 @@ public class AuthController {
     })
     public AuthMeResponse me(@RequestHeader("X-Auth-Token") String token) {
         AuthSessionService.SessionContext session = authSessionService.requireSession(token);
+        sessionActivityService.touchSession(token, java.time.OffsetDateTime.now(java.time.ZoneOffset.UTC));
         User user = userRepository.findById(session.userId())
             .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado para sesion"));
 
@@ -95,5 +100,32 @@ public class AuthController {
     }
 
     public record AuthMeResponse(Long userId, Long tenantId, String fullName, String email, UserRole role) {
+    }
+
+    @PostMapping("/heartbeat")
+    @Operation(
+        summary = "Heartbeat de sesion",
+        description = "Actualiza lastSeenAt y duracion parcial de la sesion autenticada.",
+        security = @SecurityRequirement(name = "AuthToken")
+    )
+    public AckResponse heartbeat(@RequestHeader("X-Auth-Token") String token) {
+        authSessionService.requireSession(token);
+        sessionActivityService.touchSession(token, java.time.OffsetDateTime.now(java.time.ZoneOffset.UTC));
+        return new AckResponse("heartbeat-ok");
+    }
+
+    @PostMapping("/logout")
+    @Operation(
+        summary = "Cerrar sesion",
+        description = "Marca endedAt y durationSeconds para la sesion autenticada.",
+        security = @SecurityRequirement(name = "AuthToken")
+    )
+    public AckResponse logout(@RequestHeader("X-Auth-Token") String token) {
+        authSessionService.requireSession(token);
+        sessionActivityService.endSession(token, java.time.OffsetDateTime.now(java.time.ZoneOffset.UTC));
+        return new AckResponse("logout-ok");
+    }
+
+    public record AckResponse(String status) {
     }
 }

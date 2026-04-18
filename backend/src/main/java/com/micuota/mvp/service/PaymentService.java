@@ -29,6 +29,7 @@ public class PaymentService {
     private final UserRepository userRepository;
     private final CourseRepository courseRepository;
     private final PaymentNotificationService paymentNotificationService;
+    private final SaasMetricsService saasMetricsService;
     private final Map<PaymentProviderType, PaymentProviderGateway> gateways;
 
     @Value("${app.base-url}")
@@ -40,6 +41,7 @@ public class PaymentService {
         UserRepository userRepository,
         CourseRepository courseRepository,
         PaymentNotificationService paymentNotificationService,
+        SaasMetricsService saasMetricsService,
         List<PaymentProviderGateway> providers
     ) {
         this.teacherProfileRepository = teacherProfileRepository;
@@ -47,6 +49,7 @@ public class PaymentService {
         this.userRepository = userRepository;
         this.courseRepository = courseRepository;
         this.paymentNotificationService = paymentNotificationService;
+        this.saasMetricsService = saasMetricsService;
         this.gateways = new EnumMap<>(PaymentProviderType.class);
         providers.forEach(p -> this.gateways.put(p.provider(), p));
     }
@@ -83,7 +86,9 @@ public class PaymentService {
             operation.getFlowType(),
             operation.getProvider(),
             operation.getStatus(),
-            operation.getCheckoutUrl()
+            operation.getCheckoutUrl(),
+            teacherProfile.getTransferAlias(),
+            teacherProfile.getTransferBankName()
         );
     }
 
@@ -135,7 +140,9 @@ public class PaymentService {
             .orElseThrow(() -> new IllegalArgumentException("Operacion no encontrada: " + operationId));
         operation.setStatus(status);
         operation.setUpdatedAt(OffsetDateTime.now());
-        return paymentOperationRepository.save(operation);
+        PaymentOperation saved = paymentOperationRepository.save(operation);
+        saasMetricsService.recordPaymentStatusChanged(status);
+        return saved;
     }
 
     @Transactional
@@ -144,7 +151,9 @@ public class PaymentService {
             .orElseThrow(() -> new IllegalArgumentException("Operacion no encontrada para providerReference: " + providerReference));
         operation.setStatus(status);
         operation.setUpdatedAt(OffsetDateTime.now());
-        return paymentOperationRepository.save(operation);
+        PaymentOperation saved = paymentOperationRepository.save(operation);
+        saasMetricsService.recordPaymentStatusChanged(status);
+        return saved;
     }
 
     private PaymentOperation createOperation(PaymentFlowType flowType, CreatePaymentRequest request) {
@@ -181,7 +190,9 @@ public class PaymentService {
         TeacherProviderCredentials credentials = new TeacherProviderCredentials(
             teacher.getMpAccessToken(),
             teacher.getPrometeoApiKey(),
-            teacher.getWooCommerceApiKey()
+            teacher.getWooCommerceApiKey(),
+            teacher.getTransferAlias(),
+            teacher.getTransferBankName()
         );
 
         ProviderCheckoutResult result = gateway.createCheckout(flowType, request, credentials, appBaseUrl);
@@ -204,6 +215,7 @@ public class PaymentService {
         PaymentOperation saved = paymentOperationRepository.save(operation);
         String normalizedPayerEmail = request.payerEmail() == null ? null : request.payerEmail().trim().toLowerCase(Locale.ROOT);
         paymentNotificationService.sendPaymentCreatedEmail(normalizedPayerEmail, teacher.getDisplayName(), saved);
+        saasMetricsService.recordPaymentCreated(request.provider(), flowType, request.amount());
         return saved;
     }
 

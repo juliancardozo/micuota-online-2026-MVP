@@ -14,6 +14,8 @@ public record PaymentPublicView(
     PaymentFlowType flowType,
     PaymentProviderType provider,
     OperationStatus status,
-    String checkoutUrl
+    String checkoutUrl,
+    String transferAlias,
+    String transferBankName
 ) {
 }

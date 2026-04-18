@@ -34,6 +34,10 @@
               <strong>Resumen</strong>
               <span>Metricas y foco operativo</span>
             </a>
+            <a class="nav-link" href="#launchpad">
+              <strong>Launchpad</strong>
+              <span>Freemium y activacion</span>
+            </a>
             <a class="nav-link" href="#usuarios">
               <strong>Usuarios</strong>
               <span>Altas y base del tenant</span>
@@ -124,6 +128,47 @@
               <div class="pills" id="session-pills"></div>
             </div>
             <div class="split-grid" id="summary-cards"></div>
+          </div>
+        </section>
+
+        <section class="shell-section" id="launchpad">
+          <div class="section-head">
+            <div class="section-head-copy">
+              <h2>Launchpad freemium</h2>
+              <p class="section-copy">Checklist de activacion para salir a internet y aprender de los primeros 50 clientes.</p>
+            </div>
+          </div>
+
+          <div class="section-grid">
+            <article class="surface-card span-4">
+              <h3>Estado actual</h3>
+              <div class="stack" id="launchpad-overview"></div>
+            </article>
+
+            <article class="surface-card span-4">
+              <h3>Progreso</h3>
+              <div class="stack" id="launchpad-progress"></div>
+            </article>
+
+            <article class="surface-card span-4">
+              <h3>Siguiente paso</h3>
+              <div class="stack" id="launchpad-next-action"></div>
+            </article>
+
+            <article class="surface-card span-6">
+              <h3>Uso del plan</h3>
+              <div class="stack" id="launchpad-usage"></div>
+            </article>
+
+            <article class="surface-card span-6">
+              <h3>Checklist de activacion</h3>
+              <div class="stack" id="launchpad-checklist"></div>
+            </article>
+
+            <article class="surface-card span-12">
+              <h3>Experimentos para los primeros 50</h3>
+              <div class="stack" id="launchpad-experiments"></div>
+            </article>
           </div>
         </section>
 
@@ -433,9 +478,11 @@
       const API_BASE = "http://localhost:8080";
       const RECENT_TENANTS_KEY = "micuota.recentTenants";
       const PREFERRED_TENANT_KEY = "micuota.preferredTenantSlug";
+      const FIRST_TENANT_REDIRECT_KEY = "micuota.firstTenantRedirect";
       const urlToken = new URLSearchParams(window.location.search).get("token");
       const token = urlToken || localStorage.getItem("micuota.authToken");
       const tenantSlug = localStorage.getItem("micuota.tenantSlug") || "(sin slug)";
+      const isFirstTenantRedirect = sessionStorage.getItem(FIRST_TENANT_REDIRECT_KEY) === tenantSlug;
 
       if (urlToken) {
         localStorage.setItem("micuota.authToken", urlToken);
@@ -446,7 +493,9 @@
         users: { teachers: [], students: [] },
         courses: [],
         enrollments: [],
-        payments: []
+        payments: [],
+        launchpad: null,
+        paymentSettings: null
       };
 
       const createUserForm = document.getElementById("create-user-form");
@@ -457,6 +506,7 @@
       const adminOnlyCard = document.getElementById("admin-only-card");
 
       function logout() {
+        window.MicuotaSessionTelemetry?.logout();
         localStorage.removeItem("micuota.authToken");
         window.location.href = `/landing.html?tenantSlug=${encodeURIComponent(localStorage.getItem("micuota.tenantSlug") || "")}`;
       }
@@ -553,6 +603,7 @@
       }
 
       function renderTenantSelector() {
+        const wrap = document.getElementById("tenant-selector-wrap");
         const selector = document.getElementById("tenant-switcher");
         const recent = getRecentTenants();
         selector.innerHTML = "";
@@ -562,15 +613,28 @@
         }
         selector.value = tenantSlug;
 
-        if (state.profile && state.profile.role !== "TENANT_ADMIN" && state.profile.role !== "ADMIN") {
-          document.getElementById("tenant-selector-wrap").style.display = "none";
+        if (isFirstTenantRedirect) {
+          wrap.style.display = "none";
+          return;
         }
+
+        if (state.profile && state.profile.role !== "TENANT_ADMIN" && state.profile.role !== "ADMIN") {
+          wrap.style.display = "none";
+          return;
+        }
+
+        wrap.style.display = "";
       }
 
       function renderSummaryCards() {
         const oneTime = state.payments.filter((payment) => payment.flowType === "ONE_TIME");
         const subscriptions = state.payments.filter((payment) => payment.flowType === "SUBSCRIPTION");
         document.getElementById("summary-cards").innerHTML = [
+          {
+            title: "Activacion",
+            value: state.launchpad ? `${state.launchpad.activationScore}%` : "--",
+            note: state.launchpad ? `Stage: ${state.launchpad.stage}` : "Cargando launchpad"
+          },
           {
             title: "Profesores",
             value: state.users.teachers.length,
@@ -602,6 +666,134 @@
             `;
           })
           .join("");
+      }
+
+      function renderLaunchpad() {
+        if (!state.launchpad) {
+          document.getElementById("launchpad-overview").innerHTML = "<div class='empty-state'>Cargando launchpad...</div>";
+          document.getElementById("launchpad-progress").innerHTML = "";
+          document.getElementById("launchpad-usage").innerHTML = "";
+          document.getElementById("launchpad-next-action").innerHTML = "";
+          document.getElementById("launchpad-checklist").innerHTML = "";
+          document.getElementById("launchpad-experiments").innerHTML = "";
+          return;
+        }
+
+        const launchpad = state.launchpad;
+        const checklist = (launchpad.checklist || []).map((item) => {
+          const targetByKey = {
+            "first-teacher": "#usuarios",
+            "first-student": "#usuarios",
+            "first-course": "#cursos",
+            "first-enrollment": "#cursos",
+            "first-payment": "#pagos",
+            "first-success": "#pagos",
+            "first-subscription": "#suscripciones",
+            "transfer-alias": "#cuenta"
+          };
+          const labelByKey = {
+            "first-teacher": "Ir a usuarios",
+            "first-student": "Cargar clientes",
+            "first-course": "Ir a cursos",
+            "first-enrollment": "Asignar cliente",
+            "first-payment": "Crear cobro",
+            "first-success": "Hacer seguimiento",
+            "first-subscription": "Crear suscripcion",
+            "transfer-alias": "Configurar alias"
+          };
+          const pointsByKey = {
+            "first-teacher": 15,
+            "first-student": 15,
+            "first-course": 10,
+            "first-enrollment": 10,
+            "first-payment": 15,
+            "first-success": 20,
+            "first-subscription": 10,
+            "transfer-alias": 5
+          };
+          return {
+            ...item,
+            points: Number.isFinite(item.points) ? item.points : pointsByKey[item.key] || 10,
+            actionTarget: item.actionTarget || targetByKey[item.key] || "#resumen",
+            actionLabel: item.actionLabel || labelByKey[item.key] || "Abrir"
+          };
+        });
+        const { usage } = launchpad;
+        const nextStep = checklist.find((item) => !item.done) || null;
+        const completedSteps = Number.isFinite(launchpad.completedSteps)
+          ? launchpad.completedSteps
+          : checklist.filter((item) => item.done).length;
+        const totalSteps = Number.isFinite(launchpad.totalSteps) ? launchpad.totalSteps : checklist.length;
+        const experiencePoints = Number.isFinite(launchpad.experiencePoints)
+          ? launchpad.experiencePoints
+          : checklist.filter((item) => item.done).reduce((total, item) => total + item.points, 0);
+        const nextReward = launchpad.nextReward || (nextStep ? `Siguiente recompensa: +${nextStep.points} XP.` : "Base completa.");
+        const progressPercent = Math.max(6, launchpad.activationScore || 0);
+
+        document.getElementById("launchpad-overview").innerHTML = [
+          `<div class="item"><strong>${launchpad.planName}</strong><br /><small>Plan activo</small></div>`,
+          `<div class="item"><strong>${launchpad.stage}</strong><br /><small>Stage actual</small></div>`,
+          `<div class="item"><strong>${launchpad.activationScore}/100</strong><br /><small>Score de activacion</small></div>`,
+          `<div class="item"><strong>${experiencePoints} XP</strong><br /><small>${launchpad.headline}</small></div>`
+        ].join("");
+
+        document.getElementById("launchpad-progress").innerHTML = [
+          `<div class="launch-focus-card">`,
+          `<small>Ruta base</small>`,
+          `<strong>${completedSteps}/${totalSteps} hitos</strong>`,
+          `<div class="launch-progress-track"><span class="launch-progress-fill" style="width:${progressPercent}%"></span></div>`,
+          `<p>${nextReward}</p>`,
+          `</div>`
+        ].join("");
+
+        document.getElementById("launchpad-usage").innerHTML = [
+          `<div class="item"><strong>${usage.students} / 50</strong><br /><small>Clientes cargados</small></div>`,
+          `<div class="item"><strong>${usage.remainingStudentSlots}</strong><br /><small>Cupos free restantes</small></div>`,
+          `<div class="item"><strong>${usage.courses}</strong><br /><small>Cursos activos</small></div>`,
+          `<div class="item"><strong>${usage.successfulPayments}</strong><br /><small>Pagos exitosos</small></div>`,
+          `<div class="item"><strong>${usage.subscriptions}</strong><br /><small>Suscripciones</small></div>`,
+          `<div class="item"><strong>${usage.pendingPayments}</strong><br /><small>Pendientes</small></div>`
+        ].join("");
+
+        document.getElementById("launchpad-next-action").innerHTML = nextStep
+          ? [
+              `<div class="launch-focus-card">`,
+              `<small>Haz esto ahora</small>`,
+              `<strong>${nextStep.title}</strong>`,
+              `<p>${nextStep.detail}</p>`,
+              `<div class="actions-row">`,
+              `<button type="button" data-launch-target="${nextStep.actionTarget}">${nextStep.actionLabel}</button>`,
+              `<span class="pill">+${nextStep.points} XP</span>`,
+              `</div>`,
+              `<p class="helper-text">${launchpad.ahaMomentDefinition}</p>`,
+              `</div>`
+            ].join("")
+          : `<div class="item"><strong>Base completa</strong><br /><small>Ahora repite el flujo ganador con mas clientes y mide conversion.</small></div>`;
+
+        document.getElementById("launchpad-checklist").innerHTML = checklist.length
+          ? checklist
+              .map((item) => {
+                return `
+                  <div class="item ${item.done ? "launch-item-done" : "launch-item-pending"}">
+                    <strong>${item.done ? "Listo" : "Pendiente"} · ${item.title}</strong><br />
+                    <small>${item.detail}</small>
+                    <div class="actions-row">
+                      <span class="pill">+${item.points} XP</span>
+                      ${item.done ? "" : `<button class="btn-secondary" type="button" data-launch-target="${item.actionTarget}">${item.actionLabel}</button>`}
+                    </div>
+                  </div>
+                `;
+              })
+              .join("")
+          : "<div class='empty-state'>Sin checklist disponible.</div>";
+
+        document.getElementById("launchpad-experiments").innerHTML = launchpad.experiments.length
+          ? launchpad.experiments
+              .map((experiment) => {
+                return `<div class="item"><strong>${experiment.title}</strong><br /><small>${experiment.play}</small><br /><small><strong>Metrica:</strong> ${experiment.successMetric}</small></div>`;
+              })
+              .join("")
+          : "<div class='empty-state'>Sin experimentos sugeridos.</div>";
       }
 
       function renderUsers() {
@@ -684,7 +876,8 @@
         document.getElementById("account-tenant").innerHTML = [
           `<div><small>Tenant slug</small><strong>${tenantSlug}</strong></div>`,
           `<div><small>Tenant ID</small><strong>${state.profile.tenantId}</strong></div>`,
-          `<div><small>User ID</small><strong>${state.profile.userId}</strong></div>`
+          `<div><small>User ID</small><strong>${state.profile.userId}</strong></div>`,
+          `<div><small>Alias AR</small><strong>${state.paymentSettings?.transferAlias || "No configurado"}</strong></div>`
         ].join("");
       }
 
@@ -771,16 +964,27 @@
         state.payments = await apiGet("/api/backoffice/payments");
       }
 
+      async function loadLaunchpad() {
+        state.launchpad = await apiGet("/api/backoffice/launchpad");
+      }
+
+      async function loadPaymentSettings() {
+        try {
+          state.paymentSettings = await apiGet("/api/backoffice/payment-settings");
+        } catch (error) {
+          state.paymentSettings = null;
+        }
+      }
+
       async function refreshAllData() {
-        await loadUsers();
-        await loadCourses();
-        await loadEnrollments();
-        await loadPayments();
+        await Promise.all([loadUsers(), loadCourses(), loadEnrollments(), loadPayments(), loadLaunchpad(), loadPaymentSettings()]);
         fillUserAndCourseSelectors();
         renderSummaryCards();
+        renderLaunchpad();
         renderUsers();
         renderCourses();
         renderPayments();
+        renderAccountSettings();
       }
 
       async function loadQuickShare() {
@@ -854,12 +1058,23 @@
           renderTenantSelector();
           renderAccountSettings();
           await refreshAllData();
+          if (isFirstTenantRedirect) {
+            sessionStorage.removeItem(FIRST_TENANT_REDIRECT_KEY);
+          }
         } catch (error) {
           logout();
         }
       }
 
       window.addEventListener("hashchange", setActiveNav);
+      document.addEventListener("click", (event) => {
+        const trigger = event.target.closest("[data-launch-target]");
+        if (!trigger) return;
+        const target = trigger.dataset.launchTarget;
+        if (!target) return;
+        window.location.hash = target;
+        setActiveNav();
+      });
       document.getElementById("logout-link").addEventListener("click", logout);
       document.getElementById("logout-button").addEventListener("click", logout);
       document.getElementById("switch-tenant-button").addEventListener("click", switchTenant);
@@ -977,6 +1192,7 @@
 
       bootstrap();
     </script>
+    <script src="/session-telemetry.js"></script>
     <script src="/chatbot.js"></script>
   </body>
 </html>

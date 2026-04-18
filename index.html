@@ -6,137 +6,261 @@
     <title>MiCuota.online | Demo de cobros</title>
     <meta
       name="description"
-      content="Demo tecnológica y minimalista de cobros únicos y suscripciones en MiCuota.online."
+      content="Demo de cobros de MiCuota.online para crear pagos, suscripciones y compartir checkout listo para alumnos."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Syne:wght@500;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="ui.css" />
+    <link rel="stylesheet" href="styles.css" />
   </head>
-  <body>
-    <div class="app-shell">
-      <header class="topbar">
-        <a class="brand" href="/landing.html">
-          <span class="brand-dot"></span>
-          MiCuota.online
+  <body class="demo-body">
+    <div class="demo-bg" aria-hidden="true">
+      <div class="demo-orb demo-orb-a"></div>
+      <div class="demo-orb demo-orb-b"></div>
+      <div class="demo-grid"></div>
+    </div>
+
+    <div class="demo-shell">
+      <header class="demo-topbar">
+        <a class="demo-brand" href="/landing.html">
+          <span class="demo-brand-mark" aria-hidden="true"></span>
+          <span>
+            <strong>MiCuota.online</strong>
+            <small>Payment design sandbox</small>
+          </span>
         </a>
-        <nav class="nav-links">
-          <a href="/landing.html">Inicio</a>
+
+        <nav class="demo-nav">
+          <a href="/landing.html">Landing</a>
           <a href="/backoffice.html">Backoffice</a>
           <a href="/profesor.html">Profesor</a>
           <a href="/alumno.html">Alumno</a>
-          <a href="http://localhost:5173" target="_blank" rel="noopener noreferrer">Embedding SDK</a>
+          <a href="http://localhost:5173" target="_blank" rel="noopener noreferrer">SDK</a>
         </nav>
       </header>
 
-      <section class="hero">
-        <span class="kicker">Demo interactiva</span>
-        <h1>Probá el flujo de cobro en minutos.</h1>
-        <p>
-          Crea links de pago y suscripciones con una experiencia tecnológica, limpia y usable.
-        </p>
-        <div class="pills">
-          <span class="pill">MercadoPago</span>
-          <span class="pill">QR</span>
-          <span class="pill">Callbacks</span>
-          <span class="pill">Suscripciones</span>
-        </div>
-      </section>
+      <main class="demo-main">
+        <section class="hero-stage">
+          <div class="hero-copy">
+            <span class="hero-kicker">Checkout Lab</span>
+            <h1>Un demo de cobros que ya se siente como producto premium.</h1>
+            <p class="hero-lead">
+              Genera un pago o una suscripción, comparte el link y revisa el resultado en un flujo
+              claro, rápido y digno de mostrarse en internet.
+            </p>
 
-      <main class="grid">
-      <section class="card span-6">
-        <h2>Crear pago unico</h2>
-        <p class="section-copy">Genera un link para una clase, sesión o cobro puntual.</p>
-        <form id="single-payment-form">
-          <div class="field">
-            <label>Proveedor</label>
-            <select name="provider">
-              <option value="MERCADOPAGO">MercadoPago</option>
-              <option value="PROMETEO">Prometeo</option>
-              <option value="WOOCOMMERCE">WooCommerce</option>
-              <option value="STRIPE">Stripe</option>
-              <option value="SQUARE">Square</option>
-              <option value="PLEXO">Plexo</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Titulo</label>
-            <input name="title" value="Clase de apoyo" required />
-          </div>
-          <div class="field">
-            <label>Monto</label>
-            <input name="amount" type="number" min="1" step="1" value="800" required />
-          </div>
-          <div class="field">
-            <label>Moneda</label>
-            <select name="currency">
-              <option value="UYU">UYU</option>
-              <option value="ARS">ARS</option>
-              <option value="USD">USD</option>
-            </select>
-          </div>
-          <button type="submit">Generar link + QR</button>
-        </form>
-        <div class="result stack" id="single-result" aria-live="polite"></div>
-      </section>
+            <div class="hero-actions">
+              <a class="hero-btn hero-btn-primary" href="#single-payment-form">Crear pago</a>
+              <a class="hero-btn hero-btn-secondary" href="#subscription-form">Crear suscripción</a>
+            </div>
 
-      <section class="card span-6">
-        <h2>Crear suscripcion</h2>
-        <p class="section-copy">Configura una mensualidad recurrente para alumnos o pacientes.</p>
-        <form id="subscription-form">
-          <div class="field">
-            <label>Proveedor</label>
-            <select name="provider">
-              <option value="MERCADOPAGO">MercadoPago</option>
-              <option value="PROMETEO">Prometeo</option>
-              <option value="WOOCOMMERCE">WooCommerce</option>
-              <option value="STRIPE">Stripe</option>
-              <option value="SQUARE">Square</option>
-              <option value="PLEXO">Plexo</option>
-            </select>
+            <div class="hero-trust">
+              <span class="hero-chip">Links</span>
+              <span class="hero-chip">QR</span>
+              <span class="hero-chip">Callbacks</span>
+              <span class="hero-chip">Pagos reales</span>
+            </div>
           </div>
-          <div class="field">
-            <label>Nombre del plan</label>
-            <input name="reason" value="Cuota mensual" required />
-          </div>
-          <div class="field">
-            <label>Monto mensual</label>
-            <input name="amount" type="number" min="1" step="1" value="2500" required />
-          </div>
-          <div class="field">
-            <label>Frecuencia</label>
-            <select name="frequency">
-              <option value="1">Cada 1 mes</option>
-              <option value="2">Cada 2 meses</option>
-              <option value="3">Cada 3 meses</option>
-            </select>
-          </div>
-          <button type="submit">Generar suscripcion + QR</button>
-        </form>
-        <div class="result stack" id="subscription-result" aria-live="polite"></div>
-      </section>
 
-      <section class="card span-6">
-        <h2>Estado del MVP</h2>
-        <ul class="stack" style="padding-left: 18px; margin: 0;">
-          <li><strong>Profesor:</strong> onboarding y credenciales de MercadoPago</li>
-          <li><strong>Alumno:</strong> pago via link o QR</li>
-          <li><strong>Callbacks:</strong> success, pending, failure</li>
-          <li><strong>Monetizacion:</strong> comision por pago unico o recurrente</li>
-          <li><strong>Deploy:</strong> Netlify + flujo Git con develop/test/produccion</li>
-        </ul>
-      </section>
+          <aside class="hero-board">
+            <div class="hero-board-head">
+              <span>Signal board</span>
+              <strong>Demo listo para mostrar</strong>
+            </div>
 
-      <section class="card span-6">
-        <h2>Operaciones recientes</h2>
-        <p class="section-copy">Se consultan desde el backend para el teacher demo (id 1).</p>
-        <button id="refresh-ops" type="button">Actualizar operaciones</button>
-        <div class="result stack" id="ops-result" aria-live="polite"></div>
-      </section>
-    </main>
+            <div class="hero-board-grid">
+              <article class="signal-card signal-card-primary">
+                <small>Tiempo a valor</small>
+                <strong>Menos de 2 min</strong>
+                <p>Creas el cobro y lo compartes sin salir del flujo.</p>
+              </article>
+
+              <article class="signal-card">
+                <small>Primer CTA</small>
+                <strong>Pagar o suscribirse</strong>
+                <p>La intención principal está siempre visible.</p>
+              </article>
+
+              <article class="signal-card">
+                <small>Canales</small>
+                <strong>WhatsApp, QR, link</strong>
+                <p>Todo listo para enviar y retomar en otro dispositivo.</p>
+              </article>
+
+              <article class="signal-card">
+                <small>Setup</small>
+                <strong>Teacher demo #1</strong>
+                <p>Apunta al sandbox real del backend local.</p>
+              </article>
+            </div>
+          </aside>
+        </section>
+
+        <section class="story-strip">
+          <article class="story-card">
+            <span>01</span>
+            <strong>Genera el cobro</strong>
+            <p>Pago único para clases, sesiones o cobros puntuales.</p>
+          </article>
+          <article class="story-card">
+            <span>02</span>
+            <strong>Comparte el checkout</strong>
+            <p>Link y QR listos para mandarlo por donde quieras.</p>
+          </article>
+          <article class="story-card">
+            <span>03</span>
+            <strong>Sigue el resultado</strong>
+            <p>Callbacks y operaciones recientes para validar el flujo real.</p>
+          </article>
+        </section>
+
+        <section class="demo-grid-layout">
+          <section class="panel panel-form panel-large">
+            <div class="panel-head">
+              <div>
+                <span class="panel-kicker">Pago puntual</span>
+                <h2>Crear pago único</h2>
+              </div>
+              <p>Úsalo para cobrar una clase, cuota o sesión puntual y entregar un checkout limpio.</p>
+            </div>
+
+            <form id="single-payment-form" class="form-grid">
+              <div class="field">
+                <label for="single-provider">Proveedor</label>
+                <select id="single-provider" name="provider">
+                  <option value="MERCADOPAGO">MercadoPago</option>
+                  <option value="PROMETEO">Prometeo</option>
+                  <option value="WOOCOMMERCE">WooCommerce</option>
+                  <option value="STRIPE">Stripe</option>
+                  <option value="SQUARE">Square</option>
+                  <option value="PLEXO">Plexo</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="single-title">Concepto</label>
+                <input id="single-title" name="title" value="Clase de apoyo" required />
+              </div>
+
+              <div class="field">
+                <label for="single-amount">Monto</label>
+                <input id="single-amount" name="amount" type="number" min="1" step="1" value="800" required />
+              </div>
+
+              <div class="field">
+                <label for="single-currency">Moneda</label>
+                <select id="single-currency" name="currency">
+                  <option value="UYU">UYU</option>
+                  <option value="ARS">ARS</option>
+                  <option value="USD">USD</option>
+                </select>
+              </div>
+
+              <div class="panel-actions">
+                <button type="submit">Generar link + QR</button>
+              </div>
+            </form>
+
+            <div class="result stack result-surface" id="single-result" aria-live="polite"></div>
+          </section>
+
+          <section class="panel panel-form panel-large">
+            <div class="panel-head">
+              <div>
+                <span class="panel-kicker">Recurring revenue</span>
+                <h2>Crear suscripción</h2>
+              </div>
+              <p>Diseñada para mensualidades y cobros repetidos con un flujo consistente para el alumno.</p>
+            </div>
+
+            <form id="subscription-form" class="form-grid">
+              <div class="field">
+                <label for="subscription-provider">Proveedor</label>
+                <select id="subscription-provider" name="provider">
+                  <option value="MERCADOPAGO">MercadoPago</option>
+                  <option value="PROMETEO">Prometeo</option>
+                  <option value="WOOCOMMERCE">WooCommerce</option>
+                  <option value="STRIPE">Stripe</option>
+                  <option value="SQUARE">Square</option>
+                  <option value="PLEXO">Plexo</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="subscription-reason">Nombre del plan</label>
+                <input id="subscription-reason" name="reason" value="Cuota mensual" required />
+              </div>
+
+              <div class="field">
+                <label for="subscription-amount">Monto mensual</label>
+                <input id="subscription-amount" name="amount" type="number" min="1" step="1" value="2500" required />
+              </div>
+
+              <div class="field">
+                <label for="subscription-frequency">Frecuencia</label>
+                <select id="subscription-frequency" name="frequency">
+                  <option value="1">Cada 1 mes</option>
+                  <option value="2">Cada 2 meses</option>
+                  <option value="3">Cada 3 meses</option>
+                </select>
+              </div>
+
+              <div class="panel-actions">
+                <button type="submit">Generar suscripción + QR</button>
+              </div>
+            </form>
+
+            <div class="result stack result-surface" id="subscription-result" aria-live="polite"></div>
+          </section>
+
+          <section class="panel panel-side">
+            <div class="panel-head compact">
+              <div>
+                <span class="panel-kicker">What this proves</span>
+                <h2>MVP con narrativa</h2>
+              </div>
+            </div>
+
+            <ul class="feature-list">
+              <li>
+                <strong>Profesor</strong>
+                <span>Onboarding, cobros y credenciales operativas.</span>
+              </li>
+              <li>
+                <strong>Alumno</strong>
+                <span>Experiencia simple para abrir, pagar y retomar.</span>
+              </li>
+              <li>
+                <strong>Callbacks</strong>
+                <span>Success, pending y failure para cerrar el circuito.</span>
+              </li>
+              <li>
+                <strong>Monetización</strong>
+                <span>Pago único o recurrente con lógica de SaaS real.</span>
+              </li>
+            </ul>
+          </section>
+
+          <section class="panel panel-side">
+            <div class="panel-head compact">
+              <div>
+                <span class="panel-kicker">Live feed</span>
+                <h2>Operaciones recientes</h2>
+              </div>
+              <p>Consultadas desde el backend local para el teacher demo `#1`.</p>
+            </div>
+
+            <div class="panel-actions panel-actions-inline">
+              <button id="refresh-ops" type="button">Actualizar operaciones</button>
+            </div>
+
+            <div class="result stack result-surface" id="ops-result" aria-live="polite"></div>
+          </section>
+        </section>
+      </main>
     </div>
 
     <script src="app.js"></script>

@@ -1,6 +1,10 @@
 -- MiCuota MVP | Metabase SQL Pack
 -- Dashboards globales para entidades principales y metricas de negocio.
 -- Base objetivo: PostgreSQL (database: micuota)
+-- Nota:
+-- - Los leads viven en crm.leads
+-- - La telemetria de sesiones vive en analytics.session_activity
+-- - payment_operations.teacher_id referencia teacher_profiles.id
 
 -- =========================================================
 -- A) KPI CARDS (global)
@@ -39,6 +43,20 @@ WHERE status = 'SUCCESS';
 SELECT COALESCE(AVG(amount), 0) AS avg_ticket_success
 FROM payment_operations
 WHERE status = 'SUCCESS';
+
+-- A9) Leads totales en CRM propio
+SELECT COUNT(*) AS total_leads
+FROM crm.leads;
+
+-- A10) Sesiones activas aproximadas (last_seen < 5 min y no cerradas)
+SELECT COUNT(*) AS active_sessions
+FROM analytics.session_activity
+WHERE ended_at IS NULL
+  AND last_seen_at >= NOW() - INTERVAL '5 minutes';
+
+-- A11) Duracion promedio de sesion en minutos
+SELECT ROUND(COALESCE(AVG(duration_seconds), 0) / 60.0, 2) AS avg_session_duration_minutes
+FROM analytics.session_activity;
 
 
 -- =========================================================
@@ -184,6 +202,22 @@ FROM payment_operations p
 GROUP BY DATE_TRUNC('month', p.created_at)
 ORDER BY month;
 
+-- D6) Sesiones iniciadas por mes
+SELECT
+  DATE_TRUNC('month', s.started_at)::date AS month,
+  COUNT(*) AS sessions_started
+FROM analytics.session_activity s
+GROUP BY DATE_TRUNC('month', s.started_at)
+ORDER BY month;
+
+-- D7) Leads creados por mes
+SELECT
+  DATE_TRUNC('month', l.created_at)::date AS month,
+  COUNT(*) AS leads_created
+FROM crm.leads l
+GROUP BY DATE_TRUNC('month', l.created_at)
+ORDER BY month;
+
 
 -- =========================================================
 -- E) RANKINGS (gestion)
@@ -191,13 +225,14 @@ ORDER BY month;
 
 -- E1) Top 10 profesores por monto cobrado (SUCCESS)
 SELECT
-  p.teacher_id,
+  tp.id AS teacher_profile_id,
   COALESCE(u.full_name, 'N/A') AS teacher_name,
   COUNT(*) FILTER (WHERE p.status = 'SUCCESS') AS success_operations,
   COALESCE(SUM(p.amount) FILTER (WHERE p.status = 'SUCCESS'), 0) AS success_amount
 FROM payment_operations p
-LEFT JOIN users u ON u.id = p.teacher_id
-GROUP BY p.teacher_id, u.full_name
+LEFT JOIN teacher_profiles tp ON tp.id = p.teacher_id
+LEFT JOIN users u ON u.id = tp.user_id
+GROUP BY tp.id, u.full_name
 ORDER BY success_amount DESC
 LIMIT 10;
 
@@ -209,7 +244,8 @@ SELECT
   COUNT(*) FILTER (WHERE p.status = 'SUCCESS') AS success_operations,
   COALESCE(SUM(p.amount) FILTER (WHERE p.status = 'SUCCESS'), 0) AS success_amount
 FROM payment_operations p
-LEFT JOIN users u ON u.id = p.teacher_id
+LEFT JOIN teacher_profiles tp ON tp.id = p.teacher_id
+LEFT JOIN users u ON u.id = tp.user_id
 LEFT JOIN tenants t ON t.id = u.tenant_id
 GROUP BY t.id, t.slug, t.name
 ORDER BY success_amount DESC NULLS LAST
@@ -245,13 +281,26 @@ SELECT
   p.description,
   p.provider_reference,
   t.slug AS tenant_slug,
-  teacher.full_name AS teacher_name,
+  teacher_user.full_name AS teacher_name,
   student.full_name AS student_name,
   c.name AS course_name
 FROM payment_operations p
-LEFT JOIN users teacher ON teacher.id = p.teacher_id
+LEFT JOIN teacher_profiles tp ON tp.id = p.teacher_id
+LEFT JOIN users teacher_user ON teacher_user.id = tp.user_id
 LEFT JOIN users student ON student.id = p.student_user_id
-LEFT JOIN tenants t ON t.id = teacher.tenant_id
+LEFT JOIN tenants t ON t.id = teacher_user.tenant_id
 LEFT JOIN courses c ON c.id = p.course_id
 ORDER BY p.created_at DESC
 LIMIT 100;
+
+-- F2) Embudo de leads por estado
+SELECT status, COUNT(*) AS total_leads
+FROM crm.leads
+GROUP BY status
+ORDER BY total_leads DESC;
+
+-- F3) Leads por fuente
+SELECT source, COUNT(*) AS total_leads
+FROM crm.leads
+GROUP BY source
+ORDER BY total_leads DESC;

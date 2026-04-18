@@ -8,4 +8,5 @@ public interface CourseEnrollmentRepository extends JpaRepository<CourseEnrollme
     boolean existsByCourseIdAndStudentId(Long courseId, Long studentUserId);
     List<CourseEnrollment> findByTenantIdOrderByCreatedAtDesc(Long tenantId);
     List<CourseEnrollment> findByStudentIdOrderByCreatedAtDesc(Long studentUserId);
+    long countByTenantId(Long tenantId);
 }

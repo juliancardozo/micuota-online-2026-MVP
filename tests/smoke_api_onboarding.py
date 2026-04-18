@@ -19,6 +19,16 @@ def post_json(base_url: str, path: str, payload: dict, token: str | None = None)
         return json.loads(body)
 
 
+def get_json(base_url: str, path: str, token: str | None = None) -> dict:
+    req = urllib.request.Request(base_url + path, method="GET")
+    if token:
+        req.add_header("X-Auth-Token", token)
+
+    with urllib.request.urlopen(req, timeout=30) as response:
+        body = response.read().decode("utf-8")
+        return json.loads(body)
+
+
 def get_status(base_url: str, path: str) -> int:
     req = urllib.request.Request(base_url + path, method="GET")
     with urllib.request.urlopen(req, timeout=30) as response:
@@ -142,6 +152,8 @@ def main() -> int:
             token,
         )
 
+        launchpad = get_json(base_url, "/api/backoffice/launchpad", token)
+
     except urllib.error.HTTPError as exc:
         try:
             detail = exc.read().decode("utf-8")
@@ -171,6 +183,12 @@ def main() -> int:
             "admin": {"email": admin_email, "password": admin_pass},
             "profesor": {"email": prof_email, "password": prof_pass},
             "alumno": {"email": alum_email, "password": alum_pass},
+        },
+        "launchpad": {
+            "plan": launchpad["planName"],
+            "stage": launchpad["stage"],
+            "activationScore": launchpad["activationScore"],
+            "nextBestAction": launchpad["nextBestAction"],
         },
     }
 

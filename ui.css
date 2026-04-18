@@ -136,6 +136,62 @@ body.shell-ui textarea {
   color: var(--muted);
 }
 
+.launch-item-done {
+  border-left: 4px solid rgba(41, 126, 89, 0.65);
+}
+
+.launch-item-pending {
+  border-left: 4px solid rgba(204, 90, 22, 0.55);
+}
+
+body.admin-ui .shell-content {
+  gap: 14px;
+}
+
+body.admin-ui .shell-header {
+  padding: 20px 22px;
+}
+
+body.admin-ui .hero-panel,
+body.admin-ui .shell-section {
+  padding: 18px 20px;
+}
+
+body.admin-ui .header-copy {
+  gap: 8px;
+}
+
+body.admin-ui .header-copy p,
+body.admin-ui .admin-hero-copy .section-copy {
+  max-width: 86ch;
+}
+
+body.admin-ui .header-meta {
+  width: min(100%, 420px);
+  grid-template-columns: 1fr;
+}
+
+.admin-summary-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.admin-stat-card {
+  min-height: 116px;
+  align-content: start;
+}
+
+.admin-stat-card strong {
+  font-size: clamp(1.1rem, 2vw, 1.7rem);
+}
+
+.admin-compact-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .brand-copy {
   display: grid;
   gap: 3px;
@@ -639,6 +695,37 @@ body.shell-ui textarea:focus {
   gap: 4px;
 }
 
+.launch-focus-card {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(204, 90, 22, 0.16);
+  background: linear-gradient(135deg, rgba(255, 244, 225, 0.92) 0%, rgba(255, 250, 243, 0.94) 100%);
+}
+
+.launch-focus-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.launch-progress-track {
+  width: 100%;
+  height: 12px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(93, 73, 43, 0.1);
+}
+
+.launch-progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-2) 100%);
+  box-shadow: 0 8px 18px rgba(204, 90, 22, 0.18);
+}
+
 .empty-state {
   padding: 18px;
   border-radius: 18px;
@@ -671,6 +758,11 @@ body.shell-ui textarea:focus {
   .split-grid {
     grid-template-columns: 1fr;
   }
+
+  .admin-summary-grid,
+  .admin-compact-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 920px) {
@@ -692,6 +784,11 @@ body.shell-ui textarea:focus {
   .shell-header,
   .section-head {
     flex-direction: column;
+  }
+
+  .admin-summary-grid,
+  .admin-compact-grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -731,11 +828,13 @@ body.shell-ui textarea:focus {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  border: 1px solid rgba(204, 90, 22, 0.2);
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-2) 100%);
-  color: #fff8f0;
+  border: 1px solid rgba(204, 90, 22, 0.16);
+  background: radial-gradient(circle at 30% 30%, rgba(255, 248, 238, 0.94) 0%, rgba(255, 241, 219, 0.88) 44%, rgba(240, 166, 74, 0.92) 100%);
+  color: #6a3213;
   font-weight: 800;
-  box-shadow: 0 16px 36px rgba(96, 56, 17, 0.2);
+  box-shadow:
+    0 0 0 10px rgba(240, 166, 74, 0.08),
+    0 18px 40px rgba(96, 56, 17, 0.18);
 }
 
 .mc-chatbot {
@@ -745,13 +844,35 @@ body.shell-ui textarea:focus {
   width: min(380px, calc(100vw - 24px));
   max-height: min(620px, calc(100vh - 120px));
   z-index: 1199;
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  background: rgba(255, 251, 244, 0.97);
-  box-shadow: 0 22px 56px rgba(96, 56, 17, 0.2);
+  border: 1px solid rgba(93, 73, 43, 0.08);
+  border-radius: 24px;
+  background: rgba(255, 251, 244, 0.2);
+  box-shadow:
+    0 28px 60px rgba(96, 56, 17, 0.12),
+    0 0 0 1px rgba(255, 255, 255, 0.18) inset;
+  backdrop-filter: blur(18px);
   display: grid;
   grid-template-rows: auto 1fr auto;
   overflow: hidden;
+}
+
+.mc-chatbot::before {
+  content: "";
+  position: absolute;
+  inset: -40px -30px auto auto;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(240, 166, 74, 0.2) 0%, transparent 72%);
+  pointer-events: none;
+}
+
+.mc-chatbot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, transparent 32%, rgba(255, 255, 255, 0.06) 100%);
 }
 
 .mc-chatbot[hidden] {
@@ -759,11 +880,11 @@ body.shell-ui textarea:focus {
 }
 
 .mc-chatbot-head {
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--line);
+  padding: 12px 12px 8px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  background: transparent;
 }
 
 .mc-chatbot-head strong {
@@ -773,33 +894,40 @@ body.shell-ui textarea:focus {
 .mc-chatbot-head button {
   height: 30px;
   padding: 0 10px;
-  border-radius: 8px;
+  border-radius: 999px;
   font-size: 0.78rem;
+  border: 1px solid rgba(93, 73, 43, 0.1);
+  background: rgba(255, 255, 255, 0.48);
+  box-shadow: none;
+  color: var(--muted);
 }
 
 .mc-chatbot-body {
   overflow: auto;
-  padding: 12px;
+  padding: 6px 12px 12px;
   display: grid;
   gap: 8px;
+  background: transparent;
 }
 
 .mc-chat-msg {
   padding: 9px 10px;
-  border-radius: 12px;
-  border: 1px solid var(--line);
+  border-radius: 16px;
+  border: 1px solid rgba(93, 73, 43, 0.08);
   font-size: 0.86rem;
   line-height: 1.42;
   white-space: pre-wrap;
 }
 
 .mc-chat-msg.user {
-  background: rgba(255, 236, 210, 0.72);
+  background: rgba(255, 236, 210, 0.52);
   border-color: rgba(204, 90, 22, 0.26);
+  box-shadow: 0 10px 24px rgba(204, 90, 22, 0.08);
 }
 
 .mc-chat-msg.bot {
-  background: rgba(255, 255, 255, 0.74);
+  background: rgba(255, 255, 255, 0.42);
+  box-shadow: 0 10px 24px rgba(60, 40, 12, 0.06);
 }
 
 .mc-chatbot-chips {
@@ -812,22 +940,25 @@ body.shell-ui textarea:focus {
   height: 32px;
   border-radius: 999px;
   padding: 0 11px;
-  background: rgba(255, 255, 255, 0.88);
-  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.38);
+  border: 1px solid rgba(93, 73, 43, 0.1);
   color: var(--muted);
   font-size: 0.77rem;
+  box-shadow: none;
 }
 
 .mc-chatbot-form {
-  border-top: 1px solid var(--line);
-  padding: 10px;
+  padding: 8px 10px 10px;
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 8px;
+  background: linear-gradient(180deg, transparent 0%, rgba(255, 251, 244, 0.16) 100%);
 }
 
 .mc-chatbot-form input {
   min-height: 38px;
+  border: 1px solid rgba(93, 73, 43, 0.1);
+  background: rgba(255, 255, 255, 0.42);
 }
 
 .mc-chatbot-form button {

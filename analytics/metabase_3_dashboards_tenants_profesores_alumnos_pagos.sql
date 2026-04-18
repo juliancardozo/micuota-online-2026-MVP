@@ -46,7 +46,8 @@ SELECT
   COALESCE(SUM(p.amount) FILTER (WHERE p.status = 'SUCCESS'), 0) AS success_amount
 FROM tenants t
 LEFT JOIN users u ON u.tenant_id = t.id
-LEFT JOIN payment_operations p ON p.teacher_id = u.id
+LEFT JOIN teacher_profiles tp ON tp.user_id = u.id
+LEFT JOIN payment_operations p ON p.teacher_id = tp.id
 GROUP BY t.id, t.slug, t.name
 ORDER BY success_amount DESC, t.id;
 
@@ -87,13 +88,14 @@ ORDER BY t.id;
 
 -- D2_PA4) Top profesores por monto cobrado (SUCCESS)
 SELECT
-  p.teacher_id,
+  tp.id AS teacher_profile_id,
   COALESCE(teacher.full_name, 'N/A') AS teacher_name,
   COUNT(p.id) FILTER (WHERE p.status = 'SUCCESS') AS success_operations,
   COALESCE(SUM(p.amount) FILTER (WHERE p.status = 'SUCCESS'), 0) AS success_amount
 FROM payment_operations p
-LEFT JOIN users teacher ON teacher.id = p.teacher_id
-GROUP BY p.teacher_id, teacher.full_name
+LEFT JOIN teacher_profiles tp ON tp.id = p.teacher_id
+LEFT JOIN users teacher ON teacher.id = tp.user_id
+GROUP BY tp.id, teacher.full_name
 ORDER BY success_amount DESC
 LIMIT 10;
 
@@ -109,17 +111,7 @@ GROUP BY p.student_user_id, student.full_name
 ORDER BY success_amount DESC
 LIMIT 10;
 
--- D2_PA6) Altas mensuales por rol (TEACHER/STUDENT)
-SELECT
-  DATE_TRUNC('month', u.created_at)::date AS month,
-  u.role,
-  COUNT(*) AS total_users
-FROM users u
-WHERE u.role IN ('TEACHER', 'STUDENT')
-GROUP BY DATE_TRUNC('month', u.created_at), u.role
-ORDER BY month, u.role;
-
--- D2_PA7) Inscripciones por curso con profesor
+-- D2_PA6) Inscripciones por curso con profesor
 SELECT
   c.id AS course_id,
   c.name AS course_name,

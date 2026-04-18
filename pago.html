@@ -197,7 +197,8 @@
       .detail-card,
       .trust-card,
       .timeline-card,
-      .summary-block {
+      .summary-block,
+      .transfer-card {
         border: 1px solid var(--line);
         border-radius: var(--radius-lg);
         background: rgba(255, 255, 255, 0.56);
@@ -396,6 +397,23 @@
         font-size: 0.92rem;
       }
 
+      .transfer-card {
+        display: grid;
+        gap: 12px;
+        background: linear-gradient(135deg, rgba(255, 247, 235, 0.88) 0%, rgba(255, 239, 214, 0.92) 100%);
+      }
+
+      .transfer-card code {
+        display: inline-flex;
+        align-items: center;
+        min-height: 42px;
+        padding: 0 12px;
+        border-radius: 12px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.76);
+        font-size: 0.92rem;
+      }
+
       .empty-state,
       .error-state {
         border-radius: var(--radius-lg);
@@ -483,6 +501,19 @@
           <button id="copy-link" class="btn btn-secondary" type="button">Copiar link</button>
         </div>
 
+        <section class="transfer-card" id="transfer-block" hidden>
+          <span class="section-label">Alternativa manual AR</span>
+          <div>
+            <small>Alias</small>
+            <code id="transfer-alias">--</code>
+          </div>
+          <div>
+            <small>Banco</small>
+            <strong id="transfer-bank-name">--</strong>
+          </div>
+          <p>Si prefieres transferencia, comparte este alias con el alumno y luego valida el estado desde MiCuota.</p>
+        </section>
+
         <section class="trust-card">
           <span class="section-label">Que va a pasar</span>
           <ol class="timeline">
@@ -565,6 +596,7 @@
       const qrImage = document.getElementById("checkout-qr");
       const statusBadge = document.getElementById("status-badge");
       const statusCopy = document.getElementById("status-copy");
+      const transferBlock = document.getElementById("transfer-block");
 
       function formatFlowType(flowType) {
         return flowType === "SUBSCRIPTION" ? "Suscripcion" : "Pago unico";
@@ -645,6 +677,12 @@
           const qr = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(data.checkoutUrl)}`;
           qrImage.src = qr;
           qrImage.hidden = false;
+
+          if (data.transferAlias) {
+            document.getElementById("transfer-alias").textContent = data.transferAlias;
+            document.getElementById("transfer-bank-name").textContent = data.transferBankName || "Banco a confirmar";
+            transferBlock.hidden = false;
+          }
 
           copyLink.addEventListener("click", async () => {
             await navigator.clipboard.writeText(data.checkoutUrl);

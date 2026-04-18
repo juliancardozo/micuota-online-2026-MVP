@@ -97,6 +97,8 @@ Tambien quedan disponibles clientes de administracion:
 
 - Adminer (cliente SQL): `http://localhost:8081`
 - Metabase (dashboards y metricas): `http://localhost:3001`
+- Prometheus (scrape / queries): `http://localhost:9090`
+- Grafana (observabilidad SaaS): `http://localhost:3002`
 
 PostgreSQL:
 
@@ -119,6 +121,14 @@ Metabase (dashboard admin del sistema):
 	- Database: `micuota`
 	- Username: `micuota`
 	- Password: `micuota`
+
+Grafana:
+
+- URL: `http://localhost:3002`
+- User: `admin`
+- Password: `admin123`
+- Datasource Prometheus provisionado automaticamente
+- Dashboard inicial provisionado: `MiCuota SaaS Overview`
 
 Con eso puedes construir dashboards globales para todas las entidades (usuarios, cursos, pagos, enrollments, tenants).
 
@@ -199,6 +209,28 @@ Pack especifico de 3 dashboards (Tenants, Profesores/Alumnos y Pagos):
 Guia para charts interactivos y drill-through en Metabase:
 
 - [analytics/metabase_interactive_charts_drillthrough.md](analytics/metabase_interactive_charts_drillthrough.md)
+
+### 1.4) Observabilidad del SaaS (Grafana + Prometheus)
+
+El backend expone metricas en:
+
+- `http://localhost:8080/actuator/prometheus`
+
+Metricas utiles incluidas:
+
+- `micuota_saas_tenants_total`
+- `micuota_saas_users_total`
+- `micuota_saas_courses_total`
+- `micuota_saas_leads_total`
+- `micuota_saas_active_sessions`
+- `micuota_saas_revenue_success`
+- `micuota_payments_created_total`
+- `micuota_payment_status_changes_total`
+- `micuota_leads_captured_total`
+- `micuota_sessions_started_total`
+- `micuota_sessions_ended_total`
+
+Ademas quedan disponibles metricas tecnicas de Spring Boot / JVM / HTTP gracias a Actuator + Micrometer.
 
 ### 2) Levantar frontend
 

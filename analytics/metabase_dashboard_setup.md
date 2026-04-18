@@ -28,6 +28,9 @@ Para cada bloque del SQL:
 - Total operaciones (A5)
 - Monto cobrado (A7)
 - Ticket promedio (A8)
+- Leads totales (A9)
+- Sesiones activas (A10)
+- Duracion promedio de sesion (A11)
 - Tasa global de exito (C4)
 
 ## Dashboard 2: Cobros y Conversion
@@ -39,6 +42,8 @@ Para cada bloque del SQL:
 - Operaciones por mes (D2)
 - Monto cobrado por mes (D4)
 - Conversion mensual (D5)
+- Sesiones por mes (D6)
+- Leads por mes (D7)
 
 ## Dashboard 3: Entidades y Operacion
 
@@ -48,15 +53,18 @@ Para cada bloque del SQL:
 - Top cursos por inscriptos (E3)
 - Top profesores por revenue (E1)
 - Top tenants por revenue (E2)
+- Leads por estado (F2)
+- Leads por fuente (F3)
 - Ultimas operaciones (F1)
 
 ## 4) Tipos de visualizacion recomendados
 
-- KPI cards: A1-A8, C4
+- KPI cards: A1-A11, C4
 - Bar chart horizontal: B1, B2, B3, E1, E2, E3
 - Stacked bar: C1, C2, C3
-- Line chart: D1, D2, D3, D4, D5
+- Line chart: D1, D2, D3, D4, D5, D6, D7
 - Table: F1
+- Pie / donut: F2, F3
 
 ## 5) Filtro global recomendado
 

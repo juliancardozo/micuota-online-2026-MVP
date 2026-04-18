@@ -23,6 +23,8 @@ CREATE TABLE IF NOT EXISTS teacher_profiles (
     mp_access_token VARCHAR(255),
     wc_api_key VARCHAR(255),
     prometeo_api_key VARCHAR(255),
+    transfer_alias VARCHAR(255),
+    transfer_bank_name VARCHAR(255),
     CONSTRAINT fk_teacher_profile_user FOREIGN KEY (user_id) REFERENCES users (id)
 );
 

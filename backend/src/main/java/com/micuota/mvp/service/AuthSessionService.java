@@ -16,6 +16,12 @@ import org.springframework.stereotype.Service;
 @Service
 public class AuthSessionService {
 
+    private final SessionActivityService sessionActivityService;
+
+    public AuthSessionService(SessionActivityService sessionActivityService) {
+        this.sessionActivityService = sessionActivityService;
+    }
+
     @Value("${app.auth.session-secret:micuota-local-dev-secret-change-in-prod}")
     private String sessionSecret;
 
@@ -28,7 +34,9 @@ public class AuthSessionService {
         String payload = tenantId + ":" + userId + ":" + role.name() + ":" + createdAt.toEpochSecond() + ":" + expiresAtEpoch;
         String payloadB64 = base64UrlEncode(payload);
         String signature = sign(payloadB64);
-        return payloadB64 + "." + signature;
+        String token = payloadB64 + "." + signature;
+        sessionActivityService.recordSessionStarted(token, tenantId, userId, role, createdAt);
+        return token;
     }
 
     public Optional<SessionContext> findSession(String token) {

@@ -284,4 +284,43 @@ public class BackofficeService {
 
         return new StudentDashboardView(studentUser.getFullName(), enrolledCourses, paymentViews);
     }
+
+    @Transactional(readOnly = true)
+    public PaymentSettingsView getPaymentSettings(Long tenantId, Long userId) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+        if (!user.getTenant().getId().equals(tenantId)) {
+            throw new IllegalArgumentException("Usuario fuera de tenant");
+        }
+
+        TeacherProfile profile = teacherProfileRepository.findByUserId(userId)
+            .orElseThrow(() -> new IllegalArgumentException("El usuario no tiene perfil profesional configurado"));
+
+        return new PaymentSettingsView(profile.getTransferAlias(), profile.getTransferBankName());
+    }
+
+    @Transactional
+    public PaymentSettingsView updatePaymentSettings(Long tenantId, Long userId, UpdatePaymentSettingsRequest request) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+        if (!user.getTenant().getId().equals(tenantId)) {
+            throw new IllegalArgumentException("Usuario fuera de tenant");
+        }
+
+        TeacherProfile profile = teacherProfileRepository.findByUserId(userId)
+            .orElseThrow(() -> new IllegalArgumentException("El usuario no tiene perfil profesional configurado"));
+
+        profile.setTransferAlias(blankToNull(request.transferAlias()));
+        profile.setTransferBankName(blankToNull(request.transferBankName()));
+        TeacherProfile saved = teacherProfileRepository.save(profile);
+
+        return new PaymentSettingsView(saved.getTransferAlias(), saved.getTransferBankName());
+    }
+
+    private String blankToNull(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
+    }
 }

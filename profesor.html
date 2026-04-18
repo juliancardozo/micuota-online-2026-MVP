@@ -383,6 +383,23 @@
               <div class="account-list" id="account-context"></div>
             </article>
             <article class="account-block">
+              <h3>Cobro manual AR</h3>
+              <form id="payment-settings-form">
+                <div class="field">
+                  <label for="transfer-alias">Alias</label>
+                  <input id="transfer-alias" name="transferAlias" placeholder="ej: micuota.paula" />
+                </div>
+                <div class="field">
+                  <label for="transfer-bank-name">Banco</label>
+                  <input id="transfer-bank-name" name="transferBankName" placeholder="ej: Banco Galicia" />
+                </div>
+                <div class="form-actions">
+                  <button type="submit">Guardar alias</button>
+                </div>
+              </form>
+              <p class="note" id="payment-settings-note"></p>
+            </article>
+            <article class="account-block">
               <h3>Acciones</h3>
               <div class="actions-row">
                 <button class="btn-secondary" id="reset-course-button" type="button">Ver todos los cursos</button>
@@ -411,7 +428,8 @@
         courses: [],
         payments: [],
         students: [],
-        enrollments: []
+        enrollments: [],
+        paymentSettings: null
       };
       const createCourseForm = document.getElementById("create-course-form");
       const createStudentForm = document.getElementById("create-student-form");
@@ -420,6 +438,7 @@
       const subscriptionForm = document.getElementById("subscription-form");
 
       function logout() {
+        window.MicuotaSessionTelemetry?.logout();
         localStorage.removeItem("micuota.authToken");
         window.location.href = `/landing.html?tenantSlug=${encodeURIComponent(localStorage.getItem("micuota.tenantSlug") || "")}`;
       }
@@ -578,26 +597,27 @@
         const filtered = getFilteredPayments();
         const subscriptions = filtered.filter((payment) => payment.flowType === "SUBSCRIPTION");
         const oneTime = filtered.filter((payment) => payment.flowType === "ONE_TIME");
+        const selectedCourse = getSelectedCourse();
         document.getElementById("summary-cards").innerHTML = [
           {
-            title: "Cursos",
-            value: getSelectedCourse() ? 1 : state.courses.length,
-            note: getSelectedCourse() ? "Curso seleccionado" : "Cartera total"
+            title: "Paso 1",
+            value: state.courses.length ? "Listo" : "Crear",
+            note: state.courses.length ? "Ya tienes oferta cargada" : "Crea tu primer curso"
           },
           {
-            title: "Pagos",
-            value: oneTime.length,
-            note: "Cobros unicos visibles"
+            title: "Paso 2",
+            value: state.students.length ? "Listo" : "Cargar",
+            note: state.students.length ? "Ya tienes alumnos cargados" : "Carga tu primer alumno"
           },
           {
-            title: "Suscripciones",
-            value: subscriptions.length,
-            note: "Cobros recurrentes visibles"
+            title: "Paso 3",
+            value: oneTime.length + subscriptions.length ? "Listo" : "Cobrar",
+            note: oneTime.length + subscriptions.length ? "Ya tienes links listos" : "Genera el primer link"
           },
           {
-            title: "Ingresos",
-            value: filtered.reduce((total, payment) => total + Number(payment.amount || 0), 0),
-            note: "Suma bruta visible"
+            title: "Foco",
+            value: selectedCourse ? selectedCourse.name : "Elegir curso",
+            note: selectedCourse ? "Todo el panel sigue este curso" : "Marca un curso para trabajar mas rapido"
           }
         ]
           .map((item) => {
@@ -675,8 +695,12 @@
           `<div><small>Tenant</small><strong>${tenantSlug}</strong></div>`,
           `<div><small>Curso actual</small><strong>${selectedCourse ? selectedCourse.name : "Todos los cursos"}</strong></div>`,
           `<div><small>Total visible</small><strong>${getFilteredPayments().length} operaciones</strong></div>`,
-          `<div><small>Alumnos</small><strong>${state.students.length}</strong></div>`
+          `<div><small>Alumnos</small><strong>${state.students.length}</strong></div>`,
+          `<div><small>Alias AR</small><strong>${state.paymentSettings?.transferAlias || "No configurado"}</strong></div>`
         ].join("");
+
+        document.getElementById("transfer-alias").value = state.paymentSettings?.transferAlias || "";
+        document.getElementById("transfer-bank-name").value = state.paymentSettings?.transferBankName || "";
       }
 
       function rerender() {
@@ -691,16 +715,18 @@
       }
 
       async function refreshDashboard() {
-        const [dashboard, students, enrollments] = await Promise.all([
+        const [dashboard, students, enrollments, paymentSettings] = await Promise.all([
           apiGet("/api/backoffice/dashboard/professor"),
           apiGet("/api/backoffice/users?role=STUDENT"),
-          apiGet("/api/backoffice/enrollments")
+          apiGet("/api/backoffice/enrollments"),
+          apiGet("/api/backoffice/payment-settings").catch(() => null)
         ]);
         state.dashboard = dashboard;
         state.courses = dashboard.courses || [];
         state.payments = dashboard.recentPayments || [];
         state.students = students || [];
         state.enrollments = enrollments || [];
+        state.paymentSettings = paymentSettings;
 
         if (getSelectedCourseId() && !state.courses.some((course) => String(course.id) === getSelectedCourseId())) {
           setSelectedCourseId("");
@@ -761,6 +787,18 @@
       document.getElementById("sub-student").addEventListener("change", (event) => {
         const selected = state.students.find((student) => String(student.id) === event.target.value);
         document.getElementById("sub-email").value = selected ? selected.email : "";
+      });
+      document.getElementById("payment-settings-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        setNote("payment-settings-note", "Guardando alias...");
+        try {
+          const payload = Object.fromEntries(new FormData(event.target).entries());
+          state.paymentSettings = await apiPost("/api/backoffice/payment-settings", payload);
+          setNote("payment-settings-note", "Alias listo para compartir en pagos manuales.");
+          renderAccountSettings();
+        } catch (error) {
+          setNote("payment-settings-note", error.message, true);
+        }
       });
       createCourseForm.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -878,6 +916,7 @@
 
       bootstrap();
     </script>
+    <script src="/session-telemetry.js"></script>
     <script src="/chatbot.js"></script>
   </body>
 </html>

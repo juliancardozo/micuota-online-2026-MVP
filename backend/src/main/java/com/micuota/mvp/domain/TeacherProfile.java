@@ -34,6 +34,12 @@ public class TeacherProfile {
     @Column(name = "prometeo_api_key")
     private String prometeoApiKey;
 
+    @Column(name = "transfer_alias")
+    private String transferAlias;
+
+    @Column(name = "transfer_bank_name")
+    private String transferBankName;
+
     public Long getId() {
         return id;
     }
@@ -76,5 +82,21 @@ public class TeacherProfile {
 
     public void setPrometeoApiKey(String prometeoApiKey) {
         this.prometeoApiKey = prometeoApiKey;
+    }
+
+    public String getTransferAlias() {
+        return transferAlias;
+    }
+
+    public void setTransferAlias(String transferAlias) {
+        this.transferAlias = transferAlias;
+    }
+
+    public String getTransferBankName() {
+        return transferBankName;
+    }
+
+    public void setTransferBankName(String transferBankName) {
+        this.transferBankName = transferBankName;
     }
 }
