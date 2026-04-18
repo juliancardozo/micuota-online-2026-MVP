@@ -670,11 +670,12 @@
 
       function renderCourses() {
         const selectedCourse = getSelectedCourse();
-        const visibleCourses = selectedCourse ? [selectedCourse] : state.courses;
-        document.getElementById("courses-list").innerHTML = visibleCourses.length
-          ? visibleCourses
+        document.getElementById("courses-list").innerHTML = state.courses.length
+          ? state.courses
               .map((course) => {
-                return `<div class="item"><strong>${course.name}</strong><br /><small>#${course.id} · ${course.description} · ${course.teacherName}</small></div>`;
+                const isFocused = selectedCourse && String(selectedCourse.id) === String(course.id);
+                const focusTag = isFocused ? `<span class="tag tag-status-created">Curso foco</span><br />` : "";
+                return `<div class="item"><strong>${course.name}</strong><br />${focusTag}<small>#${course.id} · ${course.description} · ${course.teacherName}</small></div>`;
               })
               .join("")
           : "<div class='empty-state'>No hay cursos disponibles.</div>";
