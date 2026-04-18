@@ -8,7 +8,7 @@ import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 
 public record CreateBackofficePaymentRequest(
-    @NotNull PaymentProviderType provider,
+    PaymentProviderType provider,
     @NotBlank String description,
     @NotNull @DecimalMin("0.01") BigDecimal amount,
     @NotBlank String currency,

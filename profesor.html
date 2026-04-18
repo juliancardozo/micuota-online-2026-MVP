@@ -312,15 +312,16 @@
               <form id="one-time-form">
                 <div class="mini-grid">
                   <div class="field">
-                    <label for="ot-provider">Proveedor</label>
+                    <label for="ot-provider">Motor de cobro</label>
                     <select id="ot-provider" name="provider" required>
-                      <option value="MERCADOPAGO">MercadoPago</option>
-                      <option value="PROMETEO">Prometeo</option>
+                      <option value="PROMETEO" selected>Prometeo recomendado</option>
+                      <option value="MERCADOPAGO">MercadoPago respaldo</option>
                       <option value="WOOCOMMERCE">WooCommerce</option>
                       <option value="STRIPE">Stripe</option>
                       <option value="SQUARE">Square</option>
                       <option value="PLEXO">Plexo</option>
                     </select>
+                    <small>Primero cobramos con Prometeo. Si algo falla, MercadoPago queda como respaldo.</small>
                   </div>
                   <div class="field">
                     <label for="ot-currency">Moneda</label>
@@ -364,15 +365,16 @@
               <form id="subscription-form">
                 <div class="mini-grid">
                   <div class="field">
-                    <label for="sub-provider">Proveedor</label>
+                    <label for="sub-provider">Motor de cobro</label>
                     <select id="sub-provider" name="provider" required>
-                      <option value="MERCADOPAGO">MercadoPago</option>
-                      <option value="PROMETEO">Prometeo</option>
+                      <option value="PROMETEO" selected>Prometeo recomendado</option>
+                      <option value="MERCADOPAGO">MercadoPago respaldo</option>
                       <option value="WOOCOMMERCE">WooCommerce</option>
                       <option value="STRIPE">Stripe</option>
                       <option value="SQUARE">Square</option>
                       <option value="PLEXO">Plexo</option>
                     </select>
+                    <small>La preferencia operativa es Prometeo, con continuidad cubierta por MercadoPago.</small>
                   </div>
                   <div class="field">
                     <label for="sub-currency">Moneda</label>

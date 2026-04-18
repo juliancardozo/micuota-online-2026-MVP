@@ -67,7 +67,7 @@ public class SeedDataConfig {
                     profile.setUser(adminUser);
                     profile.setDisplayName("Admin Demo");
                     profile.setMpAccessToken("TEST-MP-TOKEN-ADMIN");
-                    profile.setPrometeoApiKey("BDcyvtX7NPJYUZZvcKmHgrwTQaRJ4BocRNELjltmi8sWXIWx2WEvD4MBQecS2H3E");
+                    profile.setPrometeoApiKey("TEST-PROMETEO-KEY-ADMIN");
                     profile.setWooCommerceApiKey("TEST-WC-KEY-ADMIN");
                     profile.setTransferAlias("micuota.admin.ar");
                     profile.setTransferBankName("Banco Demo AR");

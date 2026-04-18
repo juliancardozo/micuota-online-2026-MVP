@@ -129,15 +129,16 @@
 
             <form id="single-payment-form" class="form-grid">
               <div class="field">
-                <label for="single-provider">Proveedor</label>
+                <label for="single-provider">Motor de cobro</label>
                 <select id="single-provider" name="provider">
-                  <option value="MERCADOPAGO">MercadoPago</option>
-                  <option value="PROMETEO">Prometeo</option>
+                  <option value="PROMETEO" selected>Prometeo recomendado</option>
+                  <option value="MERCADOPAGO">MercadoPago respaldo</option>
                   <option value="WOOCOMMERCE">WooCommerce</option>
                   <option value="STRIPE">Stripe</option>
                   <option value="SQUARE">Square</option>
                   <option value="PLEXO">Plexo</option>
                 </select>
+                <small>Intentamos primero con Prometeo para transferencias bancarias y dejamos MercadoPago como failover.</small>
               </div>
 
               <div class="field">
@@ -178,15 +179,16 @@
 
             <form id="subscription-form" class="form-grid">
               <div class="field">
-                <label for="subscription-provider">Proveedor</label>
+                <label for="subscription-provider">Motor de cobro</label>
                 <select id="subscription-provider" name="provider">
-                  <option value="MERCADOPAGO">MercadoPago</option>
-                  <option value="PROMETEO">Prometeo</option>
+                  <option value="PROMETEO" selected>Prometeo recomendado</option>
+                  <option value="MERCADOPAGO">MercadoPago respaldo</option>
                   <option value="WOOCOMMERCE">WooCommerce</option>
                   <option value="STRIPE">Stripe</option>
                   <option value="SQUARE">Square</option>
                   <option value="PLEXO">Plexo</option>
                 </select>
+                <small>Si Prometeo no responde, puedes seguir cobrando con MercadoPago sin rehacer el cobro.</small>
               </div>
 
               <div class="field">

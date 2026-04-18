@@ -48,7 +48,7 @@ function setupSinglePaymentForm() {
     const data = new FormData(form);
     const payload = {
       teacherId: TEACHER_ID,
-      provider: String(data.get("provider") || "MERCADOPAGO"),
+      provider: String(data.get("provider") || "PROMETEO"),
       description: String(data.get("title") || ""),
       amount: Number(data.get("amount") || "0"),
       currency: String(data.get("currency") || "UYU"),
@@ -78,7 +78,7 @@ function setupSubscriptionForm() {
     const data = new FormData(form);
     const payload = {
       teacherId: TEACHER_ID,
-      provider: String(data.get("provider") || "MERCADOPAGO"),
+      provider: String(data.get("provider") || "PROMETEO"),
       description: String(data.get("reason") || ""),
       amount: Number(data.get("amount") || "0"),
       currency: "UYU",

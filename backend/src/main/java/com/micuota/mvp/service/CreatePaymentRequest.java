@@ -8,7 +8,7 @@ import java.math.BigDecimal;
 
 public record CreatePaymentRequest(
     @NotNull Long teacherId,
-    @NotNull PaymentProviderType provider,
+    PaymentProviderType provider,
     @NotBlank String description,
     @NotNull @DecimalMin("0.01") BigDecimal amount,
     @NotBlank String currency,

@@ -3,10 +3,14 @@ package com.micuota.mvp.service;
 import com.micuota.mvp.domain.PaymentFlowType;
 import com.micuota.mvp.domain.PaymentProviderType;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
 public class PrometeoGateway implements PaymentProviderGateway {
+
+    @Value("${app.prometeo.api-key:}")
+    private String platformPrometeoApiKey;
 
     @Override
     public PaymentProviderType provider() {
@@ -22,7 +26,10 @@ public class PrometeoGateway implements PaymentProviderGateway {
     ) {
         String apiKey = credentials.prometeoApiKey();
         if (apiKey == null || apiKey.isBlank()) {
-            throw new IllegalStateException("El profesor no tiene API key de Prometeo configurada");
+            apiKey = platformPrometeoApiKey;
+        }
+        if (apiKey == null || apiKey.isBlank()) {
+            throw new IllegalStateException("No hay API key de Prometeo configurada");
         }
 
         String ref = "PR-" + UUID.randomUUID().toString().substring(0, 8);
