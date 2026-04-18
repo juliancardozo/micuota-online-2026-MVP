@@ -1,5 +1,6 @@
 .DS_Store
 .vscode/
+.env
 .env.prod
 backend/target/
 backend/data/*.mv.db

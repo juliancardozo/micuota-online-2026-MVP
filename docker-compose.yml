@@ -23,6 +23,12 @@ services:
       APP_DEMO_SEED_ENABLED: "true"
       APP_CRM_API_KEY: micuota-crm-dev-key
       APP_CRM_DEFAULT_OWNER: ventas@micuota.online
+      APP_PROMETEO_ENABLED: ${APP_PROMETEO_ENABLED:-true}
+      APP_PROMETEO_SANDBOX: ${APP_PROMETEO_SANDBOX:-true}
+      APP_PROMETEO_BASE_URL: ${APP_PROMETEO_BASE_URL:-https://account-validation.sandbox.prometeoapi.com}
+      APP_PROMETEO_API_KEY: ${APP_PROMETEO_API_KEY:-}
+      APP_PROMETEO_CONNECT_TIMEOUT_MS: ${APP_PROMETEO_CONNECT_TIMEOUT_MS:-5000}
+      APP_PROMETEO_READ_TIMEOUT_MS: ${APP_PROMETEO_READ_TIMEOUT_MS:-15000}
     ports:
       - "8080:8080"
 
