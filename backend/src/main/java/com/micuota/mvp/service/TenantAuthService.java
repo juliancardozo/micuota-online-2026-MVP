@@ -52,6 +52,12 @@ public class TenantAuthService {
         tenant.setName(request.tenantName());
         tenant.setSlug(slug);
         tenant.setCreatedAt(OffsetDateTime.now());
+        tenant.setPlanCode("BASE");
+        tenant.setTakeRateBps(350);
+        tenant.setAdvancedDunningFeeBps(120);
+        tenant.setRecoveryAutomationEnabled(false);
+        tenant.setAdvancedAnalyticsEnabled(false);
+        tenant.setIntegrationsEnabled(false);
         tenant = tenantRepository.save(tenant);
 
         if (userRepository.findByTenantIdAndEmail(tenant.getId(), request.email()).isPresent()) {

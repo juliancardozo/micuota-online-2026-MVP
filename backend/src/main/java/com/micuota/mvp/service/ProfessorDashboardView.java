@@ -6,6 +6,8 @@ public record ProfessorDashboardView(
     String professionalName,
     List<CourseView> courses,
     List<ProfessorCoursePaymentSummary> courseSummaries,
-    List<StudentPaymentView> recentPayments
+    List<StudentPaymentView> recentPayments,
+    ProfessorRevenueMetricsView revenueMetrics,
+    PaymentKpiFrameworkView kpiFramework
 ) {
 }

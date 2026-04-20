@@ -8,6 +8,7 @@ import com.micuota.mvp.domain.User;
 import com.micuota.mvp.domain.UserRole;
 import com.micuota.mvp.integration.prometeo.dto.PrometeoAccountValidationRequest;
 import com.micuota.mvp.integration.prometeo.dto.PrometeoAccountValidationResponse;
+import com.micuota.mvp.integration.prometeo.exception.PrometeoIntegrationException;
 import com.micuota.mvp.integration.prometeo.service.PrometeoAccountValidationService;
 import com.micuota.mvp.repository.StudentBankAccountRepository;
 import com.micuota.mvp.repository.UserRepository;
@@ -59,19 +60,37 @@ public class StudentBankAccountService {
             throw new IllegalArgumentException("El usuario seleccionado no es alumno/paciente");
         }
 
-        PrometeoAccountValidationResponse validation = prometeoAccountValidationService.validateAccount(
-            tenantId,
-            actorUserId,
-            new PrometeoAccountValidationRequest(
+        PrometeoAccountValidationResponse validation;
+        try {
+            validation = prometeoAccountValidationService.validateAccount(
+                tenantId,
+                actorUserId,
+                new PrometeoAccountValidationRequest(
+                    request.countryCode(),
+                    request.accountNumber(),
+                    request.accountType(),
+                    request.bankCode(),
+                    request.branchCode(),
+                    request.documentNumber(),
+                    request.documentType()
+                )
+            );
+        } catch (PrometeoIntegrationException exception) {
+            // MVP-friendly: si Prometeo no puede validar (sandbox/banco no disponible),
+            // igual guardamos la cuenta como "requiere revision" para destrabar el flujo.
+            validation = new PrometeoAccountValidationResponse(
+                "PROMETEO",
+                true,
+                false,
+                exception.getUpstreamHttpStatus() == null ? 0 : exception.getUpstreamHttpStatus(),
+                exception.getProviderCode(),
+                exception.getMessage(),
                 request.countryCode(),
-                request.accountNumber(),
-                request.accountType(),
-                request.bankCode(),
-                request.branchCode(),
-                request.documentNumber(),
-                request.documentType()
-            )
-        );
+                maskAccountNumber(request.accountNumber()),
+                null,
+                null
+            );
+        }
 
         boolean preferred = request.preferred() == null ? true : request.preferred();
         List<StudentBankAccount> existingAccounts = studentBankAccountRepository.findByTenantIdAndStudentIdOrderByPreferredDescUpdatedAtDesc(
@@ -113,6 +132,17 @@ public class StudentBankAccountService {
         account.setVerifiedAt(validation.success() ? now : null);
 
         return toView(studentBankAccountRepository.save(account));
+    }
+
+    private String maskAccountNumber(String accountNumber) {
+        String compact = accountNumber == null ? "" : accountNumber.trim();
+        if (compact.isEmpty()) {
+            return "";
+        }
+        if (compact.length() <= 4) {
+            return "*".repeat(compact.length());
+        }
+        return "*".repeat(compact.length() - 4) + compact.substring(compact.length() - 4);
     }
 
     private StudentBankAccountView toView(StudentBankAccount account) {

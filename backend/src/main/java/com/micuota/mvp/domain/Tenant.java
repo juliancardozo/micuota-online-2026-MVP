@@ -25,6 +25,24 @@ public class Tenant {
     @Column(nullable = false)
     private OffsetDateTime createdAt;
 
+    @Column(nullable = false, length = 20)
+    private String planCode;
+
+    @Column(nullable = false)
+    private Integer takeRateBps;
+
+    @Column(nullable = false)
+    private Integer advancedDunningFeeBps;
+
+    @Column(nullable = false)
+    private Boolean recoveryAutomationEnabled;
+
+    @Column(nullable = false)
+    private Boolean advancedAnalyticsEnabled;
+
+    @Column(nullable = false)
+    private Boolean integrationsEnabled;
+
     public Long getId() {
         return id;
     }
@@ -51,5 +69,53 @@ public class Tenant {
 
     public void setCreatedAt(OffsetDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getPlanCode() {
+        return planCode;
+    }
+
+    public void setPlanCode(String planCode) {
+        this.planCode = planCode;
+    }
+
+    public Integer getTakeRateBps() {
+        return takeRateBps;
+    }
+
+    public void setTakeRateBps(Integer takeRateBps) {
+        this.takeRateBps = takeRateBps;
+    }
+
+    public Integer getAdvancedDunningFeeBps() {
+        return advancedDunningFeeBps;
+    }
+
+    public void setAdvancedDunningFeeBps(Integer advancedDunningFeeBps) {
+        this.advancedDunningFeeBps = advancedDunningFeeBps;
+    }
+
+    public Boolean getRecoveryAutomationEnabled() {
+        return recoveryAutomationEnabled;
+    }
+
+    public void setRecoveryAutomationEnabled(Boolean recoveryAutomationEnabled) {
+        this.recoveryAutomationEnabled = recoveryAutomationEnabled;
+    }
+
+    public Boolean getAdvancedAnalyticsEnabled() {
+        return advancedAnalyticsEnabled;
+    }
+
+    public void setAdvancedAnalyticsEnabled(Boolean advancedAnalyticsEnabled) {
+        this.advancedAnalyticsEnabled = advancedAnalyticsEnabled;
+    }
+
+    public Boolean getIntegrationsEnabled() {
+        return integrationsEnabled;
+    }
+
+    public void setIntegrationsEnabled(Boolean integrationsEnabled) {
+        this.integrationsEnabled = integrationsEnabled;
     }
 }

@@ -13,6 +13,9 @@ import com.micuota.mvp.domain.PaymentOperation;
 import com.micuota.mvp.service.LaunchpadService;
 import com.micuota.mvp.service.LaunchpadView;
 import com.micuota.mvp.service.PaymentSettingsView;
+import com.micuota.mvp.service.PaymentHealthView;
+import com.micuota.mvp.service.PaymentKpiFrameworkView;
+import com.micuota.mvp.service.PaymentKpiService;
 import com.micuota.mvp.service.UpdatePaymentSettingsRequest;
 import com.micuota.mvp.service.EnrollmentView;
 import com.micuota.mvp.service.PaymentService;
@@ -47,6 +50,7 @@ public class BackofficeController {
     private final AuthSessionService authSessionService;
     private final BackofficeService backofficeService;
     private final PaymentService paymentService;
+    private final PaymentKpiService paymentKpiService;
     private final LaunchpadService launchpadService;
     private final StudentBankAccountService studentBankAccountService;
 
@@ -54,12 +58,14 @@ public class BackofficeController {
         AuthSessionService authSessionService,
         BackofficeService backofficeService,
         PaymentService paymentService,
+        PaymentKpiService paymentKpiService,
         LaunchpadService launchpadService,
         StudentBankAccountService studentBankAccountService
     ) {
         this.authSessionService = authSessionService;
         this.backofficeService = backofficeService;
         this.paymentService = paymentService;
+        this.paymentKpiService = paymentKpiService;
         this.launchpadService = launchpadService;
         this.studentBankAccountService = studentBankAccountService;
     }
@@ -154,6 +160,22 @@ public class BackofficeController {
         AuthSessionService.SessionContext session = authSessionService.requireSession(token);
         requireTenantAdminOrTeacher(session);
         return paymentService.lastOperationsByUserAndCourse(session.userId(), courseId);
+    }
+
+    @GetMapping("/payments/health")
+    @Operation(summary = "Salud de cobranzas", description = "Resumen de conversion, mora, recupero y reconciliacion para el profesional autenticado.")
+    public PaymentHealthView paymentHealth(@RequestHeader("X-Auth-Token") String token) {
+        AuthSessionService.SessionContext session = authSessionService.requireSession(token);
+        requireTenantAdminOrTeacher(session);
+        return paymentService.paymentHealthByUser(session.userId());
+    }
+
+    @GetMapping("/payments/kpi-framework")
+    @Operation(summary = "KPI framework de pagos", description = "Devuelve activacion, conversion, retencion, revenue y riesgo para el tenant autenticado.")
+    public PaymentKpiFrameworkView paymentKpiFramework(@RequestHeader("X-Auth-Token") String token) {
+        AuthSessionService.SessionContext session = authSessionService.requireSession(token);
+        requireTenantAdmin(session);
+        return paymentKpiService.buildTenantKpis(session.tenantId());
     }
 
     @PostMapping("/enrollments")

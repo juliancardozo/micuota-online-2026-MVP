@@ -1,0 +1,10 @@
+/* TEAM */
+Product: MiCuota.online
+Site: https://micuota.online
+Contact: hello@micuota.online
+Security: security@micuota.online
+
+/* TECHNOLOGY */
+Hosting: Netlify
+Backend: Spring Boot
+Monitoring: Grafana + Prometheus

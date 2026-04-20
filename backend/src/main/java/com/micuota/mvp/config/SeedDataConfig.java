@@ -36,6 +36,12 @@ public class SeedDataConfig {
                     t.setName("Demo Academia");
                     t.setSlug("demo-academia");
                     t.setCreatedAt(OffsetDateTime.now());
+                    t.setPlanCode("BASE");
+                    t.setTakeRateBps(350);
+                    t.setAdvancedDunningFeeBps(120);
+                    t.setRecoveryAutomationEnabled(false);
+                    t.setAdvancedAnalyticsEnabled(false);
+                    t.setIntegrationsEnabled(false);
                     return tenantRepository.save(t);
                 });
 

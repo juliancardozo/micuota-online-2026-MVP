@@ -606,6 +606,121 @@ body.landing-mp::before {
   letter-spacing: 0.06em;
 }
 
+.lp-billing-global > p {
+  margin: 10px 0 0;
+}
+
+.lp-billing-suite {
+  margin-top: 16px;
+  border: 1px solid var(--lp-line);
+  border-radius: var(--lp-radius-md);
+  background: rgba(255, 248, 236, 0.68);
+  padding: 18px;
+}
+
+.lp-billing-suite h3 {
+  margin: 0;
+  font-size: 1.14rem;
+}
+
+.lp-billing-suite > p {
+  margin: 10px 0 0;
+  color: var(--lp-muted);
+  line-height: 1.56;
+}
+
+.lp-billing-pillars {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.lp-billing-pillar {
+  border: 1px solid var(--lp-line);
+  border-radius: var(--lp-radius-sm);
+  background: rgba(255, 255, 255, 0.72);
+  padding: 14px;
+}
+
+.lp-billing-pillar span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(255, 229, 179, 0.92);
+  color: var(--lp-accent);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.lp-billing-pillar h4 {
+  margin: 10px 0 0;
+  font-size: 0.98rem;
+  line-height: 1.25;
+}
+
+.lp-billing-pillar p {
+  margin: 8px 0 0;
+  color: var(--lp-muted);
+  font-size: 0.92rem;
+  line-height: 1.48;
+}
+
+.lp-billing-split {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.lp-billing-panel {
+  border: 1px solid var(--lp-line);
+  border-radius: var(--lp-radius-md);
+  background: rgba(255, 255, 255, 0.66);
+  padding: 18px;
+}
+
+.lp-billing-panel h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.lp-billing-panel-accent {
+  background: linear-gradient(145deg, rgba(255, 241, 219, 0.86) 0%, rgba(255, 247, 235, 0.9) 100%);
+  border-color: rgba(204, 90, 22, 0.2);
+}
+
+.lp-billing-list {
+  margin: 12px 0 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 8px;
+  color: var(--lp-muted);
+  line-height: 1.55;
+}
+
+.lp-billing-grid {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.lp-billing-feature {
+  min-height: 148px;
+}
+
+.lp-billing-feature p {
+  line-height: 1.56;
+}
+
+.lp-billing-cta {
+  margin-top: 18px;
+}
+
 .lp-steps {
   background: rgba(255, 251, 244, 0.9);
 }
@@ -944,6 +1059,9 @@ body.landing-mp .mc-chatbot-form input {
   .lp-hero,
   .lp-feature-grid,
   .lp-use-case-grid,
+  .lp-billing-pillars,
+  .lp-billing-split,
+  .lp-billing-grid,
   .lp-step-row,
   .lp-access,
   .lp-interested-grid,

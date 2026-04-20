@@ -1,6 +1,10 @@
 User-agent: *
 Disallow: /api/
 Disallow: /sandbox/
+Disallow: /admin.html
+Disallow: /backoffice.html
+Disallow: /profesor.html
+Disallow: /alumno.html
 Allow: /
 
 Sitemap: https://micuota.online/sitemap.xml

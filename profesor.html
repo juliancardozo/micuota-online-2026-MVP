@@ -131,6 +131,7 @@
             </div>
             <div class="split-grid" id="summary-cards"></div>
           </div>
+          <div class="split-grid" id="revenue-kpi-cards"></div>
         </section>
 
         <section class="shell-section" id="cuenta">
@@ -778,6 +779,40 @@
           .join("");
       }
 
+      function renderRevenueAndKpis() {
+        const target = document.getElementById("revenue-kpi-cards");
+        if (!state.dashboard) {
+          target.innerHTML = "<div class='empty-state'>Cargando metricas...</div>";
+          return;
+        }
+
+        const revenue = state.dashboard.revenueMetrics;
+        const kpi = state.dashboard.kpiFramework;
+
+        if (!revenue || !kpi) {
+          target.innerHTML = "<div class='empty-state'>No hay metricas de monetizacion disponibles todavia.</div>";
+          return;
+        }
+
+        const methodBreakdown = Object.entries(kpi.conversion.successRateByMethodPercent || {})
+          .map(([method, value]) => `${method}: ${value}%`)
+          .join(" · ");
+        const failureBreakdown = Object.entries(kpi.risk.failureRateByReasonPercent || {})
+          .map(([reason, value]) => `${reason}: ${value}%`)
+          .join(" · ");
+
+        target.innerHTML = [
+          `<article class="stat-card"><small>Plan</small><strong>${revenue.planCode}</strong><span>Automatizacion: ${revenue.recoveryAutomationEnabled ? "ON" : "OFF"} · Analytics: ${revenue.advancedAnalyticsEnabled ? "ON" : "OFF"}</span></article>`,
+          `<article class="stat-card"><small>Revenue bruto</small><strong>${revenue.grossRevenueSuccess}</strong><span>Neto profesor: ${revenue.teacherNetRevenue}</span></article>`,
+          `<article class="stat-card"><small>Fee procesamiento</small><strong>${revenue.platformProcessingFees}</strong><span>Take rate neto: ${revenue.takeRatePercent}%</span></article>`,
+          `<article class="stat-card"><small>Fee avanzado</small><strong>${revenue.platformAdvancedFeatureFees}</strong><span>Dunning/Pro: ${revenue.advancedFeatureFeePercent}%</span></article>`,
+          `<article class="stat-card"><small>Conversion</small><strong>${kpi.conversion.overallSuccessRatePercent}%</strong><span>Abandono checkout: ${kpi.conversion.checkoutAbandonmentRatePercent}% · ${methodBreakdown || "sin detalle"}</span></article>`,
+          `<article class="stat-card"><small>Retencion</small><strong>${kpi.retention.professionalsWithMonthlyRenewalPercent}%</strong><span>Churn con recurrente: ${kpi.retention.churnRateWithRecurringPercent}% · sin recurrente: ${kpi.retention.churnRateWithoutRecurringPercent}%</span></article>`,
+          `<article class="stat-card"><small>Activacion</small><strong>${kpi.activation.professionalsFirstPaymentUnder24hPercent}%</strong><span>Horas a primer cobro exitoso: ${kpi.activation.avgHoursToFirstSuccessfulPayment}</span></article>`,
+          `<article class="stat-card"><small>Riesgo</small><strong>${kpi.risk.disputeChargebackRatioPercent}%</strong><span>${failureBreakdown || "sin fallos registrados"}</span></article>`
+        ].join("");
+      }
+
       function renderCourses() {
         const selectedCourse = getSelectedCourse();
         document.getElementById("courses-list").innerHTML = state.courses.length
@@ -974,6 +1009,7 @@
         renderCourseFilter();
         renderStudentSelectors();
         renderSummaryCards();
+        renderRevenueAndKpis();
         renderCourses();
         renderStudents();
         renderPendings();

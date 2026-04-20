@@ -4,6 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MiCuota | Completar pago</title>
+    <meta name="robots" content="noindex,nofollow,noarchive" />
+    <link rel="canonical" href="https://micuota.online/pago.html" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -281,6 +284,25 @@
         gap: 12px;
       }
 
+      .method-reco {
+        border: 1px solid rgba(204, 90, 22, 0.2);
+        border-radius: 16px;
+        background: linear-gradient(135deg, rgba(255, 241, 214, 0.9) 0%, rgba(255, 250, 238, 0.95) 100%);
+        padding: 14px;
+        display: grid;
+        gap: 8px;
+      }
+
+      .method-reco strong {
+        font-size: 1rem;
+      }
+
+      .method-reco p {
+        color: var(--muted);
+        line-height: 1.5;
+        font-size: 0.92rem;
+      }
+
       .btn {
         display: inline-flex;
         align-items: center;
@@ -501,6 +523,12 @@
           <button id="copy-link" class="btn btn-secondary" type="button">Copiar link</button>
         </div>
 
+        <section class="method-reco" id="method-recommendation" hidden>
+          <small class="section-label">Recomendado ahora</small>
+          <strong id="method-recommendation-title">Metodo recomendado</strong>
+          <p id="method-recommendation-copy">Elegimos el mejor camino para que pagues en menos pasos.</p>
+        </section>
+
         <section class="transfer-card" id="transfer-block" hidden>
           <span class="section-label">Alternativa manual AR</span>
           <div>
@@ -597,6 +625,7 @@
       const statusBadge = document.getElementById("status-badge");
       const statusCopy = document.getElementById("status-copy");
       const transferBlock = document.getElementById("transfer-block");
+      const methodRecommendation = document.getElementById("method-recommendation");
 
       function formatFlowType(flowType) {
         return flowType === "SUBSCRIPTION" ? "Suscripcion" : "Pago unico";
@@ -644,6 +673,41 @@
         return "La operacion esta lista para completarse. Revisa el resumen y continua cuando quieras.";
       }
 
+      function recommendedMethod(data) {
+        const amount = Number(data.amount || 0);
+        const currency = (data.currency || "").toUpperCase();
+        if (data.flowType === "SUBSCRIPTION") {
+          return {
+            buttonLabel: "Activar cobro recurrente",
+            title: "Suscripcion recurrente recomendada",
+            copy: "Este cobro es recurrente. Completarlo ahora evita friccion en renovaciones y mejora continuidad."
+          };
+        }
+        if ((currency === "UYU" || currency === "ARS") && amount <= 3000) {
+          return {
+            buttonLabel: "Pagar ahora (modo rapido)",
+            title: "Pago inmediato recomendado",
+            copy: "Para este monto, la ruta de pago inmediato suele convertir mejor y reducir abandono."
+          };
+        }
+        return {
+          buttonLabel: "Continuar al pago seguro",
+          title: "Checkout seguro recomendado",
+          copy: "Completa el pago desde este checkout embebido en un paso y sin perder contexto."
+        };
+      }
+
+      function trackSprintEvent(eventName, payload) {
+        try {
+          const key = "micuota.sprint1.checkout.events";
+          const current = JSON.parse(localStorage.getItem(key) || "[]");
+          current.push({ eventName, payload, at: new Date().toISOString() });
+          localStorage.setItem(key, JSON.stringify(current.slice(-200)));
+        } catch (error) {
+          // ignore telemetry persistence errors
+        }
+      }
+
       async function loadPayment() {
         if (!operationId) {
           showError("No se recibio identificador de operacion.");
@@ -670,6 +734,12 @@
           subtitle.textContent = "Revisa el resumen y continua con tu pago seguro en un solo paso.";
           payNow.href = data.checkoutUrl;
 
+          const recommendation = recommendedMethod(data);
+          payNow.textContent = recommendation.buttonLabel;
+          document.getElementById("method-recommendation-title").textContent = recommendation.title;
+          document.getElementById("method-recommendation-copy").textContent = recommendation.copy;
+          methodRecommendation.hidden = false;
+
           statusBadge.className = `status-badge ${statusClass(data.status)}`;
           statusBadge.textContent = formatStatus(data.status);
           statusCopy.textContent = statusDescription(data.status);
@@ -687,9 +757,14 @@
           copyLink.addEventListener("click", async () => {
             await navigator.clipboard.writeText(data.checkoutUrl);
             copyLink.textContent = "Link copiado";
+            trackSprintEvent("checkout_copy_link", { operationId: data.operationId, provider: data.provider, flowType: data.flowType });
             setTimeout(() => {
               copyLink.textContent = "Copiar link";
             }, 1400);
+          });
+
+          payNow.addEventListener("click", () => {
+            trackSprintEvent("checkout_open_provider", { operationId: data.operationId, provider: data.provider, flowType: data.flowType });
           });
 
           paymentGrid.hidden = false;
@@ -706,6 +781,7 @@
         statusBadge.className = "status-badge status-failure";
         statusBadge.textContent = "Error";
         statusCopy.textContent = "No se pudo recuperar la informacion de la operacion.";
+        methodRecommendation.hidden = true;
       }
 
       loadPayment();

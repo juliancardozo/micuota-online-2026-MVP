@@ -665,6 +665,14 @@ body.shell-ui textarea:focus {
   font-size: 0.82rem;
 }
 
+.payment-actions {
+  margin-top: 6px;
+}
+
+.payment-actions .compact-btn {
+  min-height: 32px;
+}
+
 .result img {
   max-width: 220px;
   border-radius: 12px;

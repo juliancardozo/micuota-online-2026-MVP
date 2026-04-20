@@ -39,6 +39,15 @@ public class PaymentOperation {
     @Column(nullable = false)
     private BigDecimal amount;
 
+    @Column(nullable = false)
+    private BigDecimal processingFeeAmount;
+
+    @Column(nullable = false)
+    private BigDecimal advancedFeatureFeeAmount;
+
+    @Column(nullable = false)
+    private BigDecimal netAmountForTeacher;
+
     @Column(nullable = false, length = 12)
     private String currency;
 
@@ -63,6 +72,27 @@ public class PaymentOperation {
 
     @Column
     private OffsetDateTime updatedAt;
+
+    @Column(nullable = false)
+    private Integer retryCount;
+
+    @Column(length = 120)
+    private String failureReason;
+
+    @Column
+    private OffsetDateTime nextRetryAt;
+
+    @Column
+    private OffsetDateTime lastReminderAt;
+
+    @Column
+    private OffsetDateTime dueAt;
+
+    @Column(nullable = false, length = 40)
+    private String reconciliationStatus;
+
+    @Column
+    private OffsetDateTime lastReconciledAt;
 
     public Long getId() {
         return id;
@@ -114,6 +144,30 @@ public class PaymentOperation {
 
     public void setAmount(BigDecimal amount) {
         this.amount = amount;
+    }
+
+    public BigDecimal getProcessingFeeAmount() {
+        return processingFeeAmount;
+    }
+
+    public void setProcessingFeeAmount(BigDecimal processingFeeAmount) {
+        this.processingFeeAmount = processingFeeAmount;
+    }
+
+    public BigDecimal getAdvancedFeatureFeeAmount() {
+        return advancedFeatureFeeAmount;
+    }
+
+    public void setAdvancedFeatureFeeAmount(BigDecimal advancedFeatureFeeAmount) {
+        this.advancedFeatureFeeAmount = advancedFeatureFeeAmount;
+    }
+
+    public BigDecimal getNetAmountForTeacher() {
+        return netAmountForTeacher;
+    }
+
+    public void setNetAmountForTeacher(BigDecimal netAmountForTeacher) {
+        this.netAmountForTeacher = netAmountForTeacher;
     }
 
     public String getCurrency() {
@@ -178,5 +232,61 @@ public class PaymentOperation {
 
     public void setUpdatedAt(OffsetDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public Integer getRetryCount() {
+        return retryCount;
+    }
+
+    public void setRetryCount(Integer retryCount) {
+        this.retryCount = retryCount;
+    }
+
+    public String getFailureReason() {
+        return failureReason;
+    }
+
+    public void setFailureReason(String failureReason) {
+        this.failureReason = failureReason;
+    }
+
+    public OffsetDateTime getNextRetryAt() {
+        return nextRetryAt;
+    }
+
+    public void setNextRetryAt(OffsetDateTime nextRetryAt) {
+        this.nextRetryAt = nextRetryAt;
+    }
+
+    public OffsetDateTime getLastReminderAt() {
+        return lastReminderAt;
+    }
+
+    public void setLastReminderAt(OffsetDateTime lastReminderAt) {
+        this.lastReminderAt = lastReminderAt;
+    }
+
+    public OffsetDateTime getDueAt() {
+        return dueAt;
+    }
+
+    public void setDueAt(OffsetDateTime dueAt) {
+        this.dueAt = dueAt;
+    }
+
+    public String getReconciliationStatus() {
+        return reconciliationStatus;
+    }
+
+    public void setReconciliationStatus(String reconciliationStatus) {
+        this.reconciliationStatus = reconciliationStatus;
+    }
+
+    public OffsetDateTime getLastReconciledAt() {
+        return lastReconciledAt;
+    }
+
+    public void setLastReconciledAt(OffsetDateTime lastReconciledAt) {
+        this.lastReconciledAt = lastReconciledAt;
     }
 }

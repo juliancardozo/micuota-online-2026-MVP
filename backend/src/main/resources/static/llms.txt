@@ -10,3 +10,12 @@ MiCuota ayuda a profesores y profesionales independientes a cobrar pagos recurre
 
 ## Notas de crawling
 - Evitar indexar endpoints bajo /api/ y rutas sandbox.
+
+## AI stance
+- MiCuota.online utiliza automatizaciones y analitica para mejorar onboarding, soporte y recupero de pagos.
+
+## Recursos de confianza
+- Politica de privacidad: https://micuota.online/privacy.html
+- Seguridad: https://micuota.online/.well-known/security.txt
+- Robots: https://micuota.online/robots.txt
+- Sitemap: https://micuota.online/sitemap.xml

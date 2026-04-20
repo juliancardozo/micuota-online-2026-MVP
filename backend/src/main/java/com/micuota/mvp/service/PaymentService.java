@@ -6,6 +6,7 @@ import com.micuota.mvp.domain.PaymentFlowType;
 import com.micuota.mvp.domain.PaymentOperation;
 import com.micuota.mvp.domain.PaymentProviderType;
 import com.micuota.mvp.domain.TeacherProfile;
+import com.micuota.mvp.domain.Tenant;
 import com.micuota.mvp.domain.User;
 import com.micuota.mvp.domain.UserRole;
 import com.micuota.mvp.repository.CourseRepository;
@@ -13,6 +14,9 @@ import com.micuota.mvp.repository.PaymentOperationRepository;
 import com.micuota.mvp.repository.TeacherProfileRepository;
 import com.micuota.mvp.repository.UserRepository;
 import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
@@ -116,6 +120,38 @@ public class PaymentService {
         return paymentOperationRepository.findTop50ByTeacherIdAndCourseIdOrderByCreatedAtDesc(teacherProfileId, courseId);
     }
 
+    @Transactional(readOnly = true)
+    public PaymentHealthView paymentHealthByUser(Long userId) {
+        Long teacherProfileId = resolveTeacherProfileIdByUserId(userId);
+        List<PaymentOperation> operations = paymentOperationRepository.findByTeacherIdOrderByCreatedAtDesc(teacherProfileId);
+        OffsetDateTime now = OffsetDateTime.now();
+
+        long total = operations.size();
+        long success = operations.stream().filter(payment -> payment.getStatus() == OperationStatus.SUCCESS).count();
+        long pending = operations.stream().filter(payment -> payment.getStatus() == OperationStatus.CREATED || payment.getStatus() == OperationStatus.PENDING).count();
+        long failed = operations.stream().filter(payment -> payment.getStatus() == OperationStatus.FAILURE).count();
+        long recovering = operations.stream().filter(payment -> payment.getNextRetryAt() != null && payment.getStatus() != OperationStatus.SUCCESS).count();
+        long overdue = operations.stream()
+            .filter(payment -> payment.getDueAt() != null && payment.getDueAt().isBefore(now) && payment.getStatus() != OperationStatus.SUCCESS)
+            .count();
+        long mismatches = operations.stream().filter(payment -> "MISMATCH".equalsIgnoreCase(payment.getReconciliationStatus())).count();
+
+        double successRate = total == 0 ? 0.0 : ((double) success / (double) total) * 100.0;
+        String recommendation = buildHealthRecommendation(overdue, failed, mismatches, pending);
+
+        return new PaymentHealthView(
+            total,
+            success,
+            pending,
+            failed,
+            overdue,
+            recovering,
+            mismatches,
+            Math.round(successRate * 10.0) / 10.0,
+            recommendation
+        );
+    }
+
     @Transactional
     public PaymentOperation createOneTimeForUser(Long userId, CreateBackofficePaymentRequest request) {
         Long teacherProfileId = resolveTeacherProfileIdByUserId(userId);
@@ -150,8 +186,7 @@ public class PaymentService {
     public PaymentOperation updateStatus(Long operationId, OperationStatus status) {
         PaymentOperation operation = paymentOperationRepository.findById(operationId)
             .orElseThrow(() -> new IllegalArgumentException("Operacion no encontrada: " + operationId));
-        operation.setStatus(status);
-        operation.setUpdatedAt(OffsetDateTime.now());
+        applyStatusUpdate(operation, status, null);
         PaymentOperation saved = paymentOperationRepository.save(operation);
         saasMetricsService.recordPaymentStatusChanged(status);
         return saved;
@@ -161,11 +196,15 @@ public class PaymentService {
     public PaymentOperation updateStatusByProviderReference(String providerReference, OperationStatus status) {
         PaymentOperation operation = paymentOperationRepository.findByProviderReference(providerReference)
             .orElseThrow(() -> new IllegalArgumentException("Operacion no encontrada para providerReference: " + providerReference));
-        operation.setStatus(status);
-        operation.setUpdatedAt(OffsetDateTime.now());
+        applyStatusUpdate(operation, status, null);
         PaymentOperation saved = paymentOperationRepository.save(operation);
         saasMetricsService.recordPaymentStatusChanged(status);
         return saved;
+    }
+
+    @Transactional
+    public void saveAll(List<PaymentOperation> operations) {
+        paymentOperationRepository.saveAll(operations);
     }
 
     private PaymentOperation createOperation(PaymentFlowType flowType, CreatePaymentRequest request) {
@@ -210,13 +249,29 @@ public class PaymentService {
         operation.setStudentUserId(request.studentUserId());
         operation.setCourseId(request.courseId());
         operation.setAmount(request.amount());
+        BigDecimal processingFee = feeFromBps(request.amount(), normalizeBps(teacherUser.getTenant(), true));
+        BigDecimal advancedFee = teacherUser.getTenant().getRecoveryAutomationEnabled() != null && teacherUser.getTenant().getRecoveryAutomationEnabled()
+            ? feeFromBps(request.amount(), normalizeBps(teacherUser.getTenant(), false))
+            : BigDecimal.ZERO;
+        BigDecimal netAmount = request.amount().subtract(processingFee).subtract(advancedFee).max(BigDecimal.ZERO).setScale(2, RoundingMode.HALF_UP);
+        operation.setProcessingFeeAmount(processingFee);
+        operation.setAdvancedFeatureFeeAmount(advancedFee);
+        operation.setNetAmountForTeacher(netAmount);
         operation.setCurrency(request.currency());
         operation.setDescription(request.description());
         operation.setCheckoutUrl(selection.result().checkoutUrl());
         operation.setProviderReference(selection.result().providerReference());
         operation.setRawResponse(selection.rawResponse());
         operation.setStatus(OperationStatus.CREATED);
-        operation.setCreatedAt(OffsetDateTime.now());
+        OffsetDateTime now = OffsetDateTime.now();
+        operation.setCreatedAt(now);
+        operation.setRetryCount(0);
+        operation.setFailureReason(null);
+        operation.setNextRetryAt(now.plus(24, ChronoUnit.HOURS));
+        operation.setLastReminderAt(null);
+        operation.setDueAt(now.plus(7, ChronoUnit.DAYS));
+        operation.setReconciliationStatus("PENDING");
+        operation.setLastReconciledAt(null);
 
         PaymentOperation saved = paymentOperationRepository.save(operation);
         String normalizedPayerEmail = request.payerEmail() == null ? null : request.payerEmail().trim().toLowerCase(Locale.ROOT);
@@ -367,6 +422,78 @@ public class PaymentService {
         return teacherProfileRepository.findByUserId(userId)
             .map(TeacherProfile::getId)
             .orElseThrow(() -> new IllegalArgumentException("El usuario no tiene perfil profesional configurado"));
+    }
+
+    private int normalizeBps(Tenant tenant, boolean processingFee) {
+        if (tenant == null) {
+            return processingFee ? 350 : 120;
+        }
+        Integer configured = processingFee ? tenant.getTakeRateBps() : tenant.getAdvancedDunningFeeBps();
+        if (configured == null || configured < 0) {
+            return processingFee ? 350 : 120;
+        }
+        return configured;
+    }
+
+    private BigDecimal feeFromBps(BigDecimal amount, int bps) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0 || bps <= 0) {
+            return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+        }
+        return amount
+            .multiply(BigDecimal.valueOf(bps))
+            .divide(BigDecimal.valueOf(10000), 2, RoundingMode.HALF_UP);
+    }
+
+    private void applyStatusUpdate(PaymentOperation operation, OperationStatus status, String failureReason) {
+        OffsetDateTime now = OffsetDateTime.now();
+        operation.setStatus(status);
+        operation.setUpdatedAt(now);
+
+        if (status == OperationStatus.SUCCESS) {
+            operation.setFailureReason(null);
+            operation.setNextRetryAt(null);
+            operation.setReconciliationStatus("MATCHED");
+            return;
+        }
+
+        if (status == OperationStatus.FAILURE) {
+            int currentAttempts = operation.getRetryCount() == null ? 0 : operation.getRetryCount();
+            int nextAttempts = currentAttempts + 1;
+            operation.setRetryCount(nextAttempts);
+            operation.setFailureReason(failureReason == null || failureReason.isBlank() ? "PROCESSOR_DECLINED" : failureReason);
+            operation.setNextRetryAt(nextRetryAtFor(nextAttempts, now));
+            operation.setReconciliationStatus("PENDING");
+            return;
+        }
+
+        operation.setNextRetryAt(now.plus(24, ChronoUnit.HOURS));
+        operation.setReconciliationStatus("PENDING");
+    }
+
+    private OffsetDateTime nextRetryAtFor(int retryCount, OffsetDateTime now) {
+        if (retryCount <= 1) {
+            return now.plus(30, ChronoUnit.MINUTES);
+        }
+        if (retryCount == 2) {
+            return now.plus(6, ChronoUnit.HOURS);
+        }
+        return now.plus(24, ChronoUnit.HOURS);
+    }
+
+    private String buildHealthRecommendation(long overdue, long failed, long mismatches, long pending) {
+        if (mismatches > 0) {
+            return "Hay descalces de reconciliacion. Revisa webhook y estados de provider antes de escalar cobros.";
+        }
+        if (overdue > 0) {
+            return "Prioriza recupero de mora hoy con recordatorio directo y link embebido en WhatsApp.";
+        }
+        if (failed > 0) {
+            return "Activa reintentos y mensaje por motivo de fallo para aumentar recupero semanal.";
+        }
+        if (pending > 0) {
+            return "Tienes cobros sin cierre. Comparte QR/link del ultimo cobro para acelerar conversion.";
+        }
+        return "Salud estable. Sigue optimizando conversion en checkout embebido de un paso.";
     }
 
     private record ProviderSelection(

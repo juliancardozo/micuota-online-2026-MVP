@@ -278,6 +278,16 @@
               <h3>Cobros a resolver</h3>
               <div class="stack" id="pending-payments-list"></div>
             </article>
+
+            <article class="surface-card span-12">
+              <h3>Salud de cobranzas</h3>
+              <div class="stack" id="payment-health-list"></div>
+            </article>
+
+            <article class="surface-card span-12">
+              <h3>KPI framework (producto + pagos)</h3>
+              <div class="stack" id="payment-kpi-framework-list"></div>
+            </article>
           </div>
         </section>
 
@@ -527,6 +537,8 @@
         courses: [],
         enrollments: [],
         payments: [],
+        paymentHealth: null,
+        paymentKpiFramework: null,
         launchpad: null,
         paymentSettings: null
       };
@@ -596,6 +608,39 @@
         if (status === "PENDING") return "tag-status-pending";
         if (status === "FAILURE") return "tag-status-failure";
         return "tag-status-created";
+      }
+
+      function buildClientPaymentUrl(operationId) {
+        return `${window.location.origin}/pago.html?operationId=${operationId}`;
+      }
+
+      function buildWhatsappReminderText(payment) {
+        const kind = payment.flowType === "SUBSCRIPTION" ? "cuota" : "pago";
+        return `Hola, te comparto el link de ${kind} ${payment.description} por ${payment.currency} ${payment.amount}. Lo puedes completar aqui: ${buildClientPaymentUrl(payment.id)}`;
+      }
+
+      function renderPaymentActions(payment) {
+        if (payment.status === "SUCCESS") {
+          return "";
+        }
+        const isRecoverable = payment.status === "CREATED" || payment.status === "FAILURE";
+        return `
+          <div class="actions-row payment-actions">
+            <button type="button" class="btn-secondary compact-btn" data-payment-action="open-provider" data-payment-id="${payment.id}">Abrir checkout</button>
+            <button type="button" class="btn-secondary compact-btn" data-payment-action="copy-client-link" data-payment-id="${payment.id}">Copiar link cliente</button>
+            ${
+              isRecoverable
+                ? `<button type="button" class="compact-btn" data-payment-action="whatsapp-reminder" data-payment-id="${payment.id}">Recordar por WhatsApp</button>`
+                : ""
+            }
+          </div>
+        `;
+      }
+
+      function showPaymentActionMessage(message, hasError = false) {
+        const target = document.getElementById("quick-share-result");
+        if (!target) return;
+        target.innerHTML = `<div class='item ${hasError ? "error" : "ok"}'>${message}</div>`;
       }
 
       function setActiveNav() {
@@ -906,11 +951,59 @@
                     </div>
                     <strong>${payment.description}</strong>
                     <small>${payment.currency} ${payment.amount}${payment.courseId ? ` · grupo #${payment.courseId}` : ""}</small>
+                    ${renderPaymentActions(payment)}
                   </div>
                 `;
               })
               .join("")
           : "<div class='empty-state'>No hay pendientes. Todo lo visible esta al dia.</div>";
+      }
+
+      function renderPaymentHealth() {
+        const target = document.getElementById("payment-health-list");
+        if (!state.paymentHealth) {
+          target.innerHTML = "<div class='empty-state'>Cargando salud de cobranzas...</div>";
+          return;
+        }
+
+        const health = state.paymentHealth;
+        target.innerHTML = [
+          `<div class="item"><strong>${health.successRate}%</strong><br /><small>Tasa de cobro exitoso</small></div>`,
+          `<div class="item"><strong>${health.totalPayments}</strong><br /><small>Operaciones acumuladas</small></div>`,
+          `<div class="item"><strong>${health.pendingPayments}</strong><br /><small>Cobros pendientes</small></div>`,
+          `<div class="item"><strong>${health.failedPayments}</strong><br /><small>Cobros fallidos</small></div>`,
+          `<div class="item"><strong>${health.overduePayments}</strong><br /><small>En mora</small></div>`,
+          `<div class="item"><strong>${health.recoveringPayments}</strong><br /><small>En recupero automatico</small></div>`,
+          `<div class="item"><strong>${health.reconciliationMismatches}</strong><br /><small>Descalces de reconciliacion</small></div>`,
+          `<div class="item"><strong>Recomendacion</strong><br /><small>${health.recommendation}</small></div>`
+        ].join("");
+      }
+
+      function renderPaymentKpiFramework() {
+        const target = document.getElementById("payment-kpi-framework-list");
+        if (!state.paymentKpiFramework) {
+          target.innerHTML = "<div class='empty-state'>Disponible para TENANT_ADMIN. Si estas con rol teacher, esta vista se oculta.</div>";
+          return;
+        }
+
+        const kpi = state.paymentKpiFramework;
+        const methodBreakdown = Object.entries(kpi.conversion.successRateByMethodPercent || {})
+          .map(([method, value]) => `${method}: ${value}%`)
+          .join(" · ");
+        const arpaBreakdown = Object.entries(kpi.revenue.arpaByVertical || {})
+          .map(([vertical, value]) => `${vertical}: ${value}`)
+          .join(" · ");
+        const failureBreakdown = Object.entries(kpi.risk.failureRateByReasonPercent || {})
+          .map(([reason, value]) => `${reason}: ${value}%`)
+          .join(" · ");
+
+        target.innerHTML = [
+          `<div class="item"><strong>Activacion</strong><br /><small>% primer cobro <24h: ${kpi.activation.professionalsFirstPaymentUnder24hPercent}% · horas a primer exitoso: ${kpi.activation.avgHoursToFirstSuccessfulPayment}</small></div>`,
+          `<div class="item"><strong>Conversion</strong><br /><small>Exito global: ${kpi.conversion.overallSuccessRatePercent}% · abandono checkout: ${kpi.conversion.checkoutAbandonmentRatePercent}%</small><br /><small>${methodBreakdown || "Sin datos por metodo"}</small></div>`,
+          `<div class="item"><strong>Retencion</strong><br /><small>Churn con recurrente: ${kpi.retention.churnRateWithRecurringPercent}% · sin recurrente: ${kpi.retention.churnRateWithoutRecurringPercent}% · renovacion mensual: ${kpi.retention.professionalsWithMonthlyRenewalPercent}%</small></div>`,
+          `<div class="item"><strong>Revenue</strong><br /><small>TPV mensual: ${kpi.revenue.monthlyTpv} · net revenue take rate: ${kpi.revenue.netRevenueTakeRatePercent}%</small><br /><small>${arpaBreakdown || "Sin ARPA por vertical"}</small></div>`,
+          `<div class="item"><strong>Riesgo operativo</strong><br /><small>Ratio disputas/contracargos: ${kpi.risk.disputeChargebackRatioPercent}%</small><br /><small>${failureBreakdown || "Sin fallos por causa"}</small></div>`
+        ].join("");
       }
 
       function renderPayments() {
@@ -925,7 +1018,7 @@
           oneTime.length
             ? oneTime
                 .map((payment) => {
-                  return `<div class="item payment-item"><div class="payment-tags"><span class="tag">Cobro puntual</span><span class="tag ${statusClass(payment.status)}">${humanStatus(payment.status)}</span></div><strong>#${payment.id} · ${payment.currency} ${payment.amount}</strong><small>${payment.description}${payment.courseId ? ` · grupo #${payment.courseId}` : ""}</small></div>`;
+                  return `<div class="item payment-item"><div class="payment-tags"><span class="tag">Cobro puntual</span><span class="tag ${statusClass(payment.status)}">${humanStatus(payment.status)}</span></div><strong>#${payment.id} · ${payment.currency} ${payment.amount}</strong><small>${payment.description}${payment.courseId ? ` · grupo #${payment.courseId}` : ""}</small>${renderPaymentActions(payment)}</div>`;
                 })
                 .join("")
             : "<div class='empty-state'>No hay cobros puntuales para este filtro.</div>",
@@ -937,7 +1030,7 @@
         document.getElementById("subscriptions-list").innerHTML = subscriptions.length
           ? subscriptions
               .map((payment) => {
-                return `<div class="item payment-item"><div class="payment-tags"><span class="tag">Cobro recurrente</span><span class="tag ${statusClass(payment.status)}">${humanStatus(payment.status)}</span></div><strong>#${payment.id} · ${payment.currency} ${payment.amount}</strong><small>${payment.description}${payment.courseId ? ` · grupo #${payment.courseId}` : ""}</small></div>`;
+                return `<div class="item payment-item"><div class="payment-tags"><span class="tag">Cobro recurrente</span><span class="tag ${statusClass(payment.status)}">${humanStatus(payment.status)}</span></div><strong>#${payment.id} · ${payment.currency} ${payment.amount}</strong><small>${payment.description}${payment.courseId ? ` · grupo #${payment.courseId}` : ""}</small>${renderPaymentActions(payment)}</div>`;
               })
               .join("")
           : "<div class='empty-state'>No hay cobros recurrentes creados para este filtro.</div>";
@@ -982,7 +1075,7 @@
       }
 
       function createClientMarkup(operationId) {
-        const appUrl = `${window.location.origin}/pago.html?operationId=${operationId}`;
+        const appUrl = buildClientPaymentUrl(operationId);
         return `<div class="item"><strong>Link cliente MiCuota:</strong> <a href="${appUrl}" target="_blank" rel="noopener noreferrer">${appUrl}</a></div>`;
       }
 
@@ -1043,6 +1136,18 @@
         state.payments = await apiGet("/api/backoffice/payments");
       }
 
+      async function loadPaymentHealth() {
+        state.paymentHealth = await apiGet("/api/backoffice/payments/health");
+      }
+
+      async function loadPaymentKpiFramework() {
+        try {
+          state.paymentKpiFramework = await apiGet("/api/backoffice/payments/kpi-framework");
+        } catch (error) {
+          state.paymentKpiFramework = null;
+        }
+      }
+
       async function loadLaunchpad() {
         state.launchpad = await apiGet("/api/backoffice/launchpad");
       }
@@ -1056,12 +1161,14 @@
       }
 
       async function refreshAllData() {
-        await Promise.all([loadUsers(), loadCourses(), loadEnrollments(), loadPayments(), loadLaunchpad(), loadPaymentSettings()]);
+        await Promise.all([loadUsers(), loadCourses(), loadEnrollments(), loadPayments(), loadPaymentHealth(), loadPaymentKpiFramework(), loadLaunchpad(), loadPaymentSettings()]);
         fillUserAndCourseSelectors();
         renderSummaryCards();
         renderUsers();
         renderCourses();
         renderPendings();
+        renderPaymentHealth();
+        renderPaymentKpiFramework();
         renderPayments();
         renderAccountSettings();
         renderLaunchpad();
@@ -1154,6 +1261,43 @@
         if (!target) return;
         window.location.hash = target;
         setActiveNav();
+      });
+      document.addEventListener("click", async (event) => {
+        const trigger = event.target.closest("[data-payment-action]");
+        if (!trigger) return;
+
+        const paymentId = Number(trigger.dataset.paymentId);
+        const action = trigger.dataset.paymentAction;
+        const payment = state.payments.find((item) => item.id === paymentId);
+
+        if (!payment) {
+          showPaymentActionMessage("No se encontro el cobro para esta accion.", true);
+          return;
+        }
+
+        if (action === "open-provider") {
+          window.open(payment.checkoutUrl, "_blank", "noopener,noreferrer");
+          showPaymentActionMessage(`Checkout del cobro #${payment.id} abierto en nueva pestana.`);
+          return;
+        }
+
+        if (action === "copy-client-link") {
+          const clientUrl = buildClientPaymentUrl(payment.id);
+          try {
+            await navigator.clipboard.writeText(clientUrl);
+            showPaymentActionMessage(`Link de cliente del cobro #${payment.id} copiado.`);
+          } catch (error) {
+            showPaymentActionMessage(`No se pudo copiar automaticamente. Link: ${clientUrl}`);
+          }
+          return;
+        }
+
+        if (action === "whatsapp-reminder") {
+          const message = buildWhatsappReminderText(payment);
+          const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+          window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+          showPaymentActionMessage(`Recordatorio por WhatsApp listo para cobro #${payment.id}.`);
+        }
       });
       document.getElementById("logout-link").addEventListener("click", logout);
       document.getElementById("logout-button").addEventListener("click", logout);

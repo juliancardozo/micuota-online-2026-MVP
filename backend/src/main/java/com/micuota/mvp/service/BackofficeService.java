@@ -14,6 +14,7 @@ import com.micuota.mvp.repository.TeacherProfileRepository;
 import com.micuota.mvp.repository.TenantRepository;
 import com.micuota.mvp.repository.UserRepository;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.OffsetDateTime;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -33,6 +34,7 @@ public class BackofficeService {
     private final TenantRepository tenantRepository;
     private final CourseEnrollmentRepository courseEnrollmentRepository;
     private final PaymentOperationRepository paymentOperationRepository;
+    private final PaymentKpiService paymentKpiService;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     public BackofficeService(
@@ -41,7 +43,8 @@ public class BackofficeService {
         CourseRepository courseRepository,
         TenantRepository tenantRepository,
         CourseEnrollmentRepository courseEnrollmentRepository,
-        PaymentOperationRepository paymentOperationRepository
+        PaymentOperationRepository paymentOperationRepository,
+        PaymentKpiService paymentKpiService
     ) {
         this.userRepository = userRepository;
         this.teacherProfileRepository = teacherProfileRepository;
@@ -49,6 +52,7 @@ public class BackofficeService {
         this.tenantRepository = tenantRepository;
         this.courseEnrollmentRepository = courseEnrollmentRepository;
         this.paymentOperationRepository = paymentOperationRepository;
+        this.paymentKpiService = paymentKpiService;
     }
 
     @Transactional
@@ -237,7 +241,10 @@ public class BackofficeService {
             .map(course -> new CourseView(course.getId(), course.getName(), course.getDescription(), course.getTeacher().getId(), course.getTeacher().getFullName()))
             .toList();
 
-        return new ProfessorDashboardView(profile.getDisplayName(), courseViews, courseSummaries, recent);
+        ProfessorRevenueMetricsView revenueMetrics = buildRevenueMetrics(professorUser.getTenant(), payments);
+        PaymentKpiFrameworkView kpiFramework = paymentKpiService.buildTenantKpis(tenantId);
+
+        return new ProfessorDashboardView(profile.getDisplayName(), courseViews, courseSummaries, recent, revenueMetrics, kpiFramework);
     }
 
     @Transactional(readOnly = true)
@@ -322,5 +329,54 @@ public class BackofficeService {
             return null;
         }
         return value.trim();
+    }
+
+    private ProfessorRevenueMetricsView buildRevenueMetrics(Tenant tenant, List<com.micuota.mvp.domain.PaymentOperation> payments) {
+        List<com.micuota.mvp.domain.PaymentOperation> success = payments.stream()
+            .filter(payment -> payment.getStatus() == OperationStatus.SUCCESS)
+            .toList();
+
+        BigDecimal gross = success.stream()
+            .map(payment -> payment.getAmount() == null ? BigDecimal.ZERO : payment.getAmount())
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal processingFees = success.stream()
+            .map(payment -> payment.getProcessingFeeAmount() == null ? BigDecimal.ZERO : payment.getProcessingFeeAmount())
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal advancedFees = success.stream()
+            .map(payment -> payment.getAdvancedFeatureFeeAmount() == null ? BigDecimal.ZERO : payment.getAdvancedFeatureFeeAmount())
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal net = success.stream()
+            .map(payment -> payment.getNetAmountForTeacher() == null
+                ? (payment.getAmount() == null ? BigDecimal.ZERO : payment.getAmount().subtract(
+                    (payment.getProcessingFeeAmount() == null ? BigDecimal.ZERO : payment.getProcessingFeeAmount())
+                        .add(payment.getAdvancedFeatureFeeAmount() == null ? BigDecimal.ZERO : payment.getAdvancedFeatureFeeAmount())
+                ))
+                : payment.getNetAmountForTeacher())
+            .reduce(BigDecimal.ZERO, BigDecimal::add)
+            .setScale(2, RoundingMode.HALF_UP);
+
+        double takeRate = gross.compareTo(BigDecimal.ZERO) == 0
+            ? 0D
+            : processingFees.multiply(BigDecimal.valueOf(100)).divide(gross, 4, RoundingMode.HALF_UP).doubleValue();
+
+        double advancedRate = gross.compareTo(BigDecimal.ZERO) == 0
+            ? 0D
+            : advancedFees.multiply(BigDecimal.valueOf(100)).divide(gross, 4, RoundingMode.HALF_UP).doubleValue();
+
+        return new ProfessorRevenueMetricsView(
+            tenant.getPlanCode() == null ? "BASE" : tenant.getPlanCode(),
+            gross.setScale(2, RoundingMode.HALF_UP),
+            processingFees.setScale(2, RoundingMode.HALF_UP),
+            advancedFees.setScale(2, RoundingMode.HALF_UP),
+            net,
+            Math.round(takeRate * 10.0) / 10.0,
+            Math.round(advancedRate * 10.0) / 10.0,
+            Boolean.TRUE.equals(tenant.getRecoveryAutomationEnabled()),
+            Boolean.TRUE.equals(tenant.getAdvancedAnalyticsEnabled()),
+            Boolean.TRUE.equals(tenant.getIntegrationsEnabled())
+        );
     }
 }
