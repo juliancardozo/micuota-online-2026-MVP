@@ -518,7 +518,11 @@
     </div>
 
     <script>
-      const API_BASE = "http://localhost:8080";
+      const API_BASE =
+        window.__MICUOTA_API_BASE__ ||
+        ((window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
+          ? "http://localhost:8080"
+          : window.location.origin);
       const RECENT_TENANTS_KEY = "micuota.recentTenants";
       const PREFERRED_TENANT_KEY = "micuota.preferredTenantSlug";
       const FIRST_TENANT_REDIRECT_KEY = "micuota.firstTenantRedirect";
@@ -575,6 +579,21 @@
       function setNote(target, message, hasError) {
         target.textContent = message;
         target.className = hasError ? "note error" : "note ok";
+      }
+
+      function isSessionErrorMessage(message) {
+        return /Sesion invalida o expirada|Token de sesion requerido|Token no encontrado|Token expirado|Formato de token invalido|Firma de token invalida/i.test(
+          message || ""
+        );
+      }
+
+      function showBootstrapError(message) {
+        const title = document.getElementById("page-title");
+        const hero = document.getElementById("hero-title");
+        title.textContent = "No se pudo cargar el dashboard";
+        hero.textContent = "Revisa la conexion de API o vuelve a iniciar sesion";
+        const summary = document.getElementById("summary-cards");
+        summary.innerHTML = `<article class="stat-card"><small>Error de carga</small><strong>Sin datos</strong><span>${message}</span></article>`;
       }
 
       function buildOption(value, label) {
@@ -1096,8 +1115,10 @@
         const response = await fetch(`${API_BASE}${path}`, {
           headers: { "X-Auth-Token": token }
         });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || "Error de API");
+
+        const contentType = response.headers.get("content-type") || "";
+        const data = contentType.includes("application/json") ? await response.json() : null;
+        if (!response.ok) throw new Error((data && data.error) || "Error de API");
         return data;
       }
 
@@ -1110,8 +1131,10 @@
           },
           body: JSON.stringify(payload)
         });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || "Error de API");
+
+        const contentType = response.headers.get("content-type") || "";
+        const data = contentType.includes("application/json") ? await response.json() : null;
+        if (!response.ok) throw new Error((data && data.error) || "Error de API");
         return data;
       }
 
@@ -1133,11 +1156,29 @@
       }
 
       async function loadPayments() {
-        state.payments = await apiGet("/api/backoffice/payments");
+        try {
+          state.payments = await apiGet("/api/backoffice/payments");
+        } catch (error) {
+          state.payments = [];
+        }
       }
 
       async function loadPaymentHealth() {
-        state.paymentHealth = await apiGet("/api/backoffice/payments/health");
+        try {
+          state.paymentHealth = await apiGet("/api/backoffice/payments/health");
+        } catch (error) {
+          state.paymentHealth = {
+            totalPayments: 0,
+            successfulPayments: 0,
+            pendingPayments: 0,
+            failedPayments: 0,
+            overduePayments: 0,
+            recoveringPayments: 0,
+            reconciliationMismatches: 0,
+            successRate: 0,
+            recommendation: "No fue posible cargar salud de cobranzas en este perfil."
+          };
+        }
       }
 
       async function loadPaymentKpiFramework() {
@@ -1149,7 +1190,11 @@
       }
 
       async function loadLaunchpad() {
-        state.launchpad = await apiGet("/api/backoffice/launchpad");
+        try {
+          state.launchpad = await apiGet("/api/backoffice/launchpad");
+        } catch (error) {
+          state.launchpad = null;
+        }
       }
 
       async function loadPaymentSettings() {
@@ -1161,7 +1206,16 @@
       }
 
       async function refreshAllData() {
-        await Promise.all([loadUsers(), loadCourses(), loadEnrollments(), loadPayments(), loadPaymentHealth(), loadPaymentKpiFramework(), loadLaunchpad(), loadPaymentSettings()]);
+        await Promise.allSettled([
+          loadUsers(),
+          loadCourses(),
+          loadEnrollments(),
+          loadPayments(),
+          loadPaymentHealth(),
+          loadPaymentKpiFramework(),
+          loadLaunchpad(),
+          loadPaymentSettings()
+        ]);
         fillUserAndCourseSelectors();
         renderSummaryCards();
         renderUsers();
@@ -1203,7 +1257,7 @@
       }
 
       function showSessionError(message, target) {
-        const isSessionError = /Sesion invalida o expirada|Token de sesion requerido|Token no encontrado/i.test(message);
+        const isSessionError = isSessionErrorMessage(message);
         if (!isSessionError) {
           setNote(target, message, true);
           return;
@@ -1249,7 +1303,11 @@
             sessionStorage.removeItem(FIRST_TENANT_REDIRECT_KEY);
           }
         } catch (error) {
-          logout();
+          if (isSessionErrorMessage(error.message)) {
+            logout();
+            return;
+          }
+          showBootstrapError(error.message || "No se pudo conectar al backend.");
         }
       }
 

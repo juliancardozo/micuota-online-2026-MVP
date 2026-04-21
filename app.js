@@ -1,4 +1,8 @@
-const API_BASE = "http://localhost:8080";
+const API_BASE =
+  window.__MICUOTA_API_BASE__ ||
+  ((window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
+    ? "http://localhost:8080"
+    : window.location.origin);
 const TEACHER_ID = 1;
 
 function createQrMarkup(url) {

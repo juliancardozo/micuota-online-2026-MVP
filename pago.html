@@ -611,7 +611,11 @@
     </div>
 
     <script>
-      const API_BASE = "http://localhost:8080";
+      const API_BASE =
+        window.__MICUOTA_API_BASE__ ||
+        ((window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
+          ? "http://localhost:8080"
+          : window.location.origin);
       const params = new URLSearchParams(window.location.search);
       const operationId = params.get("operationId");
 
