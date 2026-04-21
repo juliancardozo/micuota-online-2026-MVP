@@ -4,6 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MiCuota | Dashboard Alumno</title>
+    <link rel="icon" type="image/png" href="/assets/micuota-mate-mark.png" />
+    <link rel="apple-touch-icon" href="/assets/micuota-mate-mark.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -16,7 +18,9 @@
     <div class="app-shell">
       <aside class="sidebar">
         <a class="brand" href="/landing.html">
-          <span class="brand-dot"></span>
+          <span class="brand-logo" aria-hidden="true">
+            <img src="/assets/micuota-mate-mark.png" alt="" />
+          </span>
           <span class="brand-copy">
             <strong>MiCuota.online</strong>
             <small>Workspace del alumno</small>
@@ -26,6 +30,8 @@
         <p class="sidebar-copy">
           Revisa cursos, pagos y suscripciones desde un menu simple con foco por curso.
         </p>
+
+        <a class="btn btn-primary quick-collect-btn" href="#pagos">Ver pagos</a>
 
         <div class="sidebar-block">
           <p class="nav-group-label">Menu</p>
@@ -222,12 +228,28 @@
         window.location.href = `/landing.html?tenantSlug=${encodeURIComponent(localStorage.getItem("micuota.tenantSlug") || "")}`;
       }
 
-      function setActiveNav() {
-        const hash = window.location.hash || "#resumen";
-        document.querySelectorAll("#sidebar-nav .nav-link").forEach((link) => {
-          link.classList.toggle("active", link.getAttribute("href") === hash);
-        });
+      function getActiveViewId() {
+        const requested = (window.location.hash || "#resumen").replace("#", "");
+        const available = Array.from(document.querySelectorAll(".hero-panel[id], .shell-section[id]")).map((section) => section.id);
+        return available.includes(requested) ? requested : "resumen";
       }
+
+      function setActiveView(viewId = getActiveViewId(), updateUrl = true) {
+        const available = Array.from(document.querySelectorAll(".hero-panel[id], .shell-section[id]"));
+        const activeId = available.some((section) => section.id === viewId) ? viewId : "resumen";
+        available.forEach((section) => {
+          section.hidden = section.id !== activeId;
+        });
+        document.querySelectorAll(".sidebar .nav-link[href^='#']").forEach((link) => {
+          link.classList.toggle("active", link.getAttribute("href") === `#${activeId}`);
+        });
+        if (updateUrl && window.location.hash !== `#${activeId}`) {
+          history.replaceState(null, "", `#${activeId}`);
+        }
+        window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      }
+
+      const setActiveNav = setActiveView;
 
       async function apiGet(path) {
         const response = await fetch(`${API_BASE}${path}`, {
@@ -408,7 +430,7 @@
           return;
         }
 
-        setActiveNav();
+        setActiveView();
 
         try {
           state.profile = await apiGet("/api/auth/me");
@@ -435,7 +457,13 @@
         }
       }
 
-      window.addEventListener("hashchange", setActiveNav);
+      window.addEventListener("hashchange", () => setActiveView(getActiveViewId(), false));
+      document.addEventListener("click", (event) => {
+        const navLink = event.target.closest(".sidebar .nav-link[href^='#'], .quick-collect-btn[href^='#']");
+        if (!navLink) return;
+        event.preventDefault();
+        setActiveView(navLink.getAttribute("href").replace("#", ""));
+      });
       document.getElementById("logout-link").addEventListener("click", logout);
       document.getElementById("logout-button").addEventListener("click", logout);
       document.getElementById("reset-course-button").addEventListener("click", () => {

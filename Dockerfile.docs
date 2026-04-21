@@ -1,0 +1,12 @@
+FROM python:3.13-slim
+
+WORKDIR /workspace
+
+RUN pip install --no-cache-dir --progress-bar off \
+    mkdocs-material==9.6.14
+
+RUN mkdocs --version
+
+EXPOSE 8000
+
+CMD ["sh", "-c", "mkdocs build && python tools/serve_docs.py"]

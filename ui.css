@@ -20,8 +20,8 @@
   --radius-xl: 30px;
   --radius-lg: 22px;
   --radius-md: 16px;
-  --shadow-lg: 0 28px 72px rgba(60, 40, 12, 0.12);
-  --shadow-md: 0 18px 42px rgba(60, 40, 12, 0.1);
+  --shadow-lg: 0 18px 44px rgba(60, 40, 12, 0.1);
+  --shadow-md: 0 10px 28px rgba(60, 40, 12, 0.08);
 }
 
 * {
@@ -48,6 +48,7 @@ body.shell-ui::before {
   content: "";
   position: fixed;
   inset: 0;
+  z-index: -1;
   pointer-events: none;
   background-image:
     linear-gradient(rgba(117, 93, 57, 0.03) 1px, transparent 1px),
@@ -73,6 +74,8 @@ body.shell-ui textarea {
   display: grid;
   grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
   gap: 18px;
+  position: relative;
+  z-index: 0;
 }
 
 .sidebar {
@@ -86,10 +89,10 @@ body.shell-ui textarea {
   padding: 22px 18px;
   border: 1px solid var(--line);
   border-radius: var(--radius-xl);
-  background: linear-gradient(180deg, rgba(255, 250, 243, 0.94) 0%, rgba(250, 241, 228, 0.96) 100%);
+  background: linear-gradient(180deg, rgba(255, 250, 243, 0.98) 0%, rgba(250, 241, 228, 0.99) 100%);
   box-shadow: var(--shadow-lg);
-  backdrop-filter: blur(16px);
   overflow: hidden;
+  contain: layout paint style;
 }
 
 .sidebar::after {
@@ -112,12 +115,25 @@ body.shell-ui textarea {
   letter-spacing: 0.02em;
 }
 
+.brand-logo,
 .brand-dot {
-  width: 13px;
-  height: 13px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-2) 100%);
-  box-shadow: 0 0 0 8px rgba(204, 90, 22, 0.08);
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: #fffaf2;
+  border: 1px solid rgba(93, 73, 43, 0.1);
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  box-shadow: 0 0 0 4px rgba(204, 90, 22, 0.07);
+  overflow: hidden;
+}
+
+.brand-logo img {
+  width: 82%;
+  height: 82%;
+  object-fit: contain;
+  display: block;
 }
 
 .brand-copy small,
@@ -236,7 +252,7 @@ body.admin-ui .header-meta {
   border-radius: 18px;
   border: 1px solid transparent;
   background: rgba(255, 255, 255, 0.48);
-  transition: 140ms ease;
+  transition: border-color 140ms ease, background 140ms ease, color 140ms ease, box-shadow 140ms ease;
 }
 
 .nav-link strong {
@@ -252,8 +268,7 @@ body.admin-ui .header-meta {
 .nav-link.active {
   border-color: var(--line-strong);
   background: linear-gradient(135deg, rgba(255, 248, 238, 0.96) 0%, rgba(255, 239, 214, 0.94) 100%);
-  transform: translateX(2px);
-  box-shadow: 0 12px 24px rgba(204, 90, 22, 0.08);
+  box-shadow: 0 8px 18px rgba(204, 90, 22, 0.06);
 }
 
 .sidebar-footer {
@@ -342,6 +357,12 @@ body.shell-ui button {
   display: grid;
   gap: 18px;
   min-width: 0;
+  align-content: start;
+}
+
+.hero-panel[hidden],
+.shell-section[hidden] {
+  display: none !important;
 }
 
 .shell-header,
@@ -349,9 +370,9 @@ body.shell-ui button {
 .shell-section,
 .surface-card {
   border: 1px solid var(--line);
-  background: var(--paper);
+  background: rgba(255, 251, 244, 0.94);
   box-shadow: var(--shadow-md);
-  backdrop-filter: blur(16px);
+  contain: layout paint style;
 }
 
 .shell-header {
@@ -532,6 +553,13 @@ body.shell-ui textarea:focus {
   scroll-margin-top: 18px;
 }
 
+@supports (content-visibility: auto) {
+  .shell-section {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 780px;
+  }
+}
+
 .section-head {
   display: flex;
   justify-content: space-between;
@@ -562,6 +590,19 @@ body.shell-ui textarea:focus {
   border-radius: 22px;
   display: grid;
   gap: 14px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-link,
+  .btn,
+  body.shell-ui button {
+    transition: none;
+  }
+
+  .btn:hover,
+  body.shell-ui button:hover {
+    transform: none;
+  }
 }
 
 .span-12 {
@@ -906,11 +947,10 @@ body.shell-ui textarea:focus {
   z-index: 1199;
   border: 1px solid rgba(93, 73, 43, 0.08);
   border-radius: 24px;
-  background: rgba(255, 251, 244, 0.2);
+  background: rgba(255, 251, 244, 0.97);
   box-shadow:
-    0 28px 60px rgba(96, 56, 17, 0.12),
+    0 18px 44px rgba(96, 56, 17, 0.1),
     0 0 0 1px rgba(255, 255, 255, 0.18) inset;
-  backdrop-filter: blur(18px);
   display: grid;
   grid-template-rows: auto 1fr auto;
   overflow: hidden;

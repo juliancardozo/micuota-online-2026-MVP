@@ -4,6 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MiCuota | Backoffice</title>
+    <link rel="icon" type="image/png" href="/assets/micuota-mate-mark.png" />
+    <link rel="apple-touch-icon" href="/assets/micuota-mate-mark.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -16,7 +18,9 @@
     <div class="app-shell">
       <aside class="sidebar">
         <a class="brand" href="/landing.html">
-          <span class="brand-dot"></span>
+          <span class="brand-logo" aria-hidden="true">
+            <img src="/assets/micuota-mate-mark.png" alt="" />
+          </span>
           <span class="brand-copy">
             <strong>MiCuota.online</strong>
             <small>App shell de administracion</small>
@@ -116,6 +120,11 @@
               <label for="tenant-switcher">Tenant operativo</label>
               <select id="tenant-switcher"></select>
               <span class="helper-text">Cambiar tenant te lleva al login del contexto elegido.</span>
+            </div>
+            <div class="selector-group" id="teacher-context-wrap">
+              <label for="teacher-context-switcher">Profesor foco</label>
+              <select id="teacher-context-switcher"></select>
+              <span class="helper-text">Filtra grupos, personas y cobros del contexto actual.</span>
             </div>
             <div class="selector-group">
               <label>Usuario actual</label>
@@ -526,6 +535,7 @@
       const RECENT_TENANTS_KEY = "micuota.recentTenants";
       const PREFERRED_TENANT_KEY = "micuota.preferredTenantSlug";
       const FIRST_TENANT_REDIRECT_KEY = "micuota.firstTenantRedirect";
+      const SELECTED_TEACHER_KEY = "micuota.backoffice.selectedTeacherUserId";
       const urlToken = new URLSearchParams(window.location.search).get("token");
       const token = urlToken || localStorage.getItem("micuota.authToken");
       const tenantSlug = localStorage.getItem("micuota.tenantSlug") || "(sin slug)";
@@ -544,7 +554,8 @@
         paymentHealth: null,
         paymentKpiFramework: null,
         launchpad: null,
-        paymentSettings: null
+        paymentSettings: null,
+        selectedTeacherUserId: localStorage.getItem(SELECTED_TEACHER_KEY) || ""
       };
 
       const createUserForm = document.getElementById("create-user-form");
@@ -596,6 +607,10 @@
         summary.innerHTML = `<article class="stat-card"><small>Error de carga</small><strong>Sin datos</strong><span>${message}</span></article>`;
       }
 
+      function nextPaint() {
+        return new Promise((resolve) => requestAnimationFrame(() => resolve()));
+      }
+
       function buildOption(value, label) {
         const option = document.createElement("option");
         option.value = value;
@@ -639,21 +654,59 @@
       }
 
       function renderPaymentActions(payment) {
-        if (payment.status === "SUCCESS") {
-          return "";
-        }
         const isRecoverable = payment.status === "CREATED" || payment.status === "FAILURE";
         return `
           <div class="actions-row payment-actions">
-            <button type="button" class="btn-secondary compact-btn" data-payment-action="open-provider" data-payment-id="${payment.id}">Abrir checkout</button>
-            <button type="button" class="btn-secondary compact-btn" data-payment-action="copy-client-link" data-payment-id="${payment.id}">Copiar link cliente</button>
+            ${
+              payment.status === "SUCCESS"
+                ? ""
+                : `<button type="button" class="btn-secondary compact-btn" data-payment-action="open-provider" data-payment-id="${payment.id}">Abrir checkout</button>
+                   <button type="button" class="btn-secondary compact-btn" data-payment-action="copy-client-link" data-payment-id="${payment.id}">Copiar link cliente</button>`
+            }
             ${
               isRecoverable
                 ? `<button type="button" class="compact-btn" data-payment-action="whatsapp-reminder" data-payment-id="${payment.id}">Recordar por WhatsApp</button>`
                 : ""
             }
+            <button type="button" class="btn-secondary compact-btn" data-payment-action="view-timeline" data-payment-id="${payment.id}">Ver timeline</button>
           </div>
         `;
+      }
+
+      function humanEventType(eventType) {
+        const labels = {
+          PAYMENT_CREATED: "Cobro creado",
+          PAYMENT_LINK_SENT: "Link enviado",
+          WEBHOOK_RECEIVED: "Webhook recibido",
+          PAYMENT_STATUS_CHANGED: "Estado actualizado",
+          REMINDER_SENT: "Recordatorio enviado",
+          RETRY_SCHEDULED: "Reintento programado",
+          DEBT_MARKED: "Deuda marcada",
+          RECONCILIATION_MATCHED: "Conciliado",
+          RECONCILIATION_MISMATCHED: "Descalce detectado"
+        };
+        return labels[eventType] || eventType || "Evento";
+      }
+
+      function renderPaymentTimeline(payment, events) {
+        if (!events.length) {
+          return `Cobro #${payment.id}: todavia no hay eventos auditables.`;
+        }
+
+        const rows = events
+          .map((item) => {
+            const createdAt = item.createdAt ? new Date(item.createdAt).toLocaleString("es-UY") : "";
+            const statusMove =
+              item.statusFrom && item.statusTo && item.statusFrom !== item.statusTo
+                ? ` · ${humanStatus(item.statusFrom)} -> ${humanStatus(item.statusTo)}`
+                : item.statusTo
+                  ? ` · ${humanStatus(item.statusTo)}`
+                  : "";
+            return `<div><small>${createdAt}${statusMove}</small><strong>${humanEventType(item.eventType)}</strong><br /><small>${item.provider || payment.provider || "Proveedor"} · ${item.providerReference || payment.providerReference || ""}</small></div>`;
+          })
+          .join("");
+
+        return `<strong>Timeline cobro #${payment.id}</strong><div class="mini-grid">${rows}</div>`;
       }
 
       function showPaymentActionMessage(message, hasError = false) {
@@ -662,12 +715,26 @@
         target.innerHTML = `<div class='item ${hasError ? "error" : "ok"}'>${message}</div>`;
       }
 
-      function setActiveNav() {
-        const hash = window.location.hash || "#resumen";
-        document.querySelectorAll(".sidebar .nav-link[href^='#']").forEach((link) => {
-          link.classList.toggle("active", link.getAttribute("href") === hash);
-        });
+      function getActiveViewId() {
+        const requested = (window.location.hash || "#resumen").replace("#", "");
+        return document.getElementById(requested) ? requested : "resumen";
       }
+
+      function setActiveView(viewId = getActiveViewId(), updateUrl = true) {
+        const targetHash = `#${viewId}`;
+        document.querySelectorAll(".hero-panel[id], .shell-section[id]").forEach((section) => {
+          section.hidden = section.id !== viewId;
+        });
+        document.querySelectorAll(".sidebar .nav-link[href^='#']").forEach((link) => {
+          link.classList.toggle("active", link.getAttribute("href") === targetHash);
+        });
+        if (updateUrl && window.location.hash !== targetHash) {
+          history.replaceState(null, "", targetHash);
+        }
+        document.querySelector(".shell-content")?.scrollTo?.({ top: 0, behavior: "auto" });
+      }
+
+      const setActiveNav = setActiveView;
 
       function renderSidebarProfile() {
         const profile = state.profile;
@@ -699,6 +766,7 @@
         document.getElementById("session-pills").innerHTML = profile
           ? [
               `<span class="pill">Tenant: ${tenantSlug}</span>`,
+              `<span class="pill">Contexto: ${getSelectedTeacherName()}</span>`,
               `<span class="pill">Rol: ${profile.role}</span>`,
               `<span class="pill">Usuario: ${profile.email}</span>`,
               `<span class="pill">User ID: ${profile.userId}</span>`
@@ -707,7 +775,8 @@
         document.getElementById("header-user-pills").innerHTML = profile
           ? [
               `<span class="pill">${profile.fullName}</span>`,
-              `<span class="pill">${profile.role}</span>`
+              `<span class="pill">${profile.role}</span>`,
+              `<span class="pill">${getSelectedTeacherName()}</span>`
             ].join("")
           : "";
         renderSidebarProfile();
@@ -737,20 +806,81 @@
         wrap.style.display = "";
       }
 
+      function getSelectedTeacherId() {
+        const selected = state.selectedTeacherUserId;
+        return selected && selected !== "all" ? selected : "";
+      }
+
+      function selectedTeacherQuery(prefix = "?") {
+        const selected = getSelectedTeacherId();
+        return selected ? `${prefix}teacherUserId=${encodeURIComponent(selected)}` : "";
+      }
+
+      function getVisibleCourses() {
+        const selected = getSelectedTeacherId();
+        return selected
+          ? state.courses.filter((course) => String(course.teacherUserId) === selected)
+          : state.courses;
+      }
+
+      function getVisibleEnrollments() {
+        const selected = getSelectedTeacherId();
+        if (!selected) return state.enrollments;
+        const courseIds = new Set(getVisibleCourses().map((course) => String(course.id)));
+        return state.enrollments.filter((enrollment) => courseIds.has(String(enrollment.courseId)));
+      }
+
+      function getVisibleStudents() {
+        const selected = getSelectedTeacherId();
+        if (!selected) return state.users.students;
+        const studentIds = new Set(getVisibleEnrollments().map((enrollment) => String(enrollment.studentUserId)));
+        return state.users.students.filter((student) => studentIds.has(String(student.id)));
+      }
+
+      function getSelectedTeacherName() {
+        const selected = getSelectedTeacherId();
+        if (!selected) return "Todo el tenant";
+        return state.users.teachers.find((teacher) => String(teacher.id) === selected)?.fullName || "Profesor seleccionado";
+      }
+
+      function renderTeacherContextSelector() {
+        const wrap = document.getElementById("teacher-context-wrap");
+        const selector = document.getElementById("teacher-context-switcher");
+        if (!wrap || !selector) return;
+        const isTenantAdmin = state.profile?.role === "TENANT_ADMIN";
+        wrap.style.display = isTenantAdmin ? "" : "none";
+        selector.innerHTML = "";
+        selector.appendChild(buildOption("", "Todo el tenant"));
+        state.users.teachers.forEach((teacher) => {
+          selector.appendChild(buildOption(String(teacher.id), `${teacher.fullName} (#${teacher.id})`));
+        });
+        if (state.selectedTeacherUserId && !state.users.teachers.some((teacher) => String(teacher.id) === state.selectedTeacherUserId)) {
+          state.selectedTeacherUserId = "";
+          localStorage.removeItem(SELECTED_TEACHER_KEY);
+        }
+        selector.value = state.selectedTeacherUserId;
+      }
+
       function renderSummaryCards() {
-        const totalPeople = state.users.teachers.length + state.users.students.length;
+        const visibleStudents = getVisibleStudents();
+        const visibleCourses = getVisibleCourses();
         const pending = state.payments.filter((payment) => payment.status !== "SUCCESS");
         const success = state.payments.filter((payment) => payment.status === "SUCCESS");
         document.getElementById("summary-cards").innerHTML = [
           {
-            title: "Personas",
-            value: totalPeople,
-            note: `${state.users.teachers.length} profesionales · ${state.users.students.length} clientes`
+            title: "Contexto",
+            value: getSelectedTeacherName(),
+            note: getSelectedTeacherId() ? "Profesor foco activo" : "Vista agregada del tenant"
+          },
+          {
+            title: "Clientes",
+            value: visibleStudents.length,
+            note: `${state.users.teachers.length} profesionales en el tenant`
           },
           {
             title: "Grupos",
-            value: state.courses.length,
-            note: "Cursos o espacios activos"
+            value: visibleCourses.length,
+            note: "Cursos o espacios del contexto"
           },
           {
             title: "Pendientes",
@@ -909,41 +1039,48 @@
       }
 
       function renderUsers() {
+        const selected = getSelectedTeacherId();
+        const visibleTeachers = selected
+          ? state.users.teachers.filter((teacher) => String(teacher.id) === selected)
+          : state.users.teachers;
+        const visibleStudents = getVisibleStudents();
         const renderUserCard = (user) => {
           return `<div class="item"><strong>${user.fullName}</strong><br /><small>#${user.id} · ${user.email}</small></div>`;
         };
 
         document.getElementById("teachers-list").innerHTML = state.users.teachers.length
-          ? state.users.teachers.map(renderUserCard).join("")
+          ? visibleTeachers.map(renderUserCard).join("")
           : "<div class='empty-state'>Sin profesores registrados.</div>";
 
-        document.getElementById("students-list").innerHTML = state.users.students.length
-          ? state.users.students.map(renderUserCard).join("")
-          : "<div class='empty-state'>Sin alumnos registrados.</div>";
+        document.getElementById("students-list").innerHTML = visibleStudents.length
+          ? visibleStudents.map(renderUserCard).join("")
+          : "<div class='empty-state'>Sin clientes asociados a este contexto.</div>";
 
         document.getElementById("users-status-list").innerHTML = [
-          `<div class="item"><strong>Total personas</strong><br /><small>${state.users.teachers.length + state.users.students.length}</small></div>`,
-          `<div class="item"><strong>Con rol profesional</strong><br /><small>${state.users.teachers.length}</small></div>`,
-          `<div class="item"><strong>Base cobrable</strong><br /><small>${state.users.students.length} clientes / alumnos</small></div>`
+          `<div class="item"><strong>Contexto</strong><br /><small>${getSelectedTeacherName()}</small></div>`,
+          `<div class="item"><strong>Profesionales visibles</strong><br /><small>${visibleTeachers.length}</small></div>`,
+          `<div class="item"><strong>Base cobrable</strong><br /><small>${visibleStudents.length} clientes / alumnos</small></div>`
         ].join("");
       }
 
       function renderCourses() {
-        document.getElementById("courses-list").innerHTML = state.courses.length
-          ? state.courses
+        const visibleCourses = getVisibleCourses();
+        const visibleEnrollments = getVisibleEnrollments();
+        document.getElementById("courses-list").innerHTML = visibleCourses.length
+          ? visibleCourses
               .map((course) => {
                 return `<div class="item"><strong>${course.name}</strong><br /><small>#${course.id} · ${course.description} · ${course.teacherName}</small></div>`;
               })
               .join("")
-          : "<div class='empty-state'>Todavia no hay grupos o cursos creados.</div>";
+          : "<div class='empty-state'>Todavia no hay grupos o cursos en este contexto.</div>";
 
-        document.getElementById("enrollments-list").innerHTML = state.enrollments.length
-          ? state.enrollments
+        document.getElementById("enrollments-list").innerHTML = visibleEnrollments.length
+          ? visibleEnrollments
               .map((enrollment) => {
                 return `<div class="item"><strong>${enrollment.studentName}</strong><br /><small>${enrollment.courseName}</small></div>`;
               })
               .join("")
-          : "<div class='empty-state'>Aun no hay personas asociadas a grupos.</div>";
+          : "<div class='empty-state'>Aun no hay personas asociadas a grupos de este contexto.</div>";
       }
 
       function renderPendings() {
@@ -1074,10 +1211,13 @@
 
       function fillUserAndCourseSelectors() {
         const teacherOptions = state.users.teachers.map((teacher) => ({ value: teacher.id, label: `#${teacher.id} ${teacher.fullName}` }));
-        const studentOptions = state.users.students.map((student) => ({ value: student.id, label: `#${student.id} ${student.fullName}` }));
-        const courseOptions = state.courses.map((course) => ({ value: course.id, label: `#${course.id} ${course.name}` }));
+        const studentOptions = getVisibleStudents().map((student) => ({ value: student.id, label: `#${student.id} ${student.fullName}` }));
+        const courseOptions = getVisibleCourses().map((course) => ({ value: course.id, label: `#${course.id} ${course.name}` }));
 
         fillSelect(document.getElementById("course-teacher"), teacherOptions, "Selecciona profesor", false);
+        if (getSelectedTeacherId()) {
+          document.getElementById("course-teacher").value = getSelectedTeacherId();
+        }
         fillSelect(document.getElementById("enrollment-student"), studentOptions, "Selecciona alumno", false);
         fillSelect(document.getElementById("enrollment-course"), courseOptions, "Selecciona curso", false);
         fillSelect(document.getElementById("ot-student"), studentOptions, "Sin alumno asignado", true);
@@ -1157,7 +1297,7 @@
 
       async function loadPayments() {
         try {
-          state.payments = await apiGet("/api/backoffice/payments");
+          state.payments = await apiGet(`/api/backoffice/payments${selectedTeacherQuery()}`);
         } catch (error) {
           state.payments = [];
         }
@@ -1165,7 +1305,7 @@
 
       async function loadPaymentHealth() {
         try {
-          state.paymentHealth = await apiGet("/api/backoffice/payments/health");
+          state.paymentHealth = await apiGet(`/api/backoffice/payments/health${selectedTeacherQuery()}`);
         } catch (error) {
           state.paymentHealth = {
             totalPayments: 0,
@@ -1216,15 +1356,19 @@
           loadLaunchpad(),
           loadPaymentSettings()
         ]);
+        renderTeacherContextSelector();
         fillUserAndCourseSelectors();
         renderSummaryCards();
+        renderAccountSettings();
+        await nextPaint();
         renderUsers();
         renderCourses();
+        await nextPaint();
         renderPendings();
         renderPaymentHealth();
         renderPaymentKpiFramework();
+        await nextPaint();
         renderPayments();
-        renderAccountSettings();
         renderLaunchpad();
       }
 
@@ -1238,7 +1382,8 @@
 
         target.innerHTML = "<div class='item'>Buscando ultimo cobro...</div>";
         try {
-          const operations = await apiGet(`/api/backoffice/payments/by-course?courseId=${courseId}`);
+          const teacherParam = selectedTeacherQuery("&");
+          const operations = await apiGet(`/api/backoffice/payments/by-course?courseId=${courseId}${teacherParam}`);
           if (!operations.length) {
             target.innerHTML = "<div class='empty-state'>No hay cobros en este curso todavia.</div>";
             return;
@@ -1297,6 +1442,7 @@
 
           renderHeader();
           renderTenantSelector();
+          renderTeacherContextSelector();
           renderAccountSettings();
           await refreshAllData();
           if (isFirstTenantRedirect) {
@@ -1311,14 +1457,19 @@
         }
       }
 
-      window.addEventListener("hashchange", setActiveNav);
+      window.addEventListener("hashchange", () => setActiveView(getActiveViewId(), false));
       document.addEventListener("click", (event) => {
+        const navLink = event.target.closest(".sidebar .nav-link[href^='#']");
+        if (navLink) {
+          event.preventDefault();
+          setActiveView(navLink.getAttribute("href").replace("#", ""));
+          return;
+        }
         const trigger = event.target.closest("[data-launch-target]");
         if (!trigger) return;
         const target = trigger.dataset.launchTarget;
         if (!target) return;
-        window.location.hash = target;
-        setActiveNav();
+        setActiveView(target.replace("#", ""));
       });
       document.addEventListener("click", async (event) => {
         const trigger = event.target.closest("[data-payment-action]");
@@ -1355,12 +1506,35 @@
           const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
           window.open(whatsappUrl, "_blank", "noopener,noreferrer");
           showPaymentActionMessage(`Recordatorio por WhatsApp listo para cobro #${payment.id}.`);
+          return;
+        }
+
+        if (action === "view-timeline") {
+          showPaymentActionMessage(`Cargando timeline del cobro #${payment.id}...`);
+          try {
+            const teacherParam = selectedTeacherQuery();
+            const events = await apiGet(`/api/backoffice/payments/${payment.id}/events${teacherParam}`);
+            showPaymentActionMessage(renderPaymentTimeline(payment, events));
+          } catch (error) {
+            showPaymentActionMessage(error.message, true);
+          }
         }
       });
       document.getElementById("logout-link").addEventListener("click", logout);
       document.getElementById("logout-button").addEventListener("click", logout);
       document.getElementById("switch-tenant-button").addEventListener("click", switchTenant);
       document.getElementById("tenant-switcher").addEventListener("change", switchTenant);
+      document.getElementById("teacher-context-switcher").addEventListener("change", async (event) => {
+        state.selectedTeacherUserId = event.target.value;
+        if (state.selectedTeacherUserId) {
+          localStorage.setItem(SELECTED_TEACHER_KEY, state.selectedTeacherUserId);
+        } else {
+          localStorage.removeItem(SELECTED_TEACHER_KEY);
+        }
+        renderHeader();
+        await refreshAllData();
+        setActiveView(getActiveViewId(), false);
+      });
       document.getElementById("payments-course-filter").addEventListener("change", renderPayments);
       document.getElementById("refresh-payments").addEventListener("click", refreshAllData);
       document.getElementById("load-quick-share").addEventListener("click", loadQuickShare);
@@ -1432,6 +1606,7 @@
         try {
           const payload = Object.fromEntries(new FormData(event.target).entries());
           payload.amount = Number(payload.amount);
+          if (getSelectedTeacherId()) payload.teacherUserId = Number(getSelectedTeacherId());
           if (payload.studentUserId) payload.studentUserId = Number(payload.studentUserId);
           else delete payload.studentUserId;
           if (payload.courseId) payload.courseId = Number(payload.courseId);
@@ -1457,6 +1632,7 @@
         try {
           const payload = Object.fromEntries(new FormData(event.target).entries());
           payload.amount = Number(payload.amount);
+          if (getSelectedTeacherId()) payload.teacherUserId = Number(getSelectedTeacherId());
           if (payload.studentUserId) payload.studentUserId = Number(payload.studentUserId);
           else delete payload.studentUserId;
           if (payload.courseId) payload.courseId = Number(payload.courseId);

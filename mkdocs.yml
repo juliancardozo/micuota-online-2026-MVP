@@ -1,0 +1,73 @@
+site_name: MiCuota Docs
+site_description: Documentacion tecnica y operativa de MiCuota.online
+site_url: https://micuota.online/docs/
+repo_name: MiCuota
+docs_dir: docs
+theme:
+  name: material
+  language: es
+  logo: assets/micuota-mate-mark.png
+  favicon: assets/micuota-mate-mark.png
+  palette:
+    - scheme: default
+      primary: deep orange
+      accent: orange
+  features:
+    - navigation.instant
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.highlight
+    - search.suggest
+    - content.code.copy
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+extra_css:
+  - stylesheets/extra.css
+nav:
+  - Inicio: index.md
+  - Get Started:
+      - Vision general: getting-started/get-started.md
+      - Onboarding: getting-started/onboarding.md
+      - Ambientes y autenticacion: getting-started/environments-auth.md
+      - Primer cobro de prueba: getting-started/first-payment.md
+      - Webhooks: getting-started/webhooks.md
+      - Errores y testing: getting-started/errors-testing.md
+      - Glosario: getting-started/glossary.md
+  - Core:
+      - Plataforma: core/platform-overview.md
+      - Pagos: core/payments.md
+      - Suscripciones: core/subscriptions.md
+      - Ledger y timeline: core/ledger.md
+      - Conciliacion: core/reconciliation.md
+      - Notificaciones: core/notifications.md
+  - API:
+      - Autenticacion: api/auth.md
+      - Backoffice: api/backoffice.md
+      - Pagos publicos: api/public-payments.md
+      - Callbacks y webhooks: api/callbacks.md
+      - Modelo de datos: api/data-model.md
+  - Operacion:
+      - Desarrollo local: operations/local-development.md
+      - Deploy: operations/deployment.md
+      - Observabilidad: operations/observability.md
+      - Seguridad: operations/security.md
+  - Estrategia:
+      - Embedded payments: micuota_embedded_payments_playbook.md
+      - Primeros 50 clientes: primeros-50-clientes-playbook.md
+      - Diagramas de secuencia: sequence-diagrams-mvp.md
+      - Assets landing: landing-image-pack-prompts.md

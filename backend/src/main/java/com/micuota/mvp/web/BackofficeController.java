@@ -14,6 +14,7 @@ import com.micuota.mvp.service.LaunchpadService;
 import com.micuota.mvp.service.LaunchpadView;
 import com.micuota.mvp.service.PaymentSettingsView;
 import com.micuota.mvp.service.PaymentHealthView;
+import com.micuota.mvp.service.PaymentEventView;
 import com.micuota.mvp.service.PaymentKpiFrameworkView;
 import com.micuota.mvp.service.PaymentKpiService;
 import com.micuota.mvp.service.UpdatePaymentSettingsRequest;
@@ -34,6 +35,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -129,7 +131,7 @@ public class BackofficeController {
     ) {
         AuthSessionService.SessionContext session = authSessionService.requireSession(token);
         requireTenantAdminOrTeacher(session);
-        return paymentService.createOneTimeForUser(session.userId(), request);
+        return paymentService.createOneTimeForBackoffice(session.tenantId(), session.userId(), session.role(), request);
     }
 
     @PostMapping("/payments/subscriptions")
@@ -140,34 +142,65 @@ public class BackofficeController {
     ) {
         AuthSessionService.SessionContext session = authSessionService.requireSession(token);
         requireTenantAdminOrTeacher(session);
-        return paymentService.createSubscriptionForUser(session.userId(), request);
+        return paymentService.createSubscriptionForBackoffice(session.tenantId(), session.userId(), session.role(), request);
     }
 
     @GetMapping("/payments")
     @Operation(summary = "Listar pagos del profesional", description = "Devuelve operaciones recientes del profesional autenticado.")
-    public List<PaymentOperation> listBackofficePayments(@RequestHeader("X-Auth-Token") String token) {
+    public List<PaymentOperation> listBackofficePayments(
+        @RequestHeader("X-Auth-Token") String token,
+        @RequestParam(required = false) Long teacherUserId
+    ) {
         AuthSessionService.SessionContext session = authSessionService.requireSession(token);
         requireTenantAdminOrTeacher(session);
-        return paymentService.lastOperationsByUser(session.userId());
+        return paymentService.lastOperationsForBackoffice(session.tenantId(), session.userId(), session.role(), teacherUserId);
     }
 
     @GetMapping("/payments/by-course")
     @Operation(summary = "Listar pagos por curso", description = "Devuelve operaciones recientes filtradas por curso.")
     public List<PaymentOperation> listBackofficePaymentsByCourse(
         @RequestHeader("X-Auth-Token") String token,
-        @RequestParam Long courseId
+        @RequestParam Long courseId,
+        @RequestParam(required = false) Long teacherUserId
     ) {
         AuthSessionService.SessionContext session = authSessionService.requireSession(token);
         requireTenantAdminOrTeacher(session);
-        return paymentService.lastOperationsByUserAndCourse(session.userId(), courseId);
+        return paymentService.lastOperationsForBackofficeAndCourse(
+            session.tenantId(),
+            session.userId(),
+            session.role(),
+            teacherUserId,
+            courseId
+        );
+    }
+
+    @GetMapping("/payments/{operationId}/events")
+    @Operation(summary = "Timeline de cobro", description = "Devuelve eventos auditables de una operacion de pago del profesional autenticado.")
+    public List<PaymentEventView> paymentTimeline(
+        @RequestHeader("X-Auth-Token") String token,
+        @PathVariable Long operationId,
+        @RequestParam(required = false) Long teacherUserId
+    ) {
+        AuthSessionService.SessionContext session = authSessionService.requireSession(token);
+        requireTenantAdminOrTeacher(session);
+        return paymentService.timelineForBackoffice(
+            session.tenantId(),
+            session.userId(),
+            session.role(),
+            teacherUserId,
+            operationId
+        );
     }
 
     @GetMapping("/payments/health")
     @Operation(summary = "Salud de cobranzas", description = "Resumen de conversion, mora, recupero y reconciliacion para el profesional autenticado.")
-    public PaymentHealthView paymentHealth(@RequestHeader("X-Auth-Token") String token) {
+    public PaymentHealthView paymentHealth(
+        @RequestHeader("X-Auth-Token") String token,
+        @RequestParam(required = false) Long teacherUserId
+    ) {
         AuthSessionService.SessionContext session = authSessionService.requireSession(token);
         requireTenantAdminOrTeacher(session);
-        return paymentService.paymentHealthByUser(session.userId());
+        return paymentService.paymentHealthForBackoffice(session.tenantId(), session.userId(), session.role(), teacherUserId);
     }
 
     @GetMapping("/payments/kpi-framework")

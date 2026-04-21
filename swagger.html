@@ -6,7 +6,8 @@
     <title>MiCuota | Swagger API</title>
     <meta name="robots" content="noindex,nofollow,noarchive" />
     <link rel="canonical" href="https://micuota.online/swagger.html" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" href="/assets/micuota-mate-mark.png" />
+    <link rel="apple-touch-icon" href="/assets/micuota-mate-mark.png" />
     <style>
       :root {
         --bg: #0f172a;
@@ -40,6 +41,22 @@
 
       h1 { margin: 0 0 10px; font-size: 1.6rem; }
       p { color: var(--muted); line-height: 1.55; }
+
+      .swagger-brand {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 14px;
+      }
+
+      .swagger-brand img {
+        width: 40px;
+        height: 40px;
+        object-fit: contain;
+        border-radius: 12px;
+        background: #fffaf2;
+        padding: 4px;
+      }
 
       .row {
         display: flex;
@@ -85,21 +102,24 @@
   </head>
   <body>
     <main class="card">
-      <h1>Swagger no se sirve desde Netlify</h1>
+      <div class="swagger-brand">
+        <img src="/assets/micuota-mate-mark.png" alt="" />
+        <h1>Swagger no se sirve desde Netlify</h1>
+      </div>
       <p>
         Este dominio (<span class="ok">micuota.netlify.app</span>) publica solo frontend estático.
         Swagger UI se sirve desde el backend Spring Boot.
       </p>
 
       <div class="row">
-        <a class="btn btn-primary" href="http://localhost:8080/swagger-ui/index.html" target="_blank" rel="noopener noreferrer">
-          Abrir Swagger local
+        <a class="btn btn-primary" href="http://localhost:8080/v3/api-docs" target="_blank" rel="noopener noreferrer">
+          Abrir OpenAPI local
         </a>
         <a class="btn btn-ghost" href="/landing.html">Volver al sitio</a>
       </div>
 
-      <p>Si tu backend está deployado en otro dominio, usa estas rutas reemplazando <strong>&lt;tu-backend&gt;</strong>:</p>
-      <div class="code">https://&lt;tu-backend&gt;/swagger-ui/index.html<br/>https://&lt;tu-backend&gt;/v3/api-docs</div>
+      <p>Si tu backend está deployado en otro dominio, usa esta ruta reemplazando <strong>&lt;tu-backend&gt;</strong>:</p>
+      <div class="code">https://&lt;tu-backend&gt;/v3/api-docs</div>
     </main>
   </body>
 </html>

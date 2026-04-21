@@ -37,8 +37,17 @@ public class CallbackController {
 
     @GetMapping("/success/by-reference")
     @Operation(summary = "Callback success por providerReference", description = "Actualiza la operacion como SUCCESS segun referencia del proveedor.")
-    public PaymentOperation successByReference(@RequestParam String providerReference) {
-        return paymentService.updateStatusByProviderReference(providerReference, OperationStatus.SUCCESS);
+    public PaymentOperation successByReference(
+        @RequestParam(required = false) String providerReference,
+        @RequestParam(name = "preference_id", required = false) String preferenceId,
+        @RequestParam(required = false) String externalReference,
+        @RequestParam(name = "external_reference", required = false) String mercadoPagoExternalReference
+    ) {
+        return paymentService.updateStatusByCallbackReference(
+            firstNonBlank(providerReference, preferenceId),
+            firstNonBlank(externalReference, mercadoPagoExternalReference),
+            OperationStatus.SUCCESS
+        );
     }
 
     @GetMapping("/pending")
@@ -49,8 +58,17 @@ public class CallbackController {
 
     @GetMapping("/pending/by-reference")
     @Operation(summary = "Callback pending por providerReference", description = "Actualiza la operacion como PENDING segun referencia del proveedor.")
-    public PaymentOperation pendingByReference(@RequestParam String providerReference) {
-        return paymentService.updateStatusByProviderReference(providerReference, OperationStatus.PENDING);
+    public PaymentOperation pendingByReference(
+        @RequestParam(required = false) String providerReference,
+        @RequestParam(name = "preference_id", required = false) String preferenceId,
+        @RequestParam(required = false) String externalReference,
+        @RequestParam(name = "external_reference", required = false) String mercadoPagoExternalReference
+    ) {
+        return paymentService.updateStatusByCallbackReference(
+            firstNonBlank(providerReference, preferenceId),
+            firstNonBlank(externalReference, mercadoPagoExternalReference),
+            OperationStatus.PENDING
+        );
     }
 
     @GetMapping("/failure")
@@ -67,13 +85,40 @@ public class CallbackController {
 
     @GetMapping("/failure/by-reference")
     @Operation(summary = "Callback failure por providerReference", description = "Actualiza la operacion como FAILURE segun referencia del proveedor.")
-    public PaymentOperation failureByReference(@RequestParam String providerReference) {
-        return paymentService.updateStatusByProviderReference(providerReference, OperationStatus.FAILURE);
+    public PaymentOperation failureByReference(
+        @RequestParam(required = false) String providerReference,
+        @RequestParam(name = "preference_id", required = false) String preferenceId,
+        @RequestParam(required = false) String externalReference,
+        @RequestParam(name = "external_reference", required = false) String mercadoPagoExternalReference
+    ) {
+        return paymentService.updateStatusByCallbackReference(
+            firstNonBlank(providerReference, preferenceId),
+            firstNonBlank(externalReference, mercadoPagoExternalReference),
+            OperationStatus.FAILURE
+        );
     }
 
     @GetMapping("/failed/by-reference")
     @Operation(summary = "Callback failed por providerReference", description = "Alias de failure por referencia para compatibilidad.")
-    public PaymentOperation failedByReference(@RequestParam String providerReference) {
-        return paymentService.updateStatusByProviderReference(providerReference, OperationStatus.FAILURE);
+    public PaymentOperation failedByReference(
+        @RequestParam(required = false) String providerReference,
+        @RequestParam(name = "preference_id", required = false) String preferenceId,
+        @RequestParam(required = false) String externalReference,
+        @RequestParam(name = "external_reference", required = false) String mercadoPagoExternalReference
+    ) {
+        return paymentService.updateStatusByCallbackReference(
+            firstNonBlank(providerReference, preferenceId),
+            firstNonBlank(externalReference, mercadoPagoExternalReference),
+            OperationStatus.FAILURE
+        );
+    }
+
+    private String firstNonBlank(String... values) {
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value;
+            }
+        }
+        return null;
     }
 }

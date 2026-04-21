@@ -1,17 +1,19 @@
 FROM nginx:1.27-alpine
 
+RUN rm -rf /usr/share/nginx/html/*
+
+COPY nginx-frontend.conf /etc/nginx/conf.d/default.conf
+COPY assets /usr/share/nginx/html/assets
 COPY landing.html /usr/share/nginx/html/landing.html
 COPY landing.css /usr/share/nginx/html/landing.css
 COPY ui.css /usr/share/nginx/html/ui.css
-COPY styles.css /usr/share/nginx/html/styles.css
-COPY index.html /usr/share/nginx/html/index.html
 COPY backoffice.html /usr/share/nginx/html/backoffice.html
 COPY admin.html /usr/share/nginx/html/admin.html
 COPY profesor.html /usr/share/nginx/html/profesor.html
 COPY alumno.html /usr/share/nginx/html/alumno.html
 COPY pago.html /usr/share/nginx/html/pago.html
 COPY swagger.html /usr/share/nginx/html/swagger.html
-COPY app.js /usr/share/nginx/html/app.js
+COPY privacy.html /usr/share/nginx/html/privacy.html
 COPY chatbot.js /usr/share/nginx/html/chatbot.js
 COPY session-telemetry.js /usr/share/nginx/html/session-telemetry.js
 COPY robots.txt /usr/share/nginx/html/robots.txt

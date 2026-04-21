@@ -6,7 +6,8 @@
     <title>MiCuota | Completar pago</title>
     <meta name="robots" content="noindex,nofollow,noarchive" />
     <link rel="canonical" href="https://micuota.online/pago.html" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" href="/assets/micuota-mate-mark.png" />
+    <link rel="apple-touch-icon" href="/assets/micuota-mate-mark.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -138,6 +139,23 @@
         border-radius: 999px;
         background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
         box-shadow: 0 0 0 6px rgba(204, 90, 22, 0.08);
+      }
+
+      .checkout-brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .checkout-brand-logo {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        border: 1px solid rgba(93, 73, 43, 0.1);
+        background: #fffaf2;
+        object-fit: contain;
+        padding: 4px;
+        box-shadow: 0 0 0 4px rgba(204, 90, 22, 0.07);
       }
 
       h1,
@@ -488,7 +506,10 @@
     <div class="payment-page">
       <main class="hero-card">
         <div class="hero-copy">
-          <span class="eyebrow">MiCuota Checkout</span>
+          <span class="eyebrow checkout-brand">
+            <img class="checkout-brand-logo" src="/assets/micuota-mate-mark.png" alt="" />
+            MiCuota Checkout
+          </span>
           <h1>Completa tu pago sin vueltas.</h1>
           <p class="subtitle" id="subtitle">Estamos preparando el detalle de tu operacion.</p>
         </div>

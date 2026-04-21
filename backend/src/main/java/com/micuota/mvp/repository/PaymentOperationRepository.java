@@ -12,9 +12,11 @@ public interface PaymentOperationRepository extends JpaRepository<PaymentOperati
     List<PaymentOperation> findByTeacherIdOrderByCreatedAtDesc(Long teacherId);
     List<PaymentOperation> findByTeacherIdInOrderByCreatedAtDesc(List<Long> teacherIds);
     List<PaymentOperation> findTop50ByTeacherIdAndCourseIdOrderByCreatedAtDesc(Long teacherId, Long courseId);
+    List<PaymentOperation> findTop50ByTeacherIdInAndCourseIdOrderByCreatedAtDesc(List<Long> teacherIds, Long courseId);
     List<PaymentOperation> findTop50ByStudentUserIdOrderByCreatedAtDesc(Long studentUserId);
     List<PaymentOperation> findTop300ByStatusInAndNextRetryAtLessThanEqualOrderByNextRetryAtAsc(List<OperationStatus> statuses, OffsetDateTime nextRetryAt);
     List<PaymentOperation> findTop300ByStatusInAndCreatedAtBeforeOrderByCreatedAtAsc(List<OperationStatus> statuses, OffsetDateTime createdAt);
     List<PaymentOperation> findTop300ByStatusNotAndDueAtBeforeOrderByDueAtAsc(OperationStatus status, OffsetDateTime dueAt);
     Optional<PaymentOperation> findByProviderReference(String providerReference);
+    Optional<PaymentOperation> findFirstByRawResponseContainingOrderByCreatedAtDesc(String rawResponseFragment);
 }

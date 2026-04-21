@@ -14,7 +14,7 @@ MiCuota ayuda a profesores y profesionales independientes a cobrar pagos recurre
 
 ## URLs públicas
 - Landing: https://micuota.online/
-- Demo: https://micuota.online/index.html
+- Demo de pago: https://micuota.online/pago.html
 
 ## Notas de crawling
 - El backoffice y dashboards requieren sesión.

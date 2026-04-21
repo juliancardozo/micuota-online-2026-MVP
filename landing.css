@@ -54,28 +54,44 @@ body.landing-mp::before {
 .lp-nav {
   width: min(1180px, 94vw);
   margin: 0 auto;
-  min-height: 78px;
+  min-height: 66px;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
 }
 
 .lp-brand {
   color: var(--lp-ink);
   text-decoration: none;
   font-weight: 800;
-  letter-spacing: 0.01em;
+  letter-spacing: 0;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
 }
 
 .lp-brand-mark {
-  width: 16px;
-  height: 16px;
-  border-radius: 999px;
-  background: linear-gradient(145deg, var(--lp-accent) 0%, var(--lp-accent-2) 100%);
-  box-shadow: 0 0 0 8px rgba(204, 90, 22, 0.08);
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: #fffaf2;
+  border: 1px solid rgba(93, 73, 43, 0.1);
+  display: inline-grid;
+  place-items: center;
+  overflow: hidden;
+  box-shadow: 0 0 0 3px rgba(204, 90, 22, 0.06);
+}
+
+.lp-brand-mark::before {
+  content: "";
+  width: 23px;
+  height: 23px;
+  background: url("/assets/micuota-mate-mark.png") center / contain no-repeat;
+  display: block;
+}
+
+.lp-brand-mark img {
+  display: none;
 }
 
 .lp-nav-badge {
@@ -90,7 +106,7 @@ body.landing-mp::before {
 
 .lp-nav-badge img {
   display: block;
-  width: 190px;
+  width: 160px;
   max-width: 100%;
   height: auto;
   opacity: 0.94;
@@ -1102,6 +1118,10 @@ body.landing-mp .mc-chatbot-form input {
 }
 
 @media (max-width: 640px) {
+  body.landing-mp::before {
+    display: none;
+  }
+
   .lp-main {
     width: min(100vw - 16px, 100%);
   }
@@ -1119,7 +1139,7 @@ body.landing-mp .mc-chatbot-form input {
   }
 
   .lp-nav-badge img {
-    width: 170px;
+    width: 150px;
   }
 
   .lp-hero-copy,

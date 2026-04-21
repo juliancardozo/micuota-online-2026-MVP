@@ -40,6 +40,7 @@ public class PaymentService {
     private final CourseRepository courseRepository;
     private final PaymentNotificationService paymentNotificationService;
     private final SaasMetricsService saasMetricsService;
+    private final PaymentEventService paymentEventService;
     private final Map<PaymentProviderType, PaymentProviderGateway> gateways;
 
     @Value("${app.base-url}")
@@ -58,6 +59,7 @@ public class PaymentService {
         CourseRepository courseRepository,
         PaymentNotificationService paymentNotificationService,
         SaasMetricsService saasMetricsService,
+        PaymentEventService paymentEventService,
         List<PaymentProviderGateway> providers
     ) {
         this.teacherProfileRepository = teacherProfileRepository;
@@ -66,6 +68,7 @@ public class PaymentService {
         this.courseRepository = courseRepository;
         this.paymentNotificationService = paymentNotificationService;
         this.saasMetricsService = saasMetricsService;
+        this.paymentEventService = paymentEventService;
         this.gateways = new EnumMap<>(PaymentProviderType.class);
         providers.forEach(p -> this.gateways.put(p.provider(), p));
     }
@@ -115,15 +118,98 @@ public class PaymentService {
     }
 
     @Transactional(readOnly = true)
+    public List<PaymentOperation> lastOperationsForBackoffice(
+        Long tenantId,
+        Long userId,
+        UserRole role,
+        Long teacherUserId
+    ) {
+        List<Long> teacherProfileIds = resolveTeacherProfileIdsForBackoffice(tenantId, userId, role, teacherUserId);
+        if (teacherProfileIds.isEmpty()) {
+            return List.of();
+        }
+        if (teacherProfileIds.size() == 1) {
+            return paymentOperationRepository.findTop20ByTeacherIdOrderByCreatedAtDesc(teacherProfileIds.get(0));
+        }
+        return paymentOperationRepository.findByTeacherIdInOrderByCreatedAtDesc(teacherProfileIds).stream()
+            .limit(50)
+            .toList();
+    }
+
+    @Transactional(readOnly = true)
     public List<PaymentOperation> lastOperationsByUserAndCourse(Long userId, Long courseId) {
         Long teacherProfileId = resolveTeacherProfileIdByUserId(userId);
         return paymentOperationRepository.findTop50ByTeacherIdAndCourseIdOrderByCreatedAtDesc(teacherProfileId, courseId);
     }
 
     @Transactional(readOnly = true)
+    public List<PaymentOperation> lastOperationsForBackofficeAndCourse(
+        Long tenantId,
+        Long userId,
+        UserRole role,
+        Long teacherUserId,
+        Long courseId
+    ) {
+        List<Long> teacherProfileIds = resolveTeacherProfileIdsForBackoffice(tenantId, userId, role, teacherUserId);
+        if (teacherProfileIds.isEmpty()) {
+            return List.of();
+        }
+        if (teacherProfileIds.size() == 1) {
+            return paymentOperationRepository.findTop50ByTeacherIdAndCourseIdOrderByCreatedAtDesc(teacherProfileIds.get(0), courseId);
+        }
+        return paymentOperationRepository.findTop50ByTeacherIdInAndCourseIdOrderByCreatedAtDesc(teacherProfileIds, courseId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<PaymentEventView> timelineByUserAndOperation(Long userId, Long operationId) {
+        Long teacherProfileId = resolveTeacherProfileIdByUserId(userId);
+        PaymentOperation operation = paymentOperationRepository.findById(operationId)
+            .orElseThrow(() -> new IllegalArgumentException("Operacion no encontrada: " + operationId));
+        if (!operation.getTeacherId().equals(teacherProfileId)) {
+            throw new IllegalArgumentException("Operacion fuera del perfil profesional");
+        }
+        return paymentEventService.lastEventsForOperation(operationId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<PaymentEventView> timelineForBackoffice(
+        Long tenantId,
+        Long userId,
+        UserRole role,
+        Long teacherUserId,
+        Long operationId
+    ) {
+        List<Long> teacherProfileIds = resolveTeacherProfileIdsForBackoffice(tenantId, userId, role, teacherUserId);
+        PaymentOperation operation = paymentOperationRepository.findById(operationId)
+            .orElseThrow(() -> new IllegalArgumentException("Operacion no encontrada: " + operationId));
+        if (!teacherProfileIds.contains(operation.getTeacherId())) {
+            throw new IllegalArgumentException("Operacion fuera del contexto profesional");
+        }
+        return paymentEventService.lastEventsForOperation(operationId);
+    }
+
+    @Transactional(readOnly = true)
     public PaymentHealthView paymentHealthByUser(Long userId) {
         Long teacherProfileId = resolveTeacherProfileIdByUserId(userId);
         List<PaymentOperation> operations = paymentOperationRepository.findByTeacherIdOrderByCreatedAtDesc(teacherProfileId);
+        return buildPaymentHealth(operations);
+    }
+
+    @Transactional(readOnly = true)
+    public PaymentHealthView paymentHealthForBackoffice(
+        Long tenantId,
+        Long userId,
+        UserRole role,
+        Long teacherUserId
+    ) {
+        List<Long> teacherProfileIds = resolveTeacherProfileIdsForBackoffice(tenantId, userId, role, teacherUserId);
+        List<PaymentOperation> operations = teacherProfileIds.isEmpty()
+            ? List.of()
+            : paymentOperationRepository.findByTeacherIdInOrderByCreatedAtDesc(teacherProfileIds);
+        return buildPaymentHealth(operations);
+    }
+
+    private PaymentHealthView buildPaymentHealth(List<PaymentOperation> operations) {
         OffsetDateTime now = OffsetDateTime.now();
 
         long total = operations.size();
@@ -168,8 +254,48 @@ public class PaymentService {
     }
 
     @Transactional
+    public PaymentOperation createOneTimeForBackoffice(
+        Long tenantId,
+        Long userId,
+        UserRole role,
+        CreateBackofficePaymentRequest request
+    ) {
+        Long teacherProfileId = resolveTeacherProfileIdForBackofficeWrite(tenantId, userId, role, request.teacherUserId());
+        return createOneTime(new CreatePaymentRequest(
+            teacherProfileId,
+            request.provider(),
+            request.description(),
+            request.amount(),
+            request.currency(),
+            request.payerEmail(),
+            request.studentUserId(),
+            request.courseId()
+        ));
+    }
+
+    @Transactional
     public PaymentOperation createSubscriptionForUser(Long userId, CreateBackofficePaymentRequest request) {
         Long teacherProfileId = resolveTeacherProfileIdByUserId(userId);
+        return createSubscription(new CreatePaymentRequest(
+            teacherProfileId,
+            request.provider(),
+            request.description(),
+            request.amount(),
+            request.currency(),
+            request.payerEmail(),
+            request.studentUserId(),
+            request.courseId()
+        ));
+    }
+
+    @Transactional
+    public PaymentOperation createSubscriptionForBackoffice(
+        Long tenantId,
+        Long userId,
+        UserRole role,
+        CreateBackofficePaymentRequest request
+    ) {
+        Long teacherProfileId = resolveTeacherProfileIdForBackofficeWrite(tenantId, userId, role, request.teacherUserId());
         return createSubscription(new CreatePaymentRequest(
             teacherProfileId,
             request.provider(),
@@ -186,20 +312,60 @@ public class PaymentService {
     public PaymentOperation updateStatus(Long operationId, OperationStatus status) {
         PaymentOperation operation = paymentOperationRepository.findById(operationId)
             .orElseThrow(() -> new IllegalArgumentException("Operacion no encontrada: " + operationId));
+        OperationStatus previousStatus = operation.getStatus();
         applyStatusUpdate(operation, status, null);
         PaymentOperation saved = paymentOperationRepository.save(operation);
+        recordStatusEvent(saved, previousStatus, status, null);
         saasMetricsService.recordPaymentStatusChanged(status);
         return saved;
     }
 
     @Transactional
     public PaymentOperation updateStatusByProviderReference(String providerReference, OperationStatus status) {
+        return updateStatusByProviderReference(providerReference, status, null);
+    }
+
+    @Transactional
+    public PaymentOperation updateStatusByProviderReference(String providerReference, OperationStatus status, String rawResponseEvent) {
         PaymentOperation operation = paymentOperationRepository.findByProviderReference(providerReference)
             .orElseThrow(() -> new IllegalArgumentException("Operacion no encontrada para providerReference: " + providerReference));
+        OperationStatus previousStatus = operation.getStatus();
+        appendRawResponseEvent(operation, rawResponseEvent);
         applyStatusUpdate(operation, status, null);
         PaymentOperation saved = paymentOperationRepository.save(operation);
+        recordWebhookEvent(saved, rawResponseEvent);
+        recordStatusEvent(saved, previousStatus, status, rawResponseEvent);
         saasMetricsService.recordPaymentStatusChanged(status);
         return saved;
+    }
+
+    @Transactional
+    public PaymentOperation updateStatusByExternalReference(String externalReference, OperationStatus status, String rawResponseEvent) {
+        PaymentOperation operation = paymentOperationRepository.findFirstByRawResponseContainingOrderByCreatedAtDesc(externalReference)
+            .orElseThrow(() -> new IllegalArgumentException("Operacion no encontrada para external_reference: " + externalReference));
+        OperationStatus previousStatus = operation.getStatus();
+        appendRawResponseEvent(operation, rawResponseEvent);
+        applyStatusUpdate(operation, status, null);
+        PaymentOperation saved = paymentOperationRepository.save(operation);
+        recordWebhookEvent(saved, rawResponseEvent);
+        recordStatusEvent(saved, previousStatus, status, rawResponseEvent);
+        saasMetricsService.recordPaymentStatusChanged(status);
+        return saved;
+    }
+
+    @Transactional
+    public PaymentOperation updateStatusByCallbackReference(
+        String providerReference,
+        String externalReference,
+        OperationStatus status
+    ) {
+        if (providerReference != null && !providerReference.isBlank()) {
+            return updateStatusByProviderReference(providerReference, status);
+        }
+        if (externalReference != null && !externalReference.isBlank()) {
+            return updateStatusByExternalReference(externalReference, status, null);
+        }
+        throw new IllegalArgumentException("Callback sin providerReference ni externalReference");
     }
 
     @Transactional
@@ -230,6 +396,9 @@ public class PaymentService {
                 .orElseThrow(() -> new IllegalArgumentException("Curso no encontrado"));
             if (!course.getTenant().getId().equals(tenantId)) {
                 throw new IllegalArgumentException("Curso fuera del tenant");
+            }
+            if (!course.getTeacher().getId().equals(teacherUser.getId())) {
+                throw new IllegalArgumentException("Curso fuera del profesor seleccionado");
             }
         }
 
@@ -274,8 +443,12 @@ public class PaymentService {
         operation.setLastReconciledAt(null);
 
         PaymentOperation saved = paymentOperationRepository.save(operation);
+        paymentEventService.recordPaymentCreated(saved, selection.rawResponse());
         String normalizedPayerEmail = request.payerEmail() == null ? null : request.payerEmail().trim().toLowerCase(Locale.ROOT);
         paymentNotificationService.sendPaymentCreatedEmail(normalizedPayerEmail, teacher.getDisplayName(), saved);
+        if (normalizedPayerEmail != null && !normalizedPayerEmail.isBlank()) {
+            paymentEventService.recordPaymentLinkSent(saved, "{\"channel\":\"email\",\"payerEmail\":\"" + escapeJson(normalizedPayerEmail) + "\"}");
+        }
         saasMetricsService.recordPaymentCreated(selection.provider(), flowType, request.amount());
         return saved;
     }
@@ -418,10 +591,107 @@ public class PaymentService {
             .replace("\"", "\\\"");
     }
 
+    private void appendRawResponseEvent(PaymentOperation operation, String rawResponseEvent) {
+        if (rawResponseEvent == null || rawResponseEvent.isBlank()) {
+            return;
+        }
+
+        String current = operation.getRawResponse();
+        StringBuilder raw = new StringBuilder();
+        raw.append("{\"previous\":")
+            .append(asJsonValue(current))
+            .append(",\"event\":")
+            .append(asJsonValue(rawResponseEvent))
+            .append('}');
+        operation.setRawResponse(raw.toString());
+    }
+
+    private String asJsonValue(String value) {
+        if (value == null || value.isBlank()) {
+            return "null";
+        }
+        String trimmed = value.trim();
+        if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+            return trimmed;
+        }
+        return "\"" + escapeJson(value) + "\"";
+    }
+
+    private void recordWebhookEvent(PaymentOperation operation, String rawResponseEvent) {
+        if (rawResponseEvent == null || rawResponseEvent.isBlank()) {
+            return;
+        }
+        paymentEventService.recordWebhookReceived(operation, rawResponseEvent);
+    }
+
+    private void recordStatusEvent(
+        PaymentOperation operation,
+        OperationStatus previousStatus,
+        OperationStatus nextStatus,
+        String rawPayload
+    ) {
+        if (previousStatus == nextStatus) {
+            return;
+        }
+        paymentEventService.recordStatusChanged(operation, previousStatus, nextStatus, rawPayload);
+    }
+
     private Long resolveTeacherProfileIdByUserId(Long userId) {
         return teacherProfileRepository.findByUserId(userId)
             .map(TeacherProfile::getId)
             .orElseThrow(() -> new IllegalArgumentException("El usuario no tiene perfil profesional configurado"));
+    }
+
+    private List<Long> resolveTeacherProfileIdsForBackoffice(
+        Long tenantId,
+        Long userId,
+        UserRole role,
+        Long teacherUserId
+    ) {
+        if (role == UserRole.TEACHER) {
+            return List.of(resolveTeacherProfileIdByUserId(userId));
+        }
+        if (role != UserRole.TENANT_ADMIN) {
+            throw new IllegalArgumentException("Operacion permitida para TENANT_ADMIN o TEACHER");
+        }
+        if (teacherUserId != null) {
+            return List.of(resolveTeacherProfileIdForTenant(tenantId, teacherUserId));
+        }
+        return teacherProfileRepository.findByUserTenantId(tenantId).stream()
+            .map(TeacherProfile::getId)
+            .toList();
+    }
+
+    private Long resolveTeacherProfileIdForBackofficeWrite(
+        Long tenantId,
+        Long userId,
+        UserRole role,
+        Long teacherUserId
+    ) {
+        if (role == UserRole.TEACHER) {
+            return resolveTeacherProfileIdByUserId(userId);
+        }
+        if (role == UserRole.TENANT_ADMIN) {
+            if (teacherUserId == null) {
+                throw new IllegalArgumentException("Selecciona un profesor para crear el cobro");
+            }
+            return resolveTeacherProfileIdForTenant(tenantId, teacherUserId);
+        }
+        throw new IllegalArgumentException("Operacion permitida para TENANT_ADMIN o TEACHER");
+    }
+
+    private Long resolveTeacherProfileIdForTenant(Long tenantId, Long teacherUserId) {
+        User teacherUser = userRepository.findById(teacherUserId)
+            .orElseThrow(() -> new IllegalArgumentException("Profesor no encontrado"));
+        if (!teacherUser.getTenant().getId().equals(tenantId)) {
+            throw new IllegalArgumentException("Profesor fuera del tenant");
+        }
+        if (teacherUser.getRole() != UserRole.TEACHER) {
+            throw new IllegalArgumentException("El usuario seleccionado no es profesor/profesional");
+        }
+        return teacherProfileRepository.findByUserId(teacherUserId)
+            .map(TeacherProfile::getId)
+            .orElseThrow(() -> new IllegalArgumentException("El profesor no tiene perfil profesional configurado"));
     }
 
     private int normalizeBps(Tenant tenant, boolean processingFee) {

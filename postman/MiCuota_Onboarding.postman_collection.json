@@ -33,14 +33,14 @@
       "name": "00 - Healthcheck",
       "item": [
         {
-          "name": "GET Swagger UI",
+          "name": "GET OpenAPI JSON",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/swagger-ui/index.html",
+              "raw": "{{baseUrl}}/v3/api-docs",
               "host": ["{{baseUrl}}"],
-              "path": ["swagger-ui", "index.html"]
+              "path": ["v3", "api-docs"]
             }
           },
           "response": []

@@ -1,0 +1,19 @@
+.md-header__button.md-logo {
+  margin: 0.2rem 0.35rem 0.2rem 0;
+  padding: 0.18rem;
+}
+
+.md-header__button.md-logo img,
+.md-header__button.md-logo svg {
+  width: 1.65rem;
+  height: 1.65rem;
+  object-fit: contain;
+  padding: 0.18rem;
+  border-radius: 0.45rem;
+  background: #fffaf2;
+  box-shadow: 0 0 0 3px rgba(204, 90, 22, 0.08);
+}
+
+.md-header__title {
+  margin-left: 0.1rem;
+}

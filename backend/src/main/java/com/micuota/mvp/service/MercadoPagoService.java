@@ -1,82 +1,88 @@
 package com.micuota.mvp.service;
 
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.Map;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 @Service
 public class MercadoPagoService {
 
-        private static final String MP_API_BASE = "https://api.mercadopago.com";
-        private final WebClient webClient;
+    private final WebClient webClient;
+    private final ObjectMapper objectMapper;
 
-        public MercadoPagoService(WebClient.Builder webClientBuilder) {
-                this.webClient = webClientBuilder.baseUrl(MP_API_BASE).build();
+    public MercadoPagoService(
+        WebClient.Builder webClientBuilder,
+        ObjectMapper objectMapper,
+        @Value("${app.payments.mercadopago.base-url:https://api.mercadopago.com}") String mercadoPagoBaseUrl
+    ) {
+        this.webClient = webClientBuilder.clone().baseUrl(mercadoPagoBaseUrl).build();
+        this.objectMapper = objectMapper;
     }
 
-        public Map<String, Object> createOneTimePayment(
-                String accessToken,
-                String title,
-                BigDecimal amount,
-                String currency,
-                String baseUrl
-        ) {
-                Map<String, Object> payload = Map.of(
-                        "items", List.of(Map.of(
-                                "title", title,
-                                "quantity", 1,
-                                "currency_id", currency,
-                                "unit_price", amount
-                        )),
-                        "back_urls", Map.of(
-                                "success", baseUrl + "/api/callbacks/success",
-                                "pending", baseUrl + "/api/callbacks/pending",
-                                "failure", baseUrl + "/api/callbacks/failure"
-                        ),
-                        "auto_return", "approved"
-                );
-
-                return webClient.post()
-                        .uri("/checkout/preferences")
-                        .header("Authorization", "Bearer " + accessToken)
-                        .bodyValue(payload)
-                        .retrieve()
-                        .bodyToMono(Map.class)
-                        .onErrorResume(error -> Mono.error(new IllegalStateException("Error creando pago unico en MercadoPago", error)))
-                        .block();
+    public MercadoPagoApiResponse createPreference(String accessToken, JsonNode payload) {
+        return post(accessToken, "/checkout/preferences", payload, "preferencia de Mercado Pago");
     }
 
-        public Map<String, Object> createSubscription(
-                String accessToken,
-                String reason,
-                BigDecimal amount,
-                String currency,
-                String baseUrl,
-                String payerEmail
-        ) {
-                Map<String, Object> payload = Map.of(
-                        "reason", reason,
-                        "auto_recurring", Map.of(
-                                "frequency", 1,
-                                "frequency_type", "months",
-                                "transaction_amount", amount,
-                                "currency_id", currency
-                        ),
-                        "back_url", baseUrl + "/api/callbacks/success",
-                        "payer_email", payerEmail,
-                        "status", "authorized"
-                );
+    public MercadoPagoApiResponse createPreapproval(String accessToken, JsonNode payload) {
+        return post(accessToken, "/preapproval", payload, "preapproval de Mercado Pago");
+    }
 
-                return webClient.post()
-                        .uri("/preapproval")
-                        .header("Authorization", "Bearer " + accessToken)
-                        .bodyValue(payload)
-                        .retrieve()
-                        .bodyToMono(Map.class)
-                        .onErrorResume(error -> Mono.error(new IllegalStateException("Error creando suscripcion en MercadoPago", error)))
-                        .block();
+    public MercadoPagoApiResponse getPayment(String accessToken, String paymentId) {
+        try {
+            String raw = webClient.get()
+                .uri("/v1/payments/{paymentId}", paymentId)
+                .header("Authorization", "Bearer " + accessToken)
+                .accept(MediaType.APPLICATION_JSON)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+            return parse(raw);
+        } catch (WebClientResponseException exception) {
+            throw new IllegalStateException(
+                "Mercado Pago devolvio status " + exception.getStatusCode().value() + " al consultar pago: " + exception.getResponseBodyAsString(),
+                exception
+            );
+        } catch (RuntimeException exception) {
+            throw new IllegalStateException("No se pudo consultar pago en Mercado Pago", exception);
+        }
+    }
+
+    private MercadoPagoApiResponse post(String accessToken, String path, JsonNode payload, String operationName) {
+        try {
+            String raw = webClient.post()
+                .uri(path)
+                .header("Authorization", "Bearer " + accessToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .bodyValue(payload)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+            return parse(raw);
+        } catch (WebClientResponseException exception) {
+            throw new IllegalStateException(
+                "Mercado Pago devolvio status " + exception.getStatusCode().value() + " creando " + operationName + ": " + exception.getResponseBodyAsString(),
+                exception
+            );
+        } catch (RuntimeException exception) {
+            throw new IllegalStateException("No se pudo crear " + operationName, exception);
+        }
+    }
+
+    private MercadoPagoApiResponse parse(String raw) {
+        try {
+            String safeRaw = raw == null || raw.isBlank() ? "{}" : raw;
+            return new MercadoPagoApiResponse(safeRaw, objectMapper.readTree(safeRaw));
+        } catch (IOException exception) {
+            throw new IllegalStateException("Mercado Pago devolvio JSON invalido", exception);
+        }
+    }
+
+    public record MercadoPagoApiResponse(String rawBody, JsonNode body) {
     }
 }

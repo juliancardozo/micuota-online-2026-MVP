@@ -14,6 +14,7 @@ public record CreateBackofficePaymentRequest(
     @NotBlank String currency,
     @NotBlank @Email String payerEmail,
     Long studentUserId,
-    Long courseId
+    Long courseId,
+    Long teacherUserId
 ) {
 }

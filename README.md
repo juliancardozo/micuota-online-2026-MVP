@@ -12,12 +12,11 @@ Repositorio con un MVP real orientado a SaaS:
 
 ### Frontend
 
-- `index.html`: dashboard simple de profesor
 - `landing.html`: landing comercial con autoregistro/login por tenant
 - `backoffice.html`: app backoffice para gestionar alumnos/pacientes, cursos y cobros
+- `profesor.html`: workspace del profesor para grupos, personas, pendientes y cobros
+- `alumno.html`: workspace del alumno para cursos, pagos y suscripciones
 - `pago.html`: experiencia de pago para cliente final (alumno/paciente)
-- `styles.css`: UI responsive
-- `app.js`: consumo de API backend
 - `netlify.toml`: configuracion para Netlify
 
 ### Backend
@@ -40,16 +39,20 @@ Proyecto Maven en `backend/` con:
 	- `TeacherProfile` (composicion 1:1 con credenciales provider)
 	- `PaymentOperation`
 
-### Integracion real de links (Stripe, Square, Plexo)
+### Integracion real de links (Mercado Pago, Stripe, Square, Plexo)
 
-El backend soporta dos modos para estos providers:
+Para Stripe, Square y Plexo el backend soporta dos modos:
 
 1. Modo sandbox interno (default): genera links locales `/sandbox/...` para pruebas.
 2. Modo externo real: crea links en APIs de Stripe/Square/Plexo segun variables de entorno.
 
+Mercado Pago usa la API real cuando el profesor tiene `mpAccessToken` o cuando existe `MERCADOPAGO_ACCESS_TOKEN` como fallback de entorno.
+
 Variables relevantes:
 
 - `APP_PAYMENTS_EXTERNAL_PROVIDERS_ENABLED=true`
+- `MERCADOPAGO_ACCESS_TOKEN=...`
+- `MERCADOPAGO_WEBHOOK_SECRET=...`
 - `APP_PAYMENTS_STRIPE_SECRET_KEY=...`
 - `APP_PAYMENTS_SQUARE_ACCESS_TOKEN=...`
 - `APP_PAYMENTS_SQUARE_LOCATION_ID=...`
@@ -57,10 +60,24 @@ Variables relevantes:
 - `APP_PAYMENTS_PLEXO_API_URL=...`
 - `APP_PAYMENTS_PLEXO_API_KEY=...`
 
+Mercado Pago usa `POST /checkout/preferences` para pagos puntuales y `POST /preapproval` para suscripciones. El backend guarda el `id` devuelto por Mercado Pago como `providerReference`, publica el webhook en `/api/callbacks/mercadopago` y mantiene la respuesta completa de la API y las notificaciones en `PaymentOperation.rawResponse`.
+
+Para validar webhooks, configura `MERCADOPAGO_WEBHOOK_SECRET` con el secreto de la app de Mercado Pago. Si el webhook trae solo `data.id`, el backend consulta `/v1/payments/{id}` usando `MERCADOPAGO_ACCESS_TOKEN` para resolver `status`, `external_reference` y `preference_id`.
+
+### Ledger minimo de pagos
+
+Cada cobro genera eventos auditables en `payment_events`: creacion de pago, envio de link por email, webhook recibido y cambios de estado. El backoffice puede consultar el timeline con:
+
+- `GET /api/backoffice/payments/{operationId}/events`
+
+Este ledger es la base para conciliacion, reportes de mora, recupero, auditoria y futuras capas como split/payouts.
+
 Nota: Plexo se deja con endpoint configurable (`.../links`) porque la URL final depende de la cuenta/entorno provisto por Plexo.
 
 Referencias oficiales de producto (links de pago):
 
+- Mercado Pago Checkout Pro preferences: https://www.mercadopago.com.uy/developers/en/docs/checkout-pro/checkout-customization/preferences
+- Mercado Pago Webhooks: https://www.mercadopago.com.uy/developers/en/docs/checkout-pro/additional-content/notifications/webhooks
 - Stripe Payment Links: https://stripe.com/payments/payment-links
 	- Crea y comparte un enlace de pago sin necesidad de sitio web.
 - Square Payment Links: https://squareup.com/payment-links
@@ -69,6 +86,28 @@ Referencias oficiales de producto (links de pago):
 	- Cobranzas para compartir por WhatsApp, email o redes sociales con un link.
 
 ## Ejecutar local
+
+### Documentacion
+
+La documentacion navegable vive en `docs/` y se genera con MkDocs Material.
+
+Con Docker:
+
+```bash
+docker compose --profile docs up docs
+```
+
+Luego abrir:
+
+```text
+http://localhost:8000
+```
+
+Build estricto:
+
+```bash
+docker compose --profile docs run --rm docs mkdocs build --strict
+```
 
 ### 1) Levantar backend
 
@@ -339,7 +378,6 @@ Prompt pack de imagenes para mantener consistencia visual SaaS (azul profundo, b
 
 Con el backend levantado, la documentacion interactiva queda disponible en:
 
-- Swagger UI: `http://localhost:8080/swagger-ui/index.html`
 - OpenAPI JSON: `http://localhost:8080/v3/api-docs`
 
 ### Autorizacion en Swagger

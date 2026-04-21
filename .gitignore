@@ -12,6 +12,7 @@ data/*.trace.db
 
 # Local tooling/runtime artifacts
 .local/
+site/
 
 # Embedding demo local artifacts
 embedding-sdk-demo/node_modules/
