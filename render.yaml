@@ -2,6 +2,7 @@ services:
   - type: web
     runtime: docker
     name: micuota-online-2026-backend
+    repo: https://github.com/juliancardozo/micuota-online-2026-MVP
     region: oregon
     plan: free
     branch: main
@@ -31,11 +32,11 @@ services:
       - key: APP_DEMO_SEED_ENABLED
         value: true
       - key: APP_PAYMENTS_EXTERNAL_PROVIDERS_ENABLED
-        value: true
+        value: false
       - key: APP_PAYMENTS_DEFAULT_PROVIDER
-        value: PROMETEO
+        value: STRIPE
       - key: APP_PAYMENTS_FALLBACK_PROVIDER
-        value: MERCADOPAGO
+        value: SQUARE
       - key: APP_CRM_DEFAULT_OWNER
         value: ventas@micuota.online
       - key: APP_CRM_API_KEY
