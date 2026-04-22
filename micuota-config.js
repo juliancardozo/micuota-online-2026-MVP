@@ -1,14 +1,22 @@
 (function () {
   const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+  const apiBaseParam = new URLSearchParams(window.location.search).get("apiBase");
+  if (apiBaseParam === "clear") {
+    localStorage.removeItem("micuota.apiBase");
+  } else if (apiBaseParam) {
+    localStorage.setItem("micuota.apiBase", apiBaseParam);
+  }
+
   const configuredApiBase =
     window.__MICUOTA_API_BASE__ ||
+    (apiBaseParam && apiBaseParam !== "clear" ? apiBaseParam : "") ||
     localStorage.getItem("micuota.apiBase") ||
     document.querySelector('meta[name="micuota-api-base"]')?.getAttribute("content");
-  const defaultApiBase = isLocalhost ? "http://localhost:8080" : "https://micuota.online";
+  const defaultApiBase = isLocalhost ? "http://localhost:8080" : "";
   const apiBase = (configuredApiBase || defaultApiBase).replace(/\/$/, "");
 
   window.__MICUOTA_API_BASE__ = apiBase;
-  window.MicuotaConfig = { apiBase };
+  window.MicuotaConfig = { apiBase, hasApiBase: Boolean(apiBase) };
 
   async function parseBody(response) {
     const text = await response.text();
@@ -27,6 +35,12 @@
   }
 
   async function request(path, options = {}) {
+    if (!apiBase) {
+      throw new Error(
+        "Backend de produccion no configurado. Abre esta pagina con ?apiBase=https://tu-backend o configura micuota.apiBase."
+      );
+    }
+
     let response;
     try {
       response = await fetch(`${apiBase}${path}`, options);

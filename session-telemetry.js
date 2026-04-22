@@ -4,11 +4,11 @@
     window.__MICUOTA_API_BASE__ ||
     ((window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
       ? "http://localhost:8080"
-      : "https://micuota.online");
+      : "");
   const HEARTBEAT_MS = 60 * 1000;
   const token = localStorage.getItem("micuota.authToken");
 
-  if (!token) {
+  if (!API_BASE || !token) {
     window.MicuotaSessionTelemetry = {
       logout() {}
     };

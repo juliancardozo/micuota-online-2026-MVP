@@ -4,7 +4,7 @@
     window.__MICUOTA_API_BASE__ ||
     ((window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
       ? "http://localhost:8080"
-      : "https://micuota.online");
+      : "");
   const QUICK_CHAT = true;
   const firstMessage =
     "Listo, vamos rapido. Si eres nuevo, escribe 'onboarding' y te guio paso a paso.";
@@ -247,6 +247,10 @@
   }
 
   async function askBackend(question, roleByPath) {
+    if (!window.MicuotaApi || !API_BASE) {
+      throw new Error("Asistente no disponible hasta configurar el backend de MiCuota.");
+    }
+
     const token = localStorage.getItem("micuota.authToken");
     const headers = { "Content-Type": "application/json" };
     if (token) {
