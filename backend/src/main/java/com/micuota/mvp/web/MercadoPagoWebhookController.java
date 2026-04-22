@@ -61,14 +61,14 @@ public class MercadoPagoWebhookController {
         OperationStatus status = toOperationStatus(firstNonBlank(lookup.status(), text(payload, "status"), queryParams.get("status")));
         String rawEvent = buildRawEvent(headers, queryParams, payload, lookup);
 
-        String providerReference = firstNonBlank(lookup.providerReference(), dataIdForProviderReference(lookup.type(), dataId));
-        if (providerReference != null && !providerReference.isBlank()) {
-            return paymentService.updateStatusByProviderReference(providerReference, status, rawEvent);
-        }
-
         String externalReference = firstNonBlank(lookup.externalReference(), text(payload, "external_reference"), queryParams.get("external_reference"));
         if (externalReference != null && !externalReference.isBlank()) {
             return paymentService.updateStatusByExternalReference(externalReference, status, rawEvent);
+        }
+
+        String providerReference = firstNonBlank(lookup.providerReference(), dataIdForProviderReference(lookup.type(), dataId));
+        if (providerReference != null && !providerReference.isBlank()) {
+            return paymentService.updateStatusByProviderReference(providerReference, status, rawEvent);
         }
 
         throw new IllegalArgumentException("Webhook Mercado Pago sin referencia de operacion");
@@ -96,8 +96,21 @@ public class MercadoPagoWebhookController {
                     providerLookupError = exception.getMessage();
                 }
             }
-        } else if (isPreapprovalNotification(type)) {
+        } else if (isPreapprovalNotification(type) && dataId != null && !dataId.isBlank()) {
             providerReference = firstNonBlank(dataId, providerReference);
+            if (mercadoPagoAccessToken == null || mercadoPagoAccessToken.isBlank()) {
+                providerLookupError = "MERCADOPAGO_ACCESS_TOKEN no configurado para consultar preapproval";
+            } else {
+                try {
+                    MercadoPagoService.MercadoPagoApiResponse response = mercadoPagoService.getPreapproval(mercadoPagoAccessToken, dataId);
+                    providerLookup = response.body();
+                    status = firstNonBlank(providerLookup.path("status").asText(""), status);
+                    externalReference = firstNonBlank(providerLookup.path("external_reference").asText(""), externalReference);
+                    providerReference = firstNonBlank(providerLookup.path("id").asText(""), providerReference);
+                } catch (RuntimeException exception) {
+                    providerLookupError = exception.getMessage();
+                }
+            }
         }
 
         return new MercadoPagoLookup(type, status, externalReference, providerReference, providerLookup, providerLookupError);

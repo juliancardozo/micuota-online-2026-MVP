@@ -91,7 +91,7 @@ public class MercadoPagoGateway implements PaymentProviderGateway {
             throw new IllegalStateException("Mercado Pago no devolvio init_point para la preferencia");
         }
 
-        return new ProviderCheckoutResult(preferenceId, checkoutUrl, rawTrace("checkout_preference", externalReference, payload, response.body()));
+        return new ProviderCheckoutResult(preferenceId, externalReference, checkoutUrl, rawTrace("checkout_preference", externalReference, payload, response.body()));
     }
 
     private ProviderCheckoutResult createPreapproval(
@@ -130,7 +130,7 @@ public class MercadoPagoGateway implements PaymentProviderGateway {
             throw new IllegalStateException("Mercado Pago no devolvio init_point para la suscripcion");
         }
 
-        return new ProviderCheckoutResult(preapprovalId, checkoutUrl, rawTrace("preapproval", externalReference, payload, response.body()));
+        return new ProviderCheckoutResult(preapprovalId, externalReference, checkoutUrl, rawTrace("preapproval", externalReference, payload, response.body()));
     }
 
     private String rawTrace(String operation, String externalReference, ObjectNode request, com.fasterxml.jackson.databind.JsonNode response) {

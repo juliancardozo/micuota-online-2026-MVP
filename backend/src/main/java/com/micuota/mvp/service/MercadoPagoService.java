@@ -33,9 +33,17 @@ public class MercadoPagoService {
     }
 
     public MercadoPagoApiResponse getPayment(String accessToken, String paymentId) {
+        return get(accessToken, "/v1/payments/{id}", paymentId, "pago");
+    }
+
+    public MercadoPagoApiResponse getPreapproval(String accessToken, String preapprovalId) {
+        return get(accessToken, "/preapproval/{id}", preapprovalId, "preapproval");
+    }
+
+    private MercadoPagoApiResponse get(String accessToken, String path, String id, String operationName) {
         try {
             String raw = webClient.get()
-                .uri("/v1/payments/{paymentId}", paymentId)
+                .uri(path, id)
                 .header("Authorization", "Bearer " + accessToken)
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
@@ -44,11 +52,11 @@ public class MercadoPagoService {
             return parse(raw);
         } catch (WebClientResponseException exception) {
             throw new IllegalStateException(
-                "Mercado Pago devolvio status " + exception.getStatusCode().value() + " al consultar pago: " + exception.getResponseBodyAsString(),
+                "Mercado Pago devolvio status " + exception.getStatusCode().value() + " al consultar " + operationName + ": " + exception.getResponseBodyAsString(),
                 exception
             );
         } catch (RuntimeException exception) {
-            throw new IllegalStateException("No se pudo consultar pago en Mercado Pago", exception);
+            throw new IllegalStateException("No se pudo consultar " + operationName + " en Mercado Pago", exception);
         }
     }
 

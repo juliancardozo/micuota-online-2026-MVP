@@ -358,6 +358,13 @@
           .join("");
       }
 
+      function humanStatus(status) {
+        if (status === "SUCCESS") return "Pagado";
+        if (status === "PENDING") return "Procesando";
+        if (status === "FAILURE") return "No completado";
+        return "Esperando pago";
+      }
+
       function renderCourses() {
         const selectedCourse = getSelectedCourse();
         const visibleCourses = selectedCourse ? [selectedCourse] : state.courses;
@@ -377,7 +384,7 @@
           ? oneTime
               .map((payment) => {
                 const appUrl = payment.checkoutUrl.startsWith("http") ? payment.checkoutUrl : `${window.location.origin}${payment.checkoutUrl}`;
-                return `<div class="item"><span class="tag">${payment.flowType}</span><br /><strong>${payment.description}</strong><br /><small>${payment.courseName} · ${payment.currency} ${payment.amount} · ${payment.status}</small><br /><a href="${appUrl}" target="_blank" rel="noopener noreferrer">Pagar / ver detalle</a></div>`;
+                return `<div class="item"><span class="tag">${payment.flowType}</span><br /><strong>${payment.description}</strong><br /><small>${payment.courseName} · ${payment.currency} ${payment.amount} · ${humanStatus(payment.status)}</small><br /><a href="${appUrl}" target="_blank" rel="noopener noreferrer">Pagar / ver detalle</a></div>`;
               })
               .join("")
           : "<div class='empty-state'>No hay pagos puntuales para este filtro.</div>";
@@ -386,7 +393,7 @@
           ? subscriptions
               .map((payment) => {
                 const appUrl = payment.checkoutUrl.startsWith("http") ? payment.checkoutUrl : `${window.location.origin}${payment.checkoutUrl}`;
-                return `<div class="item"><span class="tag">${payment.flowType}</span><br /><strong>${payment.description}</strong><br /><small>${payment.courseName} · ${payment.currency} ${payment.amount} · ${payment.status}</small><br /><a href="${appUrl}" target="_blank" rel="noopener noreferrer">Ver suscripcion</a></div>`;
+                return `<div class="item"><span class="tag">${payment.flowType}</span><br /><strong>${payment.description}</strong><br /><small>${payment.courseName} · ${payment.currency} ${payment.amount} · ${humanStatus(payment.status)}</small><br /><a href="${appUrl}" target="_blank" rel="noopener noreferrer">Ver suscripcion</a></div>`;
               })
               .join("")
           : "<div class='empty-state'>No hay suscripciones para este filtro.</div>";

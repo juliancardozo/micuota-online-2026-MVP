@@ -31,6 +31,8 @@ services:
           property: password
       - key: APP_BASE_URL
         value: https://micuota-online-2026-backend.onrender.com
+      - key: APP_FRONTEND_BASE_URL
+        value: https://micuota.netlify.app
       - key: APP_DEMO_SEED_ENABLED
         value: true
       - key: APP_PAYMENTS_EXTERNAL_PROVIDERS_ENABLED

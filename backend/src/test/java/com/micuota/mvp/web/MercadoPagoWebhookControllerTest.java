@@ -47,7 +47,7 @@ class MercadoPagoWebhookControllerTest {
     }
 
     @Test
-    void receiveValidatesSignatureFetchesPaymentAndUpdatesByPreferenceId() throws Exception {
+    void receiveValidatesSignatureFetchesPaymentAndUpdatesByExternalReference() throws Exception {
         String body = "{\"type\":\"payment\",\"data\":{\"id\":\"987654321\"}}";
         JsonNode payment = objectMapper.readTree("""
             {"id":987654321,"status":"approved","external_reference":"MC-abc","preference_id":"123456789-abcd"}
@@ -55,7 +55,7 @@ class MercadoPagoWebhookControllerTest {
         PaymentOperation operation = new PaymentOperation();
         when(mercadoPagoService.getPayment("mp-token", "987654321"))
             .thenReturn(new MercadoPagoService.MercadoPagoApiResponse(payment.toString(), payment));
-        when(paymentService.updateStatusByProviderReference(eq("123456789-abcd"), eq(OperationStatus.SUCCESS), contains("mercadopago_webhook")))
+        when(paymentService.updateStatusByExternalReference(eq("MC-abc"), eq(OperationStatus.SUCCESS), contains("mercadopago_webhook")))
             .thenReturn(operation);
 
         HttpHeaders headers = new HttpHeaders();
@@ -65,7 +65,29 @@ class MercadoPagoWebhookControllerTest {
         PaymentOperation result = controller.receive(headers, Map.of(), body);
 
         assertThat(result).isSameAs(operation);
-        verify(paymentService).updateStatusByProviderReference(eq("123456789-abcd"), eq(OperationStatus.SUCCESS), contains("\"external_reference\":\"MC-abc\""));
+        verify(paymentService).updateStatusByExternalReference(eq("MC-abc"), eq(OperationStatus.SUCCESS), contains("\"provider_reference\":\"123456789-abcd\""));
+    }
+
+    @Test
+    void receiveFetchesPreapprovalAndUpdatesSubscriptionByExternalReference() throws Exception {
+        String body = "{\"type\":\"preapproval\",\"data\":{\"id\":\"preapproval-123\"}}";
+        JsonNode preapproval = objectMapper.readTree("""
+            {"id":"preapproval-123","status":"authorized","external_reference":"MC-subscription"}
+            """);
+        PaymentOperation operation = new PaymentOperation();
+        when(mercadoPagoService.getPreapproval("mp-token", "preapproval-123"))
+            .thenReturn(new MercadoPagoService.MercadoPagoApiResponse(preapproval.toString(), preapproval));
+        when(paymentService.updateStatusByExternalReference(eq("MC-subscription"), eq(OperationStatus.SUCCESS), contains("mercadopago_webhook")))
+            .thenReturn(operation);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("x-request-id", "request-456");
+        headers.add("x-signature", "ts=1713389301,v1=" + signature("id:preapproval-123;request-id:request-456;ts:1713389301;"));
+
+        PaymentOperation result = controller.receive(headers, Map.of(), body);
+
+        assertThat(result).isSameAs(operation);
+        verify(paymentService).updateStatusByExternalReference(eq("MC-subscription"), eq(OperationStatus.SUCCESS), contains("\"provider_reference\":\"preapproval-123\""));
     }
 
     private String signature(String manifest) throws Exception {

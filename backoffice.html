@@ -629,9 +629,9 @@
 
       function humanStatus(status) {
         if (status === "SUCCESS") return "Pagado";
-        if (status === "PENDING") return "En revision";
+        if (status === "PENDING") return "Procesando";
         if (status === "FAILURE") return "No completado";
-        return "Pendiente";
+        return "Esperando pago";
       }
 
       function statusClass(status) {

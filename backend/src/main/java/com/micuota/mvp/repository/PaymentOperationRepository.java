@@ -18,5 +18,6 @@ public interface PaymentOperationRepository extends JpaRepository<PaymentOperati
     List<PaymentOperation> findTop300ByStatusInAndCreatedAtBeforeOrderByCreatedAtAsc(List<OperationStatus> statuses, OffsetDateTime createdAt);
     List<PaymentOperation> findTop300ByStatusNotAndDueAtBeforeOrderByDueAtAsc(OperationStatus status, OffsetDateTime dueAt);
     Optional<PaymentOperation> findByProviderReference(String providerReference);
+    Optional<PaymentOperation> findByExternalReference(String externalReference);
     Optional<PaymentOperation> findFirstByRawResponseContainingOrderByCreatedAtDesc(String rawResponseFragment);
 }

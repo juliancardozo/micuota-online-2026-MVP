@@ -341,7 +341,8 @@ public class PaymentService {
 
     @Transactional
     public PaymentOperation updateStatusByExternalReference(String externalReference, OperationStatus status, String rawResponseEvent) {
-        PaymentOperation operation = paymentOperationRepository.findFirstByRawResponseContainingOrderByCreatedAtDesc(externalReference)
+        PaymentOperation operation = paymentOperationRepository.findByExternalReference(externalReference)
+            .or(() -> paymentOperationRepository.findFirstByRawResponseContainingOrderByCreatedAtDesc(externalReference))
             .orElseThrow(() -> new IllegalArgumentException("Operacion no encontrada para external_reference: " + externalReference));
         OperationStatus previousStatus = operation.getStatus();
         appendRawResponseEvent(operation, rawResponseEvent);
@@ -430,6 +431,7 @@ public class PaymentService {
         operation.setDescription(request.description());
         operation.setCheckoutUrl(selection.result().checkoutUrl());
         operation.setProviderReference(selection.result().providerReference());
+        operation.setExternalReference(selection.result().externalReference());
         operation.setRawResponse(selection.rawResponse());
         operation.setStatus(OperationStatus.CREATED);
         OffsetDateTime now = OffsetDateTime.now();

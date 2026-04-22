@@ -51,6 +51,7 @@ class MercadoPagoGatewayTest {
         );
 
         assertThat(result.providerReference()).isEqualTo("123456789-abcd");
+        assertThat(result.externalReference()).startsWith("MC-");
         assertThat(result.checkoutUrl()).contains("mercadopago.com");
         assertThat(result.rawResponse()).contains("\"operation\":\"checkout_preference\"");
         assertThat(result.rawResponse()).contains("\"external_reference\":\"MC-");
@@ -80,6 +81,7 @@ class MercadoPagoGatewayTest {
         );
 
         assertThat(result.providerReference()).isEqualTo("preapproval-123");
+        assertThat(result.externalReference()).startsWith("MC-");
 
         ArgumentCaptor<JsonNode> payload = ArgumentCaptor.forClass(JsonNode.class);
         verify(mercadoPagoService).createPreapproval(eq("env-token"), payload.capture());

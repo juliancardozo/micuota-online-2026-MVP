@@ -9,10 +9,13 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.view.RedirectView;
+import org.springframework.web.util.UriComponentsBuilder;
 
 @RestController
 @RequestMapping("/api/callbacks")
@@ -20,6 +23,9 @@ import org.springframework.web.bind.annotation.RestController;
 public class CallbackController {
 
     private final PaymentService paymentService;
+
+    @Value("${app.frontend-base-url:${app.base-url}}")
+    private String frontendBaseUrl;
 
     public CallbackController(PaymentService paymentService) {
         this.paymentService = paymentService;
@@ -31,86 +37,99 @@ public class CallbackController {
         @ApiResponse(responseCode = "200", description = "Estado actualizado"),
         @ApiResponse(responseCode = "400", description = "Operacion inexistente", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     })
-    public PaymentOperation success(@RequestParam Long operationId) {
-        return paymentService.updateStatus(operationId, OperationStatus.SUCCESS);
+    public RedirectView success(@RequestParam Long operationId) {
+        return redirectToPayment(paymentService.updateStatus(operationId, OperationStatus.SUCCESS));
     }
 
     @GetMapping("/success/by-reference")
     @Operation(summary = "Callback success por providerReference", description = "Actualiza la operacion como SUCCESS segun referencia del proveedor.")
-    public PaymentOperation successByReference(
+    public RedirectView successByReference(
         @RequestParam(required = false) String providerReference,
         @RequestParam(name = "preference_id", required = false) String preferenceId,
         @RequestParam(required = false) String externalReference,
         @RequestParam(name = "external_reference", required = false) String mercadoPagoExternalReference
     ) {
-        return paymentService.updateStatusByCallbackReference(
+        return redirectToPayment(paymentService.updateStatusByCallbackReference(
             firstNonBlank(providerReference, preferenceId),
             firstNonBlank(externalReference, mercadoPagoExternalReference),
             OperationStatus.SUCCESS
-        );
+        ));
     }
 
     @GetMapping("/pending")
     @Operation(summary = "Callback pending", description = "Actualiza la operacion como PENDING.")
-    public PaymentOperation pending(@RequestParam Long operationId) {
-        return paymentService.updateStatus(operationId, OperationStatus.PENDING);
+    public RedirectView pending(@RequestParam Long operationId) {
+        return redirectToPayment(paymentService.updateStatus(operationId, OperationStatus.PENDING));
     }
 
     @GetMapping("/pending/by-reference")
     @Operation(summary = "Callback pending por providerReference", description = "Actualiza la operacion como PENDING segun referencia del proveedor.")
-    public PaymentOperation pendingByReference(
+    public RedirectView pendingByReference(
         @RequestParam(required = false) String providerReference,
         @RequestParam(name = "preference_id", required = false) String preferenceId,
         @RequestParam(required = false) String externalReference,
         @RequestParam(name = "external_reference", required = false) String mercadoPagoExternalReference
     ) {
-        return paymentService.updateStatusByCallbackReference(
+        return redirectToPayment(paymentService.updateStatusByCallbackReference(
             firstNonBlank(providerReference, preferenceId),
             firstNonBlank(externalReference, mercadoPagoExternalReference),
             OperationStatus.PENDING
-        );
+        ));
     }
 
     @GetMapping("/failure")
     @Operation(summary = "Callback failure", description = "Actualiza la operacion como FAILURE.")
-    public PaymentOperation failure(@RequestParam Long operationId) {
-        return paymentService.updateStatus(operationId, OperationStatus.FAILURE);
+    public RedirectView failure(@RequestParam Long operationId) {
+        return redirectToPayment(paymentService.updateStatus(operationId, OperationStatus.FAILURE));
     }
 
     @GetMapping("/failed")
     @Operation(summary = "Callback failed", description = "Alias de failure para compatibilidad de pasarelas.")
-    public PaymentOperation failed(@RequestParam Long operationId) {
-        return paymentService.updateStatus(operationId, OperationStatus.FAILURE);
+    public RedirectView failed(@RequestParam Long operationId) {
+        return redirectToPayment(paymentService.updateStatus(operationId, OperationStatus.FAILURE));
     }
 
     @GetMapping("/failure/by-reference")
     @Operation(summary = "Callback failure por providerReference", description = "Actualiza la operacion como FAILURE segun referencia del proveedor.")
-    public PaymentOperation failureByReference(
+    public RedirectView failureByReference(
         @RequestParam(required = false) String providerReference,
         @RequestParam(name = "preference_id", required = false) String preferenceId,
         @RequestParam(required = false) String externalReference,
         @RequestParam(name = "external_reference", required = false) String mercadoPagoExternalReference
     ) {
-        return paymentService.updateStatusByCallbackReference(
+        return redirectToPayment(paymentService.updateStatusByCallbackReference(
             firstNonBlank(providerReference, preferenceId),
             firstNonBlank(externalReference, mercadoPagoExternalReference),
             OperationStatus.FAILURE
-        );
+        ));
     }
 
     @GetMapping("/failed/by-reference")
     @Operation(summary = "Callback failed por providerReference", description = "Alias de failure por referencia para compatibilidad.")
-    public PaymentOperation failedByReference(
+    public RedirectView failedByReference(
         @RequestParam(required = false) String providerReference,
         @RequestParam(name = "preference_id", required = false) String preferenceId,
         @RequestParam(required = false) String externalReference,
         @RequestParam(name = "external_reference", required = false) String mercadoPagoExternalReference
     ) {
-        return paymentService.updateStatusByCallbackReference(
+        return redirectToPayment(paymentService.updateStatusByCallbackReference(
             firstNonBlank(providerReference, preferenceId),
             firstNonBlank(externalReference, mercadoPagoExternalReference),
             OperationStatus.FAILURE
-        );
+        ));
+    }
+
+    private RedirectView redirectToPayment(PaymentOperation operation) {
+        String target = UriComponentsBuilder
+            .fromUriString(frontendBaseUrl)
+            .path("/pago.html")
+            .queryParam("operationId", operation.getId())
+            .queryParam("status", operation.getStatus())
+            .build()
+            .toUriString();
+        RedirectView redirectView = new RedirectView(target);
+        redirectView.setExposeModelAttributes(false);
+        return redirectView;
     }
 
     private String firstNonBlank(String... values) {

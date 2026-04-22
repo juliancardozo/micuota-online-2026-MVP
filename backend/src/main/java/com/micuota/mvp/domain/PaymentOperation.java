@@ -60,6 +60,9 @@ public class PaymentOperation {
     @Column(nullable = false)
     private String providerReference;
 
+    @Column
+    private String externalReference;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private OperationStatus status;
@@ -200,6 +203,14 @@ public class PaymentOperation {
 
     public void setProviderReference(String providerReference) {
         this.providerReference = providerReference;
+    }
+
+    public String getExternalReference() {
+        return externalReference;
+    }
+
+    public void setExternalReference(String externalReference) {
+        this.externalReference = externalReference;
     }
 
     public OperationStatus getStatus() {
