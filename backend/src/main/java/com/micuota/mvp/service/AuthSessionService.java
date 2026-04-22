@@ -8,6 +8,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Base64;
 import java.util.Optional;
+import java.util.UUID;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,7 +32,7 @@ public class AuthSessionService {
     public String createSession(Long tenantId, Long userId, UserRole role) {
         OffsetDateTime createdAt = OffsetDateTime.now(ZoneOffset.UTC);
         long expiresAtEpoch = createdAt.plusSeconds(ttlSeconds).toEpochSecond();
-        String payload = tenantId + ":" + userId + ":" + role.name() + ":" + createdAt.toEpochSecond() + ":" + expiresAtEpoch;
+        String payload = tenantId + ":" + userId + ":" + role.name() + ":" + createdAt.toEpochSecond() + ":" + expiresAtEpoch + ":" + UUID.randomUUID();
         String payloadB64 = base64UrlEncode(payload);
         String signature = sign(payloadB64);
         String token = payloadB64 + "." + signature;
@@ -70,7 +71,7 @@ public class AuthSessionService {
 
         String payload = base64UrlDecode(payloadB64);
         String[] values = payload.split(":");
-        if (values.length != 5) {
+        if (values.length != 5 && values.length != 6) {
             throw new IllegalArgumentException("Payload de token invalido");
         }
 
