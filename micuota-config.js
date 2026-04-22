@@ -12,7 +12,7 @@
     (apiBaseParam && apiBaseParam !== "clear" ? apiBaseParam : "") ||
     localStorage.getItem("micuota.apiBase") ||
     document.querySelector('meta[name="micuota-api-base"]')?.getAttribute("content");
-  const defaultApiBase = isLocalhost ? "http://localhost:8080" : "";
+  const defaultApiBase = isLocalhost ? "http://localhost:8080" : "https://micuota-online-2026-backend.onrender.com";
   const apiBase = (configuredApiBase || defaultApiBase).replace(/\/$/, "");
 
   window.__MICUOTA_API_BASE__ = apiBase;

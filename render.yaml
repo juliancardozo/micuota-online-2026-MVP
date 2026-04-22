@@ -1,0 +1,69 @@
+services:
+  - type: web
+    runtime: docker
+    name: micuota-online-2026-backend
+    region: oregon
+    plan: free
+    branch: main
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /actuator/health
+    autoDeployTrigger: commit
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: SERVER_PORT
+        value: 10000
+      - key: DB_URL
+        fromDatabase:
+          name: micuota-postgres
+          property: connectionString
+      - key: DB_USERNAME
+        fromDatabase:
+          name: micuota-postgres
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: micuota-postgres
+          property: password
+      - key: APP_BASE_URL
+        value: https://micuota-online-2026-backend.onrender.com
+      - key: APP_DEMO_SEED_ENABLED
+        value: true
+      - key: APP_PAYMENTS_EXTERNAL_PROVIDERS_ENABLED
+        value: true
+      - key: APP_PAYMENTS_DEFAULT_PROVIDER
+        value: PROMETEO
+      - key: APP_PAYMENTS_FALLBACK_PROVIDER
+        value: MERCADOPAGO
+      - key: APP_CRM_DEFAULT_OWNER
+        value: ventas@micuota.online
+      - key: APP_CRM_API_KEY
+        sync: false
+      - key: MERCADOPAGO_ACCESS_TOKEN
+        sync: false
+      - key: MERCADOPAGO_WEBHOOK_SECRET
+        sync: false
+      - key: APP_PROMETEO_ENABLED
+        value: true
+      - key: APP_PROMETEO_SANDBOX
+        value: true
+      - key: APP_PROMETEO_API_KEY
+        sync: false
+      - key: MAIL_HOST
+        sync: false
+      - key: MAIL_PORT
+        value: 587
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_FROM
+        value: no-reply@micuota.online
+
+databases:
+  - name: micuota-postgres
+    databaseName: micuota
+    user: micuota
+    plan: free
+    postgresMajorVersion: "16"
