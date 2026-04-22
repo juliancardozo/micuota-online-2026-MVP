@@ -28,6 +28,9 @@ public class TeacherProfile {
     @Column(name = "mp_access_token")
     private String mpAccessToken;
 
+    @Column(name = "mp_public_key")
+    private String mpPublicKey;
+
     @Column(name = "wc_api_key")
     private String wooCommerceApiKey;
 
@@ -66,6 +69,14 @@ public class TeacherProfile {
 
     public void setMpAccessToken(String mpAccessToken) {
         this.mpAccessToken = mpAccessToken;
+    }
+
+    public String getMpPublicKey() {
+        return mpPublicKey;
+    }
+
+    public void setMpPublicKey(String mpPublicKey) {
+        this.mpPublicKey = mpPublicKey;
     }
 
     public String getWooCommerceApiKey() {

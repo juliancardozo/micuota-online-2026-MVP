@@ -13,7 +13,6 @@ export MAIL_HOST=<smtp-host>
 export MAIL_PORT=587
 export MAIL_USERNAME=<smtp-user>
 export MAIL_PASSWORD=<smtp-password>
-export MERCADOPAGO_ACCESS_TOKEN=<token>
 export MERCADOPAGO_WEBHOOK_SECRET=<secret>
 ```
 
@@ -47,7 +46,8 @@ backend/src/main/resources/db/migration
 
 - `mvn test`
 - migraciones revisadas
-- variables de Mercado Pago configuradas
+- secreto de webhook Mercado Pago configurado
+- profesores vendedores conectados con credenciales Mercado Pago
 - webhook publico registrado en Mercado Pago
 - CORS con dominio final
 - Mailpit reemplazado por SMTP real

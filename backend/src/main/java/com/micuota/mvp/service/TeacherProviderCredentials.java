@@ -2,6 +2,7 @@ package com.micuota.mvp.service;
 
 public record TeacherProviderCredentials(
     String mercadoPagoAccessToken,
+    String mercadoPagoPublicKey,
     String prometeoApiKey,
     String wooCommerceApiKey,
     String transferAlias,

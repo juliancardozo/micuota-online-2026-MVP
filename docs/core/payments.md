@@ -39,6 +39,13 @@ MiCuota selecciona proveedor segun:
 2. `app.payments.default-provider`.
 3. `app.payments.fallback-provider`.
 
+Para `MERCADOPAGO`, el profesor debe tener conectado su propio `Access Token`. MiCuota no usa un token global para crear links o suscripciones, porque en un SaaS multi-profesor cada cobro tiene que quedar asociado al vendedor real.
+
+En pruebas, usar al menos dos cuentas de Mercado Pago:
+
+- Vendedor: cuenta del profesor que genera credenciales.
+- Comprador: cuenta del alumno/paciente que paga.
+
 ## Respuesta
 
 ```json

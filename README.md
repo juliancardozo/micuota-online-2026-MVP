@@ -46,12 +46,11 @@ Para Stripe, Square y Plexo el backend soporta dos modos:
 1. Modo sandbox interno (default): genera links locales `/sandbox/...` para pruebas.
 2. Modo externo real: crea links en APIs de Stripe/Square/Plexo segun variables de entorno.
 
-Mercado Pago usa la API real cuando el profesor tiene `mpAccessToken` o cuando existe `MERCADOPAGO_ACCESS_TOKEN` como fallback de entorno.
+Mercado Pago usa la API real cuando el profesor conecta su propio Access Token desde el perfil. No hay fallback global de entorno para crear cobros, porque cada link o suscripcion debe quedar asociado al vendedor real.
 
 Variables relevantes:
 
 - `APP_PAYMENTS_EXTERNAL_PROVIDERS_ENABLED=true`
-- `MERCADOPAGO_ACCESS_TOKEN=...`
 - `MERCADOPAGO_WEBHOOK_SECRET=...`
 - `APP_PAYMENTS_STRIPE_SECRET_KEY=...`
 - `APP_PAYMENTS_SQUARE_ACCESS_TOKEN=...`
@@ -60,9 +59,9 @@ Variables relevantes:
 - `APP_PAYMENTS_PLEXO_API_URL=...`
 - `APP_PAYMENTS_PLEXO_API_KEY=...`
 
-Mercado Pago usa `POST /checkout/preferences` para pagos puntuales y `POST /preapproval` para suscripciones. El backend guarda el `id` devuelto por Mercado Pago como `providerReference`, publica el webhook en `/api/callbacks/mercadopago` y mantiene la respuesta completa de la API y las notificaciones en `PaymentOperation.rawResponse`.
+Mercado Pago usa `POST /checkout/preferences` para pagos puntuales y `POST /preapproval` para suscripciones. El backend guarda el `id` devuelto por Mercado Pago como `providerReference`, publica el webhook en `/api/callbacks/mercadopago?externalReference=...` y mantiene la respuesta completa de la API y las notificaciones en `PaymentOperation.rawResponse`.
 
-Para validar webhooks, configura `MERCADOPAGO_WEBHOOK_SECRET` con el secreto de la app de Mercado Pago. Si el webhook trae solo `data.id`, el backend consulta `/v1/payments/{id}` usando `MERCADOPAGO_ACCESS_TOKEN` para resolver `status`, `external_reference` y `preference_id`.
+Para validar webhooks, configura `MERCADOPAGO_WEBHOOK_SECRET` con el secreto de la app de Mercado Pago. Si el webhook trae solo `data.id`, el backend usa el `externalReference` de la URL para encontrar la operacion, obtiene el token del profesor y consulta `/v1/payments/{id}` para resolver `status`, `external_reference` y `preference_id`.
 
 ### Ledger minimo de pagos
 

@@ -32,9 +32,12 @@ app.cors.allowed-origin-patterns=...
 No commitear:
 
 - tokens Mercado Pago
+- public keys Mercado Pago reales si identifican una integracion productiva
 - secrets webhook
 - SMTP credentials
 - DB passwords reales
+
+Los tokens de Mercado Pago se guardan a nivel `TeacherProfile`. Solo usuarios `TEACHER` pueden conectarlos desde el backoffice; un `TENANT_ADMIN` puede operar y supervisar, pero no debe centralizar credenciales de vendedores.
 
 ## Mejoras recomendadas
 

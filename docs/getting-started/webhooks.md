@@ -13,9 +13,10 @@ POST /api/callbacks/mercadopago
 Variables:
 
 ```bash
-export MERCADOPAGO_ACCESS_TOKEN=APP_USR...
 export MERCADOPAGO_WEBHOOK_SECRET=...
 ```
+
+El `Access Token` de Mercado Pago no es global para crear cobros. Lo conecta cada profesor desde su perfil para que los fondos, preferencias y suscripciones queden asociados a la cuenta vendedora correcta.
 
 ## Firma
 
@@ -40,6 +41,8 @@ Con esa respuesta resuelve:
 - `status`
 - `external_reference`
 - `preference_id`
+
+La `notification_url` generada por MiCuota incluye `externalReference`. Con esa referencia se ubica primero la `PaymentOperation`, se obtiene el token Mercado Pago del profesor propietario y recien despues se consulta la API del proveedor.
 
 ## Mapeo de estados
 

@@ -54,6 +54,5 @@ export SPRING_PROFILES_ACTIVE=prod
 export DB_URL=jdbc:postgresql://localhost:5432/micuota
 export DB_USERNAME=micuota
 export DB_PASSWORD=micuota
-export MERCADOPAGO_ACCESS_TOKEN=APP_USR...
 export MERCADOPAGO_WEBHOOK_SECRET=...
 ```

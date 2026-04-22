@@ -317,14 +317,14 @@
                   <div class="field">
                     <label for="ot-provider">Motor de cobro</label>
                     <select id="ot-provider" name="provider" required>
-                      <option value="PROMETEO" selected>Prometeo recomendado</option>
-                      <option value="MERCADOPAGO">MercadoPago respaldo</option>
+                      <option value="MERCADOPAGO" selected>Mercado Pago recomendado</option>
+                      <option value="PROMETEO">Prometeo validacion bancaria</option>
                       <option value="WOOCOMMERCE">WooCommerce</option>
                       <option value="STRIPE">Stripe</option>
                       <option value="SQUARE">Square</option>
                       <option value="PLEXO">Plexo</option>
                     </select>
-                    <small>MiCuota intenta primero con Prometeo y conserva MercadoPago como failover.</small>
+                    <small>Usa la conexion Mercado Pago del profesor seleccionado.</small>
                   </div>
                   <div class="field">
                     <label for="ot-currency">Moneda</label>
@@ -401,14 +401,14 @@
                   <div class="field">
                     <label for="sub-provider">Motor de cobro</label>
                     <select id="sub-provider" name="provider" required>
-                      <option value="PROMETEO" selected>Prometeo recomendado</option>
-                      <option value="MERCADOPAGO">MercadoPago respaldo</option>
+                      <option value="MERCADOPAGO" selected>Mercado Pago recomendado</option>
+                      <option value="PROMETEO">Prometeo validacion bancaria</option>
                       <option value="WOOCOMMERCE">WooCommerce</option>
                       <option value="STRIPE">Stripe</option>
                       <option value="SQUARE">Square</option>
                       <option value="PLEXO">Plexo</option>
                     </select>
-                    <small>Usa Prometeo por defecto y deja MercadoPago listo si necesitas continuidad.</small>
+                    <small>La suscripcion se crea contra la cuenta Mercado Pago del profesor elegido.</small>
                   </div>
                   <div class="field">
                     <label for="sub-currency">Moneda</label>

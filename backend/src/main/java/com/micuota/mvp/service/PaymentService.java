@@ -23,6 +23,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -405,6 +406,7 @@ public class PaymentService {
 
         TeacherProviderCredentials credentials = new TeacherProviderCredentials(
             teacher.getMpAccessToken(),
+            teacher.getMpPublicKey(),
             teacher.getPrometeoApiKey(),
             teacher.getWooCommerceApiKey(),
             teacher.getTransferAlias(),
@@ -773,5 +775,20 @@ public class PaymentService {
         ProviderCheckoutResult result,
         String rawResponse
     ) {
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<String> mercadoPagoAccessTokenForOperationReference(String externalReference, String providerReference) {
+        Optional<PaymentOperation> operation = Optional.empty();
+        if (externalReference != null && !externalReference.isBlank()) {
+            operation = paymentOperationRepository.findByExternalReference(externalReference);
+        }
+        if (operation.isEmpty() && providerReference != null && !providerReference.isBlank()) {
+            operation = paymentOperationRepository.findByProviderReference(providerReference);
+        }
+        return operation
+            .flatMap(payment -> teacherProfileRepository.findById(payment.getTeacherId()))
+            .map(TeacherProfile::getMpAccessToken)
+            .filter(token -> token != null && !token.isBlank());
     }
 }

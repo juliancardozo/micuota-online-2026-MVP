@@ -8,7 +8,6 @@ import com.micuota.mvp.domain.PaymentFlowType;
 import com.micuota.mvp.domain.PaymentProviderType;
 import java.util.Locale;
 import java.util.UUID;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -16,9 +15,6 @@ public class MercadoPagoGateway implements PaymentProviderGateway {
 
     private final MercadoPagoService mercadoPagoService;
     private final ObjectMapper objectMapper;
-
-    @Value("${app.payments.mercadopago.access-token:}")
-    private String configuredAccessToken;
 
     public MercadoPagoGateway(MercadoPagoService mercadoPagoService, ObjectMapper objectMapper) {
         this.mercadoPagoService = mercadoPagoService;
@@ -37,9 +33,9 @@ public class MercadoPagoGateway implements PaymentProviderGateway {
         TeacherProviderCredentials credentials,
         String callbackBaseUrl
     ) {
-        String token = firstNonBlank(credentials.mercadoPagoAccessToken(), configuredAccessToken);
+        String token = firstNonBlank(credentials.mercadoPagoAccessToken());
         if (token == null || token.isBlank()) {
-            throw new IllegalStateException("El profesor no tiene token de MercadoPago configurado");
+            throw new IllegalStateException("El profesor debe conectar su Access Token de Mercado Pago para usar este motor");
         }
 
         String externalReference = "MC-" + UUID.randomUUID();
@@ -75,7 +71,7 @@ public class MercadoPagoGateway implements PaymentProviderGateway {
         backUrls.put("failure", callbackBaseUrl + "/api/callbacks/failed/by-reference?externalReference=" + externalReference);
         payload.put("auto_return", "approved");
         payload.put("external_reference", externalReference);
-        payload.put("notification_url", callbackBaseUrl + "/api/callbacks/mercadopago");
+        payload.put("notification_url", callbackBaseUrl + "/api/callbacks/mercadopago?externalReference=" + externalReference);
 
         MercadoPagoService.MercadoPagoApiResponse response = mercadoPagoService.createPreference(token, payload);
         String preferenceId = response.body().path("id").asText("");
@@ -104,7 +100,7 @@ public class MercadoPagoGateway implements PaymentProviderGateway {
         payload.put("reason", request.description());
         payload.put("external_reference", externalReference);
         payload.put("back_url", callbackBaseUrl + "/api/callbacks/success/by-reference?externalReference=" + externalReference);
-        payload.put("notification_url", callbackBaseUrl + "/api/callbacks/mercadopago");
+        payload.put("notification_url", callbackBaseUrl + "/api/callbacks/mercadopago?externalReference=" + externalReference);
 
         if (request.payerEmail() != null && !request.payerEmail().isBlank()) {
             payload.put("payer_email", request.payerEmail().trim().toLowerCase(Locale.ROOT));

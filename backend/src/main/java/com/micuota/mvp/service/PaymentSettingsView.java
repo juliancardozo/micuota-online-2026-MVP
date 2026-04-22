@@ -2,6 +2,8 @@ package com.micuota.mvp.service;
 
 public record PaymentSettingsView(
     String transferAlias,
-    String transferBankName
+    String transferBankName,
+    boolean mercadoPagoConfigured,
+    String mercadoPagoPublicKey
 ) {
 }

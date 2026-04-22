@@ -45,8 +45,6 @@ services:
         value: ventas@micuota.online
       - key: APP_CRM_API_KEY
         sync: false
-      - key: MERCADOPAGO_ACCESS_TOKEN
-        sync: false
       - key: MERCADOPAGO_WEBHOOK_SECRET
         sync: false
       - key: APP_PROMETEO_ENABLED

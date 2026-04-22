@@ -2,6 +2,8 @@ package com.micuota.mvp.service;
 
 public record UpdatePaymentSettingsRequest(
     String transferAlias,
-    String transferBankName
+    String transferBankName,
+    String mercadoPagoAccessToken,
+    String mercadoPagoPublicKey
 ) {
 }

@@ -157,7 +157,7 @@
               <div class="account-list" id="account-context"></div>
             </article>
             <article class="account-block">
-              <h3>Cobro manual AR</h3>
+              <h3>Motores de cobro</h3>
               <form id="payment-settings-form">
                 <div class="field">
                   <label for="transfer-alias">Alias</label>
@@ -167,8 +167,17 @@
                   <label for="transfer-bank-name">Banco</label>
                   <input id="transfer-bank-name" name="transferBankName" placeholder="ej: Banco Galicia" />
                 </div>
+                <div class="field">
+                  <label for="mp-public-key">Mercado Pago Public Key</label>
+                  <input id="mp-public-key" name="mercadoPagoPublicKey" autocomplete="off" placeholder="TEST-..." />
+                </div>
+                <div class="field">
+                  <label for="mp-access-token">Mercado Pago Access Token</label>
+                  <input id="mp-access-token" name="mercadoPagoAccessToken" type="password" autocomplete="off" placeholder="Pegar solo para conectar o reemplazar" />
+                  <small>Usa una cuenta vendedor de prueba para validar. No compartas este token con alumnos.</small>
+                </div>
                 <div class="form-actions">
-                  <button type="submit">Guardar alias</button>
+                  <button type="submit">Guardar motores</button>
                 </div>
               </form>
               <p class="note" id="payment-settings-note"></p>
@@ -389,14 +398,14 @@
                   <div class="field">
                     <label for="ot-provider">Motor de cobro</label>
                     <select id="ot-provider" name="provider" required>
-                      <option value="PROMETEO" selected>Prometeo recomendado</option>
-                      <option value="MERCADOPAGO">MercadoPago respaldo</option>
+                      <option value="MERCADOPAGO" selected>Mercado Pago recomendado</option>
+                      <option value="PROMETEO">Prometeo validacion bancaria</option>
                       <option value="WOOCOMMERCE">WooCommerce</option>
                       <option value="STRIPE">Stripe</option>
                       <option value="SQUARE">Square</option>
                       <option value="PLEXO">Plexo</option>
                     </select>
-                    <small>Primero cobramos con Prometeo. Si algo falla, MercadoPago queda como respaldo.</small>
+                    <small>Mercado Pago usa las credenciales conectadas en tu perfil de profesor.</small>
                   </div>
                   <div class="field">
                     <label for="ot-currency">Moneda</label>
@@ -442,14 +451,14 @@
                   <div class="field">
                     <label for="sub-provider">Motor de cobro</label>
                     <select id="sub-provider" name="provider" required>
-                      <option value="PROMETEO" selected>Prometeo recomendado</option>
-                      <option value="MERCADOPAGO">MercadoPago respaldo</option>
+                      <option value="MERCADOPAGO" selected>Mercado Pago recomendado</option>
+                      <option value="PROMETEO">Prometeo validacion bancaria</option>
                       <option value="WOOCOMMERCE">WooCommerce</option>
                       <option value="STRIPE">Stripe</option>
                       <option value="SQUARE">Square</option>
                       <option value="PLEXO">Plexo</option>
                     </select>
-                    <small>La preferencia operativa es Prometeo, con continuidad cubierta por MercadoPago.</small>
+                    <small>Las suscripciones se crean contra la cuenta Mercado Pago del profesor.</small>
                   </div>
                   <div class="field">
                     <label for="sub-currency">Moneda</label>
@@ -1012,11 +1021,14 @@
           `<div><small>Grupo actual</small><strong>${selectedCourse ? selectedCourse.name : "Todos los grupos"}</strong></div>`,
           `<div><small>Total visible</small><strong>${getFilteredPayments().length} cobros</strong></div>`,
           `<div><small>Personas</small><strong>${state.students.length}</strong></div>`,
-          `<div><small>Alias AR</small><strong>${state.paymentSettings?.transferAlias || "Todavia no configurado"}</strong></div>`
+          `<div><small>Alias AR</small><strong>${state.paymentSettings?.transferAlias || "Todavia no configurado"}</strong></div>`,
+          `<div><small>Mercado Pago</small><strong>${state.paymentSettings?.mercadoPagoConfigured ? "Conectado por profesor" : "Sin conectar"}</strong></div>`
         ].join("");
 
         document.getElementById("transfer-alias").value = state.paymentSettings?.transferAlias || "";
         document.getElementById("transfer-bank-name").value = state.paymentSettings?.transferBankName || "";
+        document.getElementById("mp-public-key").value = state.paymentSettings?.mercadoPagoPublicKey || "";
+        document.getElementById("mp-access-token").value = "";
       }
 
       function rerender() {
@@ -1119,11 +1131,14 @@
       });
       document.getElementById("payment-settings-form").addEventListener("submit", async (event) => {
         event.preventDefault();
-        setNote("payment-settings-note", "Guardando alias...");
+        setNote("payment-settings-note", "Guardando motores de cobro...");
         try {
           const payload = Object.fromEntries(new FormData(event.target).entries());
+          if (!payload.mercadoPagoAccessToken) {
+            delete payload.mercadoPagoAccessToken;
+          }
           state.paymentSettings = await apiPost("/api/backoffice/payment-settings", payload);
-          setNote("payment-settings-note", "Alias listo para compartir en pagos manuales.");
+          setNote("payment-settings-note", state.paymentSettings.mercadoPagoConfigured ? "Mercado Pago quedo conectado para este profesor." : "Configuracion guardada.");
           renderAccountSettings();
         } catch (error) {
           setNote("payment-settings-note", error.message, true);

@@ -17,7 +17,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 class MercadoPagoGatewayTest {
@@ -32,7 +31,6 @@ class MercadoPagoGatewayTest {
     @BeforeEach
     void setUp() {
         gateway = new MercadoPagoGateway(mercadoPagoService, objectMapper);
-        ReflectionTestUtils.setField(gateway, "configuredAccessToken", "");
     }
 
     @Test
@@ -46,7 +44,7 @@ class MercadoPagoGatewayTest {
         ProviderCheckoutResult result = gateway.createCheckout(
             PaymentFlowType.ONE_TIME,
             new CreatePaymentRequest(1L, PaymentProviderType.MERCADOPAGO, "Clase de guitarra", new BigDecimal("1200.00"), "uyu", "alumno@example.com", 2L, 3L),
-            new TeacherProviderCredentials("teacher-token", null, null, null, null),
+            new TeacherProviderCredentials("teacher-token", "teacher-public-key", null, null, null, null),
             "https://micuota.online"
         );
 
@@ -60,7 +58,7 @@ class MercadoPagoGatewayTest {
         verify(mercadoPagoService).createPreference(eq("teacher-token"), payload.capture());
         assertThat(payload.getValue().path("items").get(0).path("currency_id").asText()).isEqualTo("UYU");
         assertThat(payload.getValue().path("payer").path("email").asText()).isEqualTo("alumno@example.com");
-        assertThat(payload.getValue().path("notification_url").asText()).isEqualTo("https://micuota.online/api/callbacks/mercadopago");
+        assertThat(payload.getValue().path("notification_url").asText()).contains("https://micuota.online/api/callbacks/mercadopago?externalReference=MC-");
         assertThat(payload.getValue().path("back_urls").path("success").asText()).contains("/api/callbacks/success/by-reference");
     }
 
@@ -69,14 +67,13 @@ class MercadoPagoGatewayTest {
         JsonNode response = objectMapper.readTree("""
             {"id":"preapproval-123","init_point":"https://www.mercadopago.com/subscriptions/checkout"}
             """);
-        when(mercadoPagoService.createPreapproval(eq("env-token"), any(JsonNode.class)))
+        when(mercadoPagoService.createPreapproval(eq("teacher-token"), any(JsonNode.class)))
             .thenReturn(new MercadoPagoService.MercadoPagoApiResponse(response.toString(), response));
-        ReflectionTestUtils.setField(gateway, "configuredAccessToken", "env-token");
 
         ProviderCheckoutResult result = gateway.createCheckout(
             PaymentFlowType.SUBSCRIPTION,
             new CreatePaymentRequest(1L, PaymentProviderType.MERCADOPAGO, "Mensualidad", new BigDecimal("900.00"), "UYU", "alumno@example.com", 2L, 3L),
-            new TeacherProviderCredentials(null, null, null, null, null),
+            new TeacherProviderCredentials("teacher-token", "teacher-public-key", null, null, null, null),
             "https://micuota.online"
         );
 
@@ -84,8 +81,9 @@ class MercadoPagoGatewayTest {
         assertThat(result.externalReference()).startsWith("MC-");
 
         ArgumentCaptor<JsonNode> payload = ArgumentCaptor.forClass(JsonNode.class);
-        verify(mercadoPagoService).createPreapproval(eq("env-token"), payload.capture());
+        verify(mercadoPagoService).createPreapproval(eq("teacher-token"), payload.capture());
         assertThat(payload.getValue().path("auto_recurring").path("frequency_type").asText()).isEqualTo("months");
         assertThat(payload.getValue().path("external_reference").asText()).startsWith("MC-");
+        assertThat(payload.getValue().path("notification_url").asText()).contains("externalReference=MC-");
     }
 }

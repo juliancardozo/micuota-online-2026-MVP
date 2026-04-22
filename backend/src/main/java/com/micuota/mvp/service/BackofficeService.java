@@ -303,7 +303,12 @@ public class BackofficeService {
         TeacherProfile profile = teacherProfileRepository.findByUserId(userId)
             .orElseThrow(() -> new IllegalArgumentException("El usuario no tiene perfil profesional configurado"));
 
-        return new PaymentSettingsView(profile.getTransferAlias(), profile.getTransferBankName());
+        return new PaymentSettingsView(
+            profile.getTransferAlias(),
+            profile.getTransferBankName(),
+            hasText(profile.getMpAccessToken()),
+            profile.getMpPublicKey()
+        );
     }
 
     @Transactional
@@ -319,9 +324,18 @@ public class BackofficeService {
 
         profile.setTransferAlias(blankToNull(request.transferAlias()));
         profile.setTransferBankName(blankToNull(request.transferBankName()));
+        if (request.mercadoPagoAccessToken() != null) {
+            profile.setMpAccessToken(blankToNull(request.mercadoPagoAccessToken()));
+        }
+        profile.setMpPublicKey(blankToNull(request.mercadoPagoPublicKey()));
         TeacherProfile saved = teacherProfileRepository.save(profile);
 
-        return new PaymentSettingsView(saved.getTransferAlias(), saved.getTransferBankName());
+        return new PaymentSettingsView(
+            saved.getTransferAlias(),
+            saved.getTransferBankName(),
+            hasText(saved.getMpAccessToken()),
+            saved.getMpPublicKey()
+        );
     }
 
     private String blankToNull(String value) {
@@ -329,6 +343,10 @@ public class BackofficeService {
             return null;
         }
         return value.trim();
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 
     private ProfessorRevenueMetricsView buildRevenueMetrics(Tenant tenant, List<com.micuota.mvp.domain.PaymentOperation> payments) {

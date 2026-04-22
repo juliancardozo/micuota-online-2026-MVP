@@ -242,7 +242,7 @@ public class BackofficeController {
     @Operation(summary = "Ver configuracion de cobro manual", description = "Devuelve alias y banco para transferencias manuales del usuario autenticado.")
     public PaymentSettingsView paymentSettings(@RequestHeader("X-Auth-Token") String token) {
         AuthSessionService.SessionContext session = authSessionService.requireSession(token);
-        requireTenantAdminOrTeacher(session);
+        requireTeacher(session);
         return backofficeService.getPaymentSettings(session.tenantId(), session.userId());
     }
 
@@ -253,7 +253,7 @@ public class BackofficeController {
         @RequestBody UpdatePaymentSettingsRequest request
     ) {
         AuthSessionService.SessionContext session = authSessionService.requireSession(token);
-        requireTenantAdminOrTeacher(session);
+        requireTeacher(session);
         return backofficeService.updatePaymentSettings(session.tenantId(), session.userId(), request);
     }
 
@@ -310,6 +310,12 @@ public class BackofficeController {
     private void requireTenantAdminOrTeacher(AuthSessionService.SessionContext session) {
         if (session.role() != UserRole.TENANT_ADMIN && session.role() != UserRole.TEACHER) {
             throw new IllegalArgumentException("Operacion permitida para TENANT_ADMIN o TEACHER");
+        }
+    }
+
+    private void requireTeacher(AuthSessionService.SessionContext session) {
+        if (session.role() != UserRole.TEACHER) {
+            throw new IllegalArgumentException("Operacion permitida solo para TEACHER");
         }
     }
 }
