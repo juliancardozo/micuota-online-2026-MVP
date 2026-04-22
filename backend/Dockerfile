@@ -13,4 +13,4 @@ COPY --from=build /src/target/*.jar /app/app.jar
 
 EXPOSE 8080
 
-ENTRYPOINT ["sh", "-c", "if [ -n \"$DB_URL\" ] && [ \"${DB_URL#postgresql://}\" != \"$DB_URL\" ]; then export DB_URL=\"jdbc:$DB_URL\"; fi; exec java -jar /app/app.jar"]
+ENTRYPOINT ["sh", "-c", "if [ -n \"$DB_URL\" ] && [ \"${DB_URL#postgresql://}\" != \"$DB_URL\" ]; then db_without_scheme=\"${DB_URL#postgresql://}\"; if [ \"${db_without_scheme#*@}\" != \"$db_without_scheme\" ]; then export DB_URL=\"jdbc:postgresql://${db_without_scheme#*@}\"; else export DB_URL=\"jdbc:$DB_URL\"; fi; fi; exec java -jar /app/app.jar"]
