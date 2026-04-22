@@ -13,6 +13,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="ui.css" />
+    <script src="/micuota-config.js"></script>
   </head>
   <body class="shell-ui">
     <div class="app-shell">
@@ -526,11 +527,7 @@
     </div>
 
     <script>
-      const API_BASE =
-        window.__MICUOTA_API_BASE__ ||
-        ((window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
-          ? "http://localhost:8080"
-          : window.location.origin);
+      const API_BASE = window.MicuotaConfig?.apiBase || window.__MICUOTA_API_BASE__;
       const COURSE_FILTER_KEY = "micuota.teacher.selectedCourseId";
       const urlToken = new URLSearchParams(window.location.search).get("token");
       const token = urlToken || localStorage.getItem("micuota.authToken");
@@ -588,16 +585,13 @@
       const setActiveNav = setActiveView;
 
       async function apiGet(path) {
-        const response = await fetch(`${API_BASE}${path}`, {
+        return window.MicuotaApi.request(path, {
           headers: { "X-Auth-Token": token }
         });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || "Error de API");
-        return data;
       }
 
       async function apiPost(path, payload) {
-        const response = await fetch(`${API_BASE}${path}`, {
+        return window.MicuotaApi.request(path, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -605,9 +599,6 @@
           },
           body: JSON.stringify(payload)
         });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || "Error de API");
-        return data;
       }
 
       async function assignStudentToCourse(studentUserId, courseId) {

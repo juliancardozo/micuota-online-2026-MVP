@@ -37,6 +37,7 @@
     />
     <link rel="stylesheet" href="ui.css" />
     <link rel="stylesheet" href="landing.css" />
+    <script src="/micuota-config.js"></script>
   </head>
   <body class="landing-mp">
     <div class="lp-bg"></div>
@@ -550,11 +551,7 @@
     </footer>
 
     <script>
-      const API_BASE =
-        window.__MICUOTA_API_BASE__ ||
-        ((window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
-          ? "http://localhost:8080"
-          : window.location.origin);
+      const API_BASE = window.MicuotaConfig?.apiBase || window.__MICUOTA_API_BASE__;
       const FIRST_TENANT_REDIRECT_KEY = "micuota.firstTenantRedirect";
       const tenantInput = document.getElementById("loginTenantSlug");
       const preferredTenant =
@@ -592,17 +589,11 @@
       }
 
       async function postJson(path, payload) {
-        const response = await fetch(`${API_BASE}${path}`, {
+        return window.MicuotaApi.request(path, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
         });
-
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.error || "No se pudo procesar la solicitud");
-        }
-        return data;
       }
 
       document.getElementById("register-form").addEventListener("submit", async (event) => {

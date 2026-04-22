@@ -1,9 +1,10 @@
 (function () {
   const API_BASE =
+    window.MicuotaConfig?.apiBase ||
     window.__MICUOTA_API_BASE__ ||
     ((window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
       ? "http://localhost:8080"
-      : window.location.origin);
+      : "https://micuota.online");
   const QUICK_CHAT = true;
   const firstMessage =
     "Listo, vamos rapido. Si eres nuevo, escribe 'onboarding' y te guio paso a paso.";
@@ -252,7 +253,7 @@
       headers["X-Auth-Token"] = token;
     }
 
-    const response = await fetch(`${API_BASE}/api/chatbot/adoption`, {
+    const data = await window.MicuotaApi.request("/api/chatbot/adoption", {
       method: "POST",
       headers,
       body: JSON.stringify({
@@ -262,11 +263,6 @@
         quickMode: QUICK_CHAT
       })
     });
-
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error((data && data.error) || "No se pudo consultar al asistente");
-    }
     return data.answer;
   }
 

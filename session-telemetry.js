@@ -1,9 +1,10 @@
 (function () {
   const API_BASE =
+    window.MicuotaConfig?.apiBase ||
     window.__MICUOTA_API_BASE__ ||
     ((window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
       ? "http://localhost:8080"
-      : window.location.origin);
+      : "https://micuota.online");
   const HEARTBEAT_MS = 60 * 1000;
   const token = localStorage.getItem("micuota.authToken");
 
