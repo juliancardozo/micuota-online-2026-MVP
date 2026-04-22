@@ -2,12 +2,13 @@
 
 El onboarding de MiCuota busca que un profesional llegue a su primer cobro real lo antes posible.
 
-## Registro de tenant
+## Alta de tenant
 
 Endpoint:
 
 ```http
-POST /api/auth/register-tenant
+POST /api/admin/tenants
+X-Auth-Token: <platform-admin-token>
 ```
 
 Payload orientativo:
@@ -16,19 +17,18 @@ Payload orientativo:
 {
   "tenantName": "Academia Norte",
   "tenantSlug": "academia-norte",
-  "fullName": "Paula Gomez",
-  "email": "admin@example.com",
-  "password": "secret",
-  "mpAccessToken": "APP_USR..."
+  "adminFullName": "Paula Gomez",
+  "adminEmail": "admin@example.com",
+  "adminPassword": "secret123"
 }
 ```
 
-El registro crea:
+El administrador de plataforma crea:
 
 - Tenant.
-- Usuario administrador.
-- Perfil profesional.
-- Token de sesion.
+- Usuario `TENANT_ADMIN` inicial.
+- Perfil profesional base para operar el tenant.
+- URL de setup para entregar al administrador del tenant.
 
 ## Login
 

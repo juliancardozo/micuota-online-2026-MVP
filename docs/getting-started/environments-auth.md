@@ -29,6 +29,7 @@ curl http://localhost:8080/api/backoffice/payments \
 
 | Rol | Alcance |
 | --- | --- |
+| `ADMIN` | Administra la plataforma, crea tenants y ejecuta mantenimiento MVP. |
 | `TENANT_ADMIN` | Administra usuarios, cursos, pagos y metricas del tenant. |
 | `TEACHER` | Gestiona alumnos, cursos y cobros del profesional. |
 | `STUDENT` | Consulta su dashboard y pagos asignados. |

@@ -51,6 +51,10 @@
               <strong>Tenants</strong>
               <span>Top cuentas por ingresos</span>
             </a>
+            <a class="nav-link" href="#provisioning">
+              <strong>Provisioning</strong>
+              <span>Alta y limpieza MVP</span>
+            </a>
             <a class="nav-link" href="#cuenta">
               <strong>Cuenta</strong>
               <span>Sesion y accesos</span>
@@ -153,6 +157,60 @@
           </div>
         </section>
 
+        <section class="shell-section" id="provisioning">
+          <div class="section-head">
+            <div class="section-head-copy">
+              <h2>Provisioning</h2>
+              <p class="section-copy">Alta controlada de tenants. El administrador del tenant despues gestiona profesores, cursos y alumnos.</p>
+            </div>
+          </div>
+          <div class="section-grid">
+            <article class="surface-card span-7">
+              <h3>Crear tenant</h3>
+              <form id="create-tenant-form">
+                <div class="mini-grid">
+                  <div class="field">
+                    <label for="tenant-name">Nombre del tenant</label>
+                    <input id="tenant-name" name="tenantName" placeholder="Ej: Academia Norte" required />
+                  </div>
+                  <div class="field">
+                    <label for="tenant-slug">Slug</label>
+                    <input id="tenant-slug" name="tenantSlug" placeholder="academia-norte" />
+                  </div>
+                </div>
+                <div class="mini-grid">
+                  <div class="field">
+                    <label for="tenant-admin-name">Administrador</label>
+                    <input id="tenant-admin-name" name="adminFullName" placeholder="Nombre del secretario/admin" required />
+                  </div>
+                  <div class="field">
+                    <label for="tenant-admin-email">Email admin</label>
+                    <input id="tenant-admin-email" name="adminEmail" type="email" placeholder="admin@cliente.com" required />
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="tenant-admin-password">Password inicial</label>
+                  <input id="tenant-admin-password" name="adminPassword" type="password" minlength="8" required />
+                </div>
+                <div class="form-actions">
+                  <button type="submit">Crear tenant y acceso</button>
+                </div>
+              </form>
+              <p class="note" id="create-tenant-note"></p>
+              <div class="stack result" id="create-tenant-result"></div>
+            </article>
+
+            <article class="surface-card span-5">
+              <h3>Limpieza MVP</h3>
+              <p class="helper-text">Mantiene solo `demo-academia` y elimina tenants de prueba con sus datos operativos dependientes.</p>
+              <div class="actions-row">
+                <button class="btn-danger" id="purge-non-demo-button" type="button">Eliminar tenants no demo</button>
+              </div>
+              <p class="note" id="purge-tenants-note"></p>
+            </article>
+          </div>
+        </section>
+
         <section class="shell-section" id="cuenta">
           <div class="section-head">
             <div class="section-head-copy">
@@ -213,6 +271,22 @@
         return window.MicuotaApi.request(path, {
           headers: { "X-Auth-Token": token }
         });
+      }
+
+      async function apiPost(path, payload = {}) {
+        return window.MicuotaApi.request(path, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Auth-Token": token
+          },
+          body: JSON.stringify(payload)
+        });
+      }
+
+      function setNote(element, message, isError = false) {
+        element.className = isError ? "note error" : "note ok";
+        element.textContent = message;
       }
 
       function renderSummary() {
@@ -320,6 +394,43 @@
       window.addEventListener("hashchange", setActiveNav);
       document.getElementById("logout-button").addEventListener("click", logout);
       document.getElementById("logout-button-secondary").addEventListener("click", logout);
+      document.getElementById("create-tenant-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const note = document.getElementById("create-tenant-note");
+        const result = document.getElementById("create-tenant-result");
+        setNote(note, "Creando tenant...", false);
+        result.innerHTML = "";
+        try {
+          const payload = Object.fromEntries(new FormData(event.target).entries());
+          const created = await apiPost("/api/admin/tenants", payload);
+          setNote(note, "Tenant creado. Comparte el acceso inicial con el administrador.", false);
+          result.innerHTML = [
+            `<div class="item"><strong>${created.tenantSlug}</strong><br /><small>Tenant #${created.tenantId} · admin ${created.tenantAdminEmail}</small></div>`,
+            `<div class="item"><strong>Setup URL</strong><br /><a href="${created.setupUrl}" target="_blank" rel="noopener noreferrer">${created.setupUrl}</a></div>`
+          ].join("");
+          event.target.reset();
+          state.dashboard = await apiGet("/api/admin/system-dashboard");
+          renderSummary();
+          renderTopTenants();
+        } catch (error) {
+          setNote(note, error.message, true);
+        }
+      });
+      document.getElementById("purge-non-demo-button").addEventListener("click", async () => {
+        const note = document.getElementById("purge-tenants-note");
+        const confirmed = window.confirm("Esto elimina todos los tenants que no sean demo-academia. Continuar?");
+        if (!confirmed) return;
+        setNote(note, "Eliminando tenants no demo...", false);
+        try {
+          const result = await apiPost("/api/admin/maintenance/purge-non-demo-tenants");
+          setNote(note, `Limpieza lista. Eliminados: ${result.deletedTenants}. Conservados: ${result.keptTenants}.`, false);
+          state.dashboard = await apiGet("/api/admin/system-dashboard");
+          renderSummary();
+          renderTopTenants();
+        } catch (error) {
+          setNote(note, error.message, true);
+        }
+      });
       bootstrap();
     </script>
     <script src="/session-telemetry.js"></script>

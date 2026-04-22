@@ -456,48 +456,26 @@
       <section id="acceso" class="lp-section lp-access">
         <div class="lp-access-copy">
           <h2>Empieza gratis. Sigue 3 hitos. Cobra hoy.</h2>
-          <p>Primero crea tu tenant. Luego tu curso. Luego tu link de cobro para compartir.</p>
+          <p>Primero solicitamos el alta. Luego configuramos tu tenant. Luego generas tu primer link de cobro.</p>
           <ul>
-            <li>1. Crea tenant gratis</li>
-            <li>2. Carga curso y clientes</li>
+            <li>1. Solicita el alta guiada</li>
+            <li>2. MiCuota crea tu tenant</li>
             <li>3. Genera y comparte tu cobro</li>
           </ul>
         </div>
         <div class="lp-access-stack">
           <div class="lp-login-card" id="registro">
             <div class="lp-card-head">
-              <p class="lp-overline">Self-service</p>
-              <h3>Crea tu tenant gratis</h3>
+              <p class="lp-overline">Alta guiada</p>
+              <h3>Solicita tu tenant</h3>
             </div>
             <div class="lp-primary-path">
-              <span class="lp-primary-badge">Primera opcion</span>
-              <p>Si todavia no tienes cuenta, empieza aqui.</p>
+              <span class="lp-primary-badge">Setup MiCuota</span>
+              <p>Para el MVP, el equipo de plataforma crea cada tenant y acompana el setup inicial.</p>
             </div>
-            <form id="register-form">
-              <div class="field">
-                <label for="registerTenantName">Nombre de tu negocio</label>
-                <input id="registerTenantName" name="tenantName" placeholder="ej: Centro Fitness Norte" required />
-              </div>
-              <div class="field">
-                <label for="registerTenantSlug">Slug del tenant</label>
-                <input id="registerTenantSlug" name="tenantSlug" placeholder="ej: centro-fitness-norte" required />
-              </div>
-              <div class="field">
-                <label for="registerFullName">Tu nombre</label>
-                <input id="registerFullName" name="fullName" placeholder="ej: Paula Rodriguez" required />
-              </div>
-              <div class="field">
-                <label for="registerEmail">Email</label>
-                <input id="registerEmail" name="email" type="email" placeholder="tu@email.com" required />
-              </div>
-              <div class="field">
-                <label for="registerPassword">Contrasena</label>
-                <input id="registerPassword" name="password" type="password" minlength="8" required />
-              </div>
-              <button type="submit" class="lp-btn lp-btn-primary lp-btn-full">Crear cuenta free</button>
-            </form>
+            <a class="lp-btn lp-btn-primary lp-btn-full" href="#interesados">Pedir alta del tenant</a>
             <p id="register-note" class="note"></p>
-            <p class="lp-small-note">Entras directo al panel para completar tenant, curso y cobro.</p>
+            <p class="lp-small-note">El administrador de plataforma provisiona el tenant y comparte el acceso inicial.</p>
           </div>
 
           <div class="lp-login-card">
@@ -511,10 +489,9 @@
                 <button class="lp-btn lp-btn-demo" type="button" data-demo-role="admin">Admin tenant</button>
                 <button class="lp-btn lp-btn-demo" type="button" data-demo-role="teacher">Teacher</button>
                 <button class="lp-btn lp-btn-demo" type="button" data-demo-role="student">Alumno</button>
-                <button class="lp-btn lp-btn-demo" type="button" data-demo-role="platform-admin">Platform admin</button>
               </div>
               <p class="lp-small-note">
-                Tenant demo: <strong>demo-academia</strong> · password: <strong>demo</strong>
+                Tenant demo: <strong>demo-academia</strong> · password demo: <strong>demo</strong>
               </p>
             </div>
             <form id="login-form">
@@ -579,8 +556,7 @@
         const demoMap = {
           admin: "admin@micuota.online",
           teacher: "teacher@micuota.online",
-          student: "student@micuota.online",
-          "platform-admin": "platform-admin@micuota.online"
+          student: "student@micuota.online"
         };
         tenantInput.value = "demo-academia";
         document.getElementById("loginEmail").value = demoMap[role] || "";
@@ -595,26 +571,6 @@
           body: JSON.stringify(payload)
         });
       }
-
-      document.getElementById("register-form").addEventListener("submit", async (event) => {
-        event.preventDefault();
-        const note = document.getElementById("register-note");
-        setNote(note, "Creando tu tenant free...", false);
-
-        const formData = new FormData(event.target);
-        const payload = Object.fromEntries(formData.entries());
-
-        try {
-          const result = await postJson("/api/auth/register-tenant", payload);
-          storeSession(result);
-          sessionStorage.setItem(FIRST_TENANT_REDIRECT_KEY, result.tenantSlug);
-          tenantInput.value = result.tenantSlug;
-          setNote(note, "Cuenta creada. Entrando al launchpad...", false);
-          window.location.href = result.backofficeUrl;
-        } catch (error) {
-          setNote(note, error.message, true);
-        }
-      });
 
       document.getElementById("login-form").addEventListener("submit", async (event) => {
         event.preventDefault();

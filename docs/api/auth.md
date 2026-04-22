@@ -6,7 +6,24 @@
 POST /api/auth/register-tenant
 ```
 
-Uso: alta inicial de organizacion/profesional.
+Uso: restringido. Para el MVP, el alta de tenants no es self-service.
+
+Respuesta esperada para usuarios publicos:
+
+```json
+{
+  "error": "El alta de tenants esta restringida al administrador de plataforma"
+}
+```
+
+## Crear tenant desde plataforma
+
+```http
+POST /api/admin/tenants
+X-Auth-Token: <platform-admin-token>
+```
+
+Requiere rol `ADMIN`.
 
 Payload:
 
@@ -14,10 +31,9 @@ Payload:
 {
   "tenantName": "Academia Norte",
   "tenantSlug": "academia-norte",
-  "fullName": "Paula Gomez",
-  "email": "admin@example.com",
-  "password": "secret",
-  "mpAccessToken": "APP_USR..."
+  "adminFullName": "Paula Gomez",
+  "adminEmail": "admin@example.com",
+  "adminPassword": "secret123"
 }
 ```
 

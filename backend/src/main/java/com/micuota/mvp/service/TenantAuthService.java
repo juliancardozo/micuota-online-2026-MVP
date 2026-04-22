@@ -43,13 +43,45 @@ public class TenantAuthService {
 
     @Transactional
     public AuthResponse registerTenant(RegisterTenantRequest request) {
-        String slug = normalizeSlug(request.tenantSlug() == null || request.tenantSlug().isBlank() ? request.tenantName() : request.tenantSlug());
+        throw new IllegalArgumentException("El alta de tenants esta restringida al administrador de plataforma");
+    }
+
+    @Transactional
+    public AdminTenantProvisioningResult createTenantFromPlatform(AdminCreateTenantRequest request) {
+        AuthResponse response = createTenant(
+            request.tenantName(),
+            request.tenantSlug(),
+            request.adminFullName(),
+            request.adminEmail(),
+            request.adminPassword(),
+            null,
+            false
+        );
+        return new AdminTenantProvisioningResult(
+            response.tenantId(),
+            response.tenantSlug(),
+            response.userId(),
+            request.adminEmail().toLowerCase(Locale.ROOT),
+            response.backofficeUrl()
+        );
+    }
+
+    private AuthResponse createTenant(
+        String tenantName,
+        String tenantSlug,
+        String fullName,
+        String email,
+        String password,
+        String mpAccessToken,
+        boolean captureLead
+    ) {
+        String slug = normalizeSlug(tenantSlug == null || tenantSlug.isBlank() ? tenantName : tenantSlug);
         if (tenantRepository.findBySlug(slug).isPresent()) {
             throw new IllegalArgumentException("El slug del tenant ya existe");
         }
 
         Tenant tenant = new Tenant();
-        tenant.setName(request.tenantName());
+        tenant.setName(tenantName);
         tenant.setSlug(slug);
         tenant.setCreatedAt(OffsetDateTime.now());
         tenant.setPlanCode("BASE");
@@ -60,43 +92,46 @@ public class TenantAuthService {
         tenant.setIntegrationsEnabled(false);
         tenant = tenantRepository.save(tenant);
 
-        if (userRepository.findByTenantIdAndEmail(tenant.getId(), request.email()).isPresent()) {
+        String normalizedEmail = email.toLowerCase(Locale.ROOT);
+        if (userRepository.findByTenantIdAndEmail(tenant.getId(), normalizedEmail).isPresent()) {
             throw new IllegalArgumentException("El email ya esta registrado en este tenant");
         }
 
         User admin = new User();
         admin.setTenant(tenant);
-        admin.setEmail(request.email().toLowerCase(Locale.ROOT));
-        admin.setFullName(request.fullName());
+        admin.setEmail(normalizedEmail);
+        admin.setFullName(fullName);
         admin.setRole(UserRole.TENANT_ADMIN);
-        admin.setPasswordHash(passwordEncoder.encode(request.password()));
+        admin.setPasswordHash(passwordEncoder.encode(password));
         admin = userRepository.save(admin);
 
         TeacherProfile profile = new TeacherProfile();
         profile.setUser(admin);
-        profile.setDisplayName(request.fullName());
-        profile.setMpAccessToken(request.mpAccessToken());
+        profile.setDisplayName(fullName);
+        profile.setMpAccessToken(mpAccessToken);
         teacherProfileRepository.save(profile);
 
         String token = authSessionService.createSession(tenant.getId(), admin.getId(), admin.getRole());
         String dashboardUrl = resolveDashboardUrl(admin.getRole(), token);
 
-        CrmLeadService.LeadCaptureResult leadCaptureResult = crmLeadService.captureInterestedLead(
-            new CreateLeadRequest(
-                request.email(),
-                null,
-                request.fullName(),
-                "LANDING_TENANT_REGISTRATION"
-            )
-        );
+        if (captureLead) {
+            CrmLeadService.LeadCaptureResult leadCaptureResult = crmLeadService.captureInterestedLead(
+                new CreateLeadRequest(
+                    email,
+                    null,
+                    fullName,
+                    "LANDING_TENANT_REGISTRATION"
+                )
+            );
 
-        if (leadCaptureResult.newLead()) {
-            onboardingEmailService.sendNewLeadCampaignEmail(leadCaptureResult.lead());
+            if (leadCaptureResult.newLead()) {
+                onboardingEmailService.sendNewLeadCampaignEmail(leadCaptureResult.lead());
+            }
         }
         onboardingEmailService.sendNewTenantWelcomeEmail(
-            request.email(),
-            request.fullName(),
-            request.tenantName(),
+            email,
+            fullName,
+            tenantName,
             tenant.getSlug(),
             dashboardUrl
         );

@@ -14,6 +14,7 @@ import com.micuota.mvp.repository.SessionActivityRepository;
 import com.micuota.mvp.repository.TeacherProfileRepository;
 import com.micuota.mvp.repository.TenantRepository;
 import com.micuota.mvp.repository.UserRepository;
+import jakarta.persistence.EntityManager;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.time.YearMonth;
@@ -41,6 +42,7 @@ public class AdminAnalyticsService {
     private final PaymentOperationRepository paymentOperationRepository;
     private final SessionActivityRepository sessionActivityRepository;
     private final TeacherProfileRepository teacherProfileRepository;
+    private final EntityManager entityManager;
 
     public AdminAnalyticsService(
         TenantRepository tenantRepository,
@@ -50,7 +52,8 @@ public class AdminAnalyticsService {
         LeadRepository leadRepository,
         PaymentOperationRepository paymentOperationRepository,
         SessionActivityRepository sessionActivityRepository,
-        TeacherProfileRepository teacherProfileRepository
+        TeacherProfileRepository teacherProfileRepository,
+        EntityManager entityManager
     ) {
         this.tenantRepository = tenantRepository;
         this.userRepository = userRepository;
@@ -60,6 +63,7 @@ public class AdminAnalyticsService {
         this.paymentOperationRepository = paymentOperationRepository;
         this.sessionActivityRepository = sessionActivityRepository;
         this.teacherProfileRepository = teacherProfileRepository;
+        this.entityManager = entityManager;
     }
 
     @Transactional(readOnly = true)
@@ -216,5 +220,70 @@ public class AdminAnalyticsService {
             .sorted(Comparator.comparingLong(AdminTopTenantView::totalRevenueSuccess).reversed())
             .limit(10)
             .toList();
+    }
+
+    @Transactional
+    public AdminTenantCleanupResult purgeTenantsExcept(String keptTenantSlug) {
+        Tenant keptTenant = tenantRepository.findBySlug(keptTenantSlug)
+            .orElseThrow(() -> new IllegalArgumentException("Tenant base no encontrado: " + keptTenantSlug));
+        long deletedTenants = tenantRepository.findAll().stream()
+            .filter(tenant -> !tenant.getId().equals(keptTenant.getId()))
+            .count();
+
+        if (deletedTenants == 0) {
+            return new AdminTenantCleanupResult(0, 1);
+        }
+
+        entityManager.createNativeQuery("""
+            DELETE FROM payment_events
+            WHERE operation_id IN (
+                SELECT po.id
+                FROM payment_operations po
+                JOIN teacher_profiles tp ON tp.id = po.teacher_id
+                JOIN users u ON u.id = tp.user_id
+                WHERE u.tenant_id <> :keptTenantId
+            )
+            """)
+            .setParameter("keptTenantId", keptTenant.getId())
+            .executeUpdate();
+
+        entityManager.createNativeQuery("""
+            DELETE FROM payment_operations
+            WHERE teacher_id IN (
+                SELECT tp.id
+                FROM teacher_profiles tp
+                JOIN users u ON u.id = tp.user_id
+                WHERE u.tenant_id <> :keptTenantId
+            )
+            """)
+            .setParameter("keptTenantId", keptTenant.getId())
+            .executeUpdate();
+
+        entityManager.createNativeQuery("DELETE FROM student_bank_accounts WHERE tenant_id <> :keptTenantId")
+            .setParameter("keptTenantId", keptTenant.getId())
+            .executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM course_enrollments WHERE tenant_id <> :keptTenantId")
+            .setParameter("keptTenantId", keptTenant.getId())
+            .executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM courses WHERE tenant_id <> :keptTenantId")
+            .setParameter("keptTenantId", keptTenant.getId())
+            .executeUpdate();
+        entityManager.createNativeQuery("""
+            DELETE FROM teacher_profiles
+            WHERE user_id IN (SELECT id FROM users WHERE tenant_id <> :keptTenantId)
+            """)
+            .setParameter("keptTenantId", keptTenant.getId())
+            .executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM analytics.session_activity WHERE tenant_id <> :keptTenantId")
+            .setParameter("keptTenantId", keptTenant.getId())
+            .executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM users WHERE tenant_id <> :keptTenantId")
+            .setParameter("keptTenantId", keptTenant.getId())
+            .executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM tenants WHERE id <> :keptTenantId")
+            .setParameter("keptTenantId", keptTenant.getId())
+            .executeUpdate();
+
+        return new AdminTenantCleanupResult(deletedTenants, 1);
     }
 }

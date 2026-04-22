@@ -385,7 +385,7 @@ El esquema privado usa header `X-Auth-Token`.
 
 Flujo recomendado:
 
-1. Ejecutar `POST /api/auth/login` (o `POST /api/auth/register-tenant`).
+1. Ejecutar `POST /api/auth/login`.
 2. Copiar el campo `token` de la respuesta.
 3. En Swagger UI, boton `Authorize`, pegar el token en `AuthToken`.
 4. Ejecutar endpoints privados (`/api/backoffice/*` y `/api/auth/me`).
@@ -397,7 +397,9 @@ Notas:
 
 ## API multi-tenant y backoffice
 
-- `POST /api/auth/register-tenant`: crea tenant + usuario admin y devuelve token + URL de backoffice.
+- `POST /api/auth/register-tenant`: restringido; el alta de tenants la hace plataforma.
+- `POST /api/admin/tenants`: crea tenant + usuario `TENANT_ADMIN` inicial. Requiere `ADMIN`.
+- `POST /api/admin/maintenance/purge-non-demo-tenants`: elimina tenants no demo para limpieza MVP. Requiere `ADMIN`.
 - `POST /api/auth/login`: login por `tenantSlug + email + password`.
 - `POST /api/backoffice/users` (header `X-Auth-Token`): crea perfil `TEACHER` o `STUDENT`.
 - `GET /api/backoffice/users?role=TEACHER|STUDENT` (header `X-Auth-Token`): lista perfiles del tenant.

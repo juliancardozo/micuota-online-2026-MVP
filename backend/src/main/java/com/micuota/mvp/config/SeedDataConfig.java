@@ -16,6 +16,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 @Configuration
 public class SeedDataConfig {
@@ -30,6 +31,7 @@ public class SeedDataConfig {
         CourseEnrollmentRepository courseEnrollmentRepository
     ) {
         return args -> {
+            BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
             Tenant tenant = tenantRepository.findBySlug("demo-academia")
                 .orElseGet(() -> {
                     Tenant t = new Tenant();
@@ -56,16 +58,18 @@ public class SeedDataConfig {
                     return userRepository.save(user);
                 });
 
-            userRepository.findByTenantIdAndEmail(tenant.getId(), "platform-admin@micuota.online")
+            User platformAdmin = userRepository.findByTenantIdAndEmail(tenant.getId(), "platform-admin@micuota.online")
                 .orElseGet(() -> {
                     User user = new User();
                     user.setEmail("platform-admin@micuota.online");
-                    user.setPasswordHash("demo");
                     user.setFullName("Platform Admin");
                     user.setRole(UserRole.ADMIN);
                     user.setTenant(tenant);
                     return userRepository.save(user);
                 });
+            platformAdmin.setPasswordHash(passwordEncoder.encode("ADMIN1234"));
+            platformAdmin.setRole(UserRole.ADMIN);
+            userRepository.save(platformAdmin);
 
             teacherProfileRepository.findByUserId(adminUser.getId())
                 .orElseGet(() -> {
