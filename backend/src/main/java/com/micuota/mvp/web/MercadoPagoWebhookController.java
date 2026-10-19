@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.micuota.mvp.domain.OperationStatus;
 import com.micuota.mvp.domain.PaymentOperation;
+import com.micuota.mvp.service.MercadoPagoPaymentDetails;
 import com.micuota.mvp.service.MercadoPagoService;
 import com.micuota.mvp.service.PaymentService;
 import java.nio.charset.StandardCharsets;
@@ -91,12 +92,14 @@ public class MercadoPagoWebhookController {
         );
         OperationStatus status = toOperationStatus(lookup.status());
         String rawEvent = buildRawEvent(headers, queryParams, payload, lookup);
+        // Id, comision y neto reales del pago segun Mercado Pago (no aplica a preapprovals).
+        MercadoPagoPaymentDetails paymentDetails = preapproval ? null : MercadoPagoPaymentDetails.fromPayment(providerLookup);
 
         PaymentOperation operation;
         if (lookup.externalReference() != null) {
-            operation = paymentService.updateStatusByExternalReference(lookup.externalReference(), status, rawEvent);
+            operation = paymentService.updateStatusByExternalReference(lookup.externalReference(), status, rawEvent, paymentDetails);
         } else if (lookup.providerReference() != null) {
-            operation = paymentService.updateStatusByProviderReference(lookup.providerReference(), status, rawEvent);
+            operation = paymentService.updateStatusByProviderReference(lookup.providerReference(), status, rawEvent, paymentDetails);
         } else {
             return ignored("Mercado Pago no devolvio referencia de operacion");
         }

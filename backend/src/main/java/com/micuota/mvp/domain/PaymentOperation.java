@@ -63,6 +63,16 @@ public class PaymentOperation {
     @Column
     private String externalReference;
 
+    // Datos reales del pago en Mercado Pago (GET /v1/payments/{id}); null hasta que llega un pago.
+    @Column(length = 64)
+    private String mpPaymentId;
+
+    @Column(precision = 19, scale = 2)
+    private BigDecimal mpFeeAmount;
+
+    @Column(precision = 19, scale = 2)
+    private BigDecimal mpNetReceivedAmount;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private OperationStatus status;
@@ -211,6 +221,30 @@ public class PaymentOperation {
 
     public void setExternalReference(String externalReference) {
         this.externalReference = externalReference;
+    }
+
+    public String getMpPaymentId() {
+        return mpPaymentId;
+    }
+
+    public void setMpPaymentId(String mpPaymentId) {
+        this.mpPaymentId = mpPaymentId;
+    }
+
+    public BigDecimal getMpFeeAmount() {
+        return mpFeeAmount;
+    }
+
+    public void setMpFeeAmount(BigDecimal mpFeeAmount) {
+        this.mpFeeAmount = mpFeeAmount;
+    }
+
+    public BigDecimal getMpNetReceivedAmount() {
+        return mpNetReceivedAmount;
+    }
+
+    public void setMpNetReceivedAmount(BigDecimal mpNetReceivedAmount) {
+        this.mpNetReceivedAmount = mpNetReceivedAmount;
     }
 
     public OperationStatus getStatus() {

@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -14,8 +15,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.micuota.mvp.domain.OperationStatus;
 import com.micuota.mvp.domain.PaymentOperation;
+import com.micuota.mvp.service.MercadoPagoPaymentDetails;
 import com.micuota.mvp.service.MercadoPagoService;
 import com.micuota.mvp.service.PaymentService;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import javax.crypto.Mac;
@@ -62,13 +65,13 @@ class MercadoPagoWebhookControllerTest {
             .thenReturn(java.util.Optional.of("teacher-mp-token"));
         when(mercadoPagoService.getPayment("teacher-mp-token", "321"))
             .thenReturn(new MercadoPagoService.MercadoPagoApiResponse(payment.toString(), payment));
-        when(paymentService.updateStatusByExternalReference(eq("MC-abc"), eq(OperationStatus.FAILURE), contains("mercadopago_webhook")))
+        when(paymentService.updateStatusByExternalReference(eq("MC-abc"), eq(OperationStatus.FAILURE), contains("mercadopago_webhook"), any()))
             .thenReturn(operation);
 
         ResponseEntity<Map<String, Object>> result = controller.receive(new HttpHeaders(), Map.of("externalReference", "MC-abc"), body);
 
         assertThat(result.getStatusCode().value()).isEqualTo(200);
-        verify(paymentService, never()).updateStatusByExternalReference(eq("MC-forjado"), any(), any());
+        verify(paymentService, never()).updateStatusByExternalReference(eq("MC-forjado"), any(), any(), any());
     }
 
     @Test
@@ -91,7 +94,7 @@ class MercadoPagoWebhookControllerTest {
             .thenReturn(java.util.Optional.of("teacher-mp-token"));
         when(mercadoPagoService.getPreapproval("teacher-mp-token", "2C938084ABC"))
             .thenReturn(new MercadoPagoService.MercadoPagoApiResponse(preapproval.toString(), preapproval));
-        when(paymentService.updateStatusByExternalReference(eq("MC-sub"), eq(OperationStatus.SUCCESS), contains("mercadopago_webhook")))
+        when(paymentService.updateStatusByExternalReference(eq("MC-sub"), eq(OperationStatus.SUCCESS), contains("mercadopago_webhook"), any()))
             .thenReturn(new PaymentOperation());
 
         HttpHeaders headers = new HttpHeaders();
@@ -126,7 +129,7 @@ class MercadoPagoWebhookControllerTest {
 
         assertThatThrownBy(() -> controller.receive(headers, Map.of("externalReference", "MC-abc"), body))
             .isInstanceOf(IllegalStateException.class);
-        verify(paymentService, never()).updateStatusByExternalReference(any(), any(), any());
+        verify(paymentService, never()).updateStatusByExternalReference(any(), any(), any(), any());
     }
 
     @Test
@@ -157,7 +160,7 @@ class MercadoPagoWebhookControllerTest {
             .thenReturn(java.util.Optional.of("teacher-mp-token"));
         when(mercadoPagoService.getPayment("teacher-mp-token", "987654321"))
             .thenReturn(new MercadoPagoService.MercadoPagoApiResponse(payment.toString(), payment));
-        when(paymentService.updateStatusByExternalReference(eq("MC-abc"), eq(OperationStatus.SUCCESS), contains("mercadopago_webhook")))
+        when(paymentService.updateStatusByExternalReference(eq("MC-abc"), eq(OperationStatus.SUCCESS), contains("mercadopago_webhook"), any()))
             .thenReturn(operation);
 
         HttpHeaders headers = new HttpHeaders();
@@ -167,7 +170,7 @@ class MercadoPagoWebhookControllerTest {
         ResponseEntity<Map<String, Object>> result = controller.receive(headers, Map.of("externalReference", "MC-abc"), body);
 
         assertThat(result.getStatusCode().value()).isEqualTo(200);
-        verify(paymentService).updateStatusByExternalReference(eq("MC-abc"), eq(OperationStatus.SUCCESS), contains("\"provider_reference\":\"123456789-abcd\""));
+        verify(paymentService).updateStatusByExternalReference(eq("MC-abc"), eq(OperationStatus.SUCCESS), contains("\"provider_reference\":\"123456789-abcd\""), any());
     }
 
     @Test
@@ -181,7 +184,7 @@ class MercadoPagoWebhookControllerTest {
             .thenReturn(java.util.Optional.of("teacher-mp-token"));
         when(mercadoPagoService.getPreapproval("teacher-mp-token", "preapproval-123"))
             .thenReturn(new MercadoPagoService.MercadoPagoApiResponse(preapproval.toString(), preapproval));
-        when(paymentService.updateStatusByExternalReference(eq("MC-subscription"), eq(OperationStatus.SUCCESS), contains("mercadopago_webhook")))
+        when(paymentService.updateStatusByExternalReference(eq("MC-subscription"), eq(OperationStatus.SUCCESS), contains("mercadopago_webhook"), any()))
             .thenReturn(operation);
 
         HttpHeaders headers = new HttpHeaders();
@@ -191,7 +194,34 @@ class MercadoPagoWebhookControllerTest {
         ResponseEntity<Map<String, Object>> result = controller.receive(headers, Map.of("externalReference", "MC-subscription"), body);
 
         assertThat(result.getStatusCode().value()).isEqualTo(200);
-        verify(paymentService).updateStatusByExternalReference(eq("MC-subscription"), eq(OperationStatus.SUCCESS), contains("\"provider_reference\":\"preapproval-123\""));
+        verify(paymentService).updateStatusByExternalReference(eq("MC-subscription"), eq(OperationStatus.SUCCESS), contains("\"provider_reference\":\"preapproval-123\""), isNull());
+    }
+
+    @Test
+    void receivePassesRealMercadoPagoFeeAndNetAmounts() throws Exception {
+        ReflectionTestUtils.setField(controller, "webhookSecret", "");
+        JsonNode payment = objectMapper.readTree("""
+            {"id":183995068253,"status":"approved","external_reference":"MC-abc","preference_id":"pref-1",
+             "transaction_amount":100,
+             "fee_details":[{"type":"mercadopago_fee","amount":6.09,"fee_payer":"collector"},
+                            {"type":"financing_fee","amount":3.00,"fee_payer":"payer"}],
+             "transaction_details":{"net_received_amount":93.91,"total_paid_amount":100}}
+            """);
+        when(paymentService.mercadoPagoAccessTokenForOperationReference("MC-abc", null))
+            .thenReturn(java.util.Optional.of("teacher-mp-token"));
+        when(mercadoPagoService.getPayment("teacher-mp-token", "183995068253"))
+            .thenReturn(new MercadoPagoService.MercadoPagoApiResponse(payment.toString(), payment));
+        when(paymentService.updateStatusByExternalReference(eq("MC-abc"), eq(OperationStatus.SUCCESS), contains("mercadopago_webhook"), any()))
+            .thenReturn(new PaymentOperation());
+
+        controller.receive(new HttpHeaders(), Map.of("externalReference", "MC-abc"), "{\"type\":\"payment\",\"data\":{\"id\":\"183995068253\"}}");
+
+        verify(paymentService).updateStatusByExternalReference(
+            eq("MC-abc"),
+            eq(OperationStatus.SUCCESS),
+            any(),
+            eq(new MercadoPagoPaymentDetails("183995068253", new BigDecimal("6.09"), new BigDecimal("93.91")))
+        );
     }
 
     private String signature(String manifest) throws Exception {

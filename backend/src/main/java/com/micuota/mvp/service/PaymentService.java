@@ -1,5 +1,8 @@
 package com.micuota.mvp.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.micuota.mvp.domain.OperationStatus;
 import com.micuota.mvp.domain.Course;
 import com.micuota.mvp.domain.PaymentFlowType;
@@ -27,6 +30,7 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +38,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class PaymentService {
 
     private static final Logger log = LoggerFactory.getLogger(PaymentService.class);
+    private static final ObjectMapper RAW_JSON = new ObjectMapper();
 
     private final TeacherProfileRepository teacherProfileRepository;
     private final PaymentOperationRepository paymentOperationRepository;
@@ -323,31 +328,121 @@ public class PaymentService {
 
     @Transactional
     public PaymentOperation updateStatusByProviderReference(String providerReference, OperationStatus status, String rawResponseEvent) {
-        PaymentOperation operation = paymentOperationRepository.findByProviderReference(providerReference)
+        return updateStatusByProviderReference(providerReference, status, rawResponseEvent, null);
+    }
+
+    @Transactional
+    public PaymentOperation updateStatusByProviderReference(
+        String providerReference,
+        OperationStatus status,
+        String rawResponseEvent,
+        MercadoPagoPaymentDetails paymentDetails
+    ) {
+        PaymentOperation operation = paymentOperationRepository.findByProviderReferenceForUpdate(providerReference)
             .orElseThrow(() -> new IllegalArgumentException("Operacion no encontrada para providerReference: " + providerReference));
-        OperationStatus previousStatus = operation.getStatus();
-        appendRawResponseEvent(operation, rawResponseEvent);
-        applyStatusUpdate(operation, status, null);
-        PaymentOperation saved = paymentOperationRepository.save(operation);
-        recordWebhookEvent(saved, rawResponseEvent);
-        recordStatusEvent(saved, previousStatus, status, rawResponseEvent);
-        saasMetricsService.recordPaymentStatusChanged(status);
-        return saved;
+        return applyProviderNotification(operation, status, rawResponseEvent, paymentDetails);
     }
 
     @Transactional
     public PaymentOperation updateStatusByExternalReference(String externalReference, OperationStatus status, String rawResponseEvent) {
-        PaymentOperation operation = paymentOperationRepository.findByExternalReference(externalReference)
-            .or(() -> paymentOperationRepository.findFirstByRawResponseContainingOrderByCreatedAtDesc(externalReference))
+        return updateStatusByExternalReference(externalReference, status, rawResponseEvent, null);
+    }
+
+    @Transactional
+    public PaymentOperation updateStatusByExternalReference(
+        String externalReference,
+        OperationStatus status,
+        String rawResponseEvent,
+        MercadoPagoPaymentDetails paymentDetails
+    ) {
+        PaymentOperation operation = paymentOperationRepository.findByExternalReferenceForUpdate(externalReference)
+            .or(() -> paymentOperationRepository.findIdsByRawResponseContaining(externalReference, PageRequest.of(0, 1)).stream()
+                .findFirst()
+                .flatMap(paymentOperationRepository::findByIdForUpdate))
             .orElseThrow(() -> new IllegalArgumentException("Operacion no encontrada para external_reference: " + externalReference));
+        return applyProviderNotification(operation, status, rawResponseEvent, paymentDetails);
+    }
+
+    /**
+     * Aplica una notificacion del proveedor sobre una operacion ya bloqueada (SELECT ... FOR UPDATE), de modo que
+     * webhooks concurrentes de la misma operacion se procesan en serie y cada uno ve el estado commiteado por el anterior.
+     * Siempre registra WEBHOOK_RECEIVED (auditoria de cada entrega); PAYMENT_STATUS_CHANGED solo si el estado cambia.
+     */
+    private PaymentOperation applyProviderNotification(
+        PaymentOperation operation,
+        OperationStatus status,
+        String rawResponseEvent,
+        MercadoPagoPaymentDetails paymentDetails
+    ) {
         OperationStatus previousStatus = operation.getStatus();
+        String incomingPaymentId = paymentDetails == null ? null : paymentDetails.paymentId();
+        String knownPaymentId = operation.getMpPaymentId();
+        boolean samePayment = incomingPaymentId == null || incomingPaymentId.equals(knownPaymentId);
+
+        if (previousStatus == status && samePayment) {
+            // Notificacion repetida (MP reintenta o envia duplicados): solo queda en el ledger como WEBHOOK_RECEIVED.
+            log.info("Webhook repetido sin cambios operationId={} status={} mpPaymentId={}", operation.getId(), status, knownPaymentId);
+            refreshPaymentDetails(operation, paymentDetails);
+            PaymentOperation saved = paymentOperationRepository.save(operation);
+            recordWebhookEvent(saved, rawResponseEvent);
+            return saved;
+        }
+
+        if (previousStatus == OperationStatus.SUCCESS
+            && status != OperationStatus.SUCCESS
+            && knownPaymentId != null
+            && incomingPaymentId != null
+            && !incomingPaymentId.equals(knownPaymentId)) {
+            // Otro intento de pago (distinto id) sobre una operacion ya cobrada: no debe revertir el cobro aprobado.
+            log.warn(
+                "Webhook de otro pago ignorado para operacion ya cobrada operationId={} mpPaymentId={} incomingPaymentId={} incomingStatus={}",
+                operation.getId(),
+                knownPaymentId,
+                incomingPaymentId,
+                status
+            );
+            recordWebhookEvent(operation, rawResponseEvent);
+            return operation;
+        }
+
+        if (incomingPaymentId != null && knownPaymentId != null && !incomingPaymentId.equals(knownPaymentId)) {
+            log.warn("Operacion recibe otro pago Mercado Pago operationId={} mpPaymentId={} -> {}", operation.getId(), knownPaymentId, incomingPaymentId);
+        }
+        storePaymentDetails(operation, paymentDetails);
         appendRawResponseEvent(operation, rawResponseEvent);
         applyStatusUpdate(operation, status, null);
         PaymentOperation saved = paymentOperationRepository.save(operation);
         recordWebhookEvent(saved, rawResponseEvent);
         recordStatusEvent(saved, previousStatus, status, rawResponseEvent);
-        saasMetricsService.recordPaymentStatusChanged(status);
+        if (previousStatus != status) {
+            saasMetricsService.recordPaymentStatusChanged(status);
+        }
         return saved;
+    }
+
+    private void storePaymentDetails(PaymentOperation operation, MercadoPagoPaymentDetails paymentDetails) {
+        if (paymentDetails == null || paymentDetails.paymentId() == null) {
+            return;
+        }
+        operation.setMpPaymentId(paymentDetails.paymentId());
+        operation.setMpFeeAmount(paymentDetails.feeAmount());
+        operation.setMpNetReceivedAmount(paymentDetails.netReceivedAmount());
+    }
+
+    // En una notificacion repetida del mismo pago solo se completan montos que antes no habian llegado.
+    private void refreshPaymentDetails(PaymentOperation operation, MercadoPagoPaymentDetails paymentDetails) {
+        if (paymentDetails == null || paymentDetails.paymentId() == null) {
+            return;
+        }
+        if (operation.getMpPaymentId() == null) {
+            operation.setMpPaymentId(paymentDetails.paymentId());
+        }
+        if (paymentDetails.feeAmount() != null) {
+            operation.setMpFeeAmount(paymentDetails.feeAmount());
+        }
+        if (paymentDetails.netReceivedAmount() != null) {
+            operation.setMpNetReceivedAmount(paymentDetails.netReceivedAmount());
+        }
     }
 
     @Transactional(readOnly = true)
@@ -587,19 +682,44 @@ public class PaymentService {
             .replace("\"", "\\\"");
     }
 
-    private void appendRawResponseEvent(PaymentOperation operation, String rawResponseEvent) {
+    /**
+     * Guarda en rawResponse la respuesta de creacion mas el ultimo evento: {"creation":...,"lastEvent":...}.
+     * Antes se anidaba {"previous":...,"event":...} sin limite; el historial completo de webhooks vive en payment_events.
+     */
+    void appendRawResponseEvent(PaymentOperation operation, String rawResponseEvent) {
         if (rawResponseEvent == null || rawResponseEvent.isBlank()) {
             return;
         }
 
-        String current = operation.getRawResponse();
+        String creation = extractCreationResponse(operation.getRawResponse());
         StringBuilder raw = new StringBuilder();
-        raw.append("{\"previous\":")
-            .append(asJsonValue(current))
-            .append(",\"event\":")
+        raw.append("{\"creation\":")
+            .append(asJsonValue(creation))
+            .append(",\"lastEvent\":")
             .append(asJsonValue(rawResponseEvent))
             .append('}');
         operation.setRawResponse(raw.toString());
+    }
+
+    private String extractCreationResponse(String current) {
+        if (current == null || current.isBlank()) {
+            return null;
+        }
+        try {
+            JsonNode node = RAW_JSON.readTree(current);
+            if (node.isObject() && node.has("creation") && node.has("lastEvent")) {
+                return RAW_JSON.writeValueAsString(node.get("creation"));
+            }
+            // Formato legado: desanidar {"previous":{"previous":...,"event":...},"event":...} hasta la respuesta original.
+            boolean legacy = false;
+            while (node.isObject() && node.has("previous") && node.has("event") && node.size() == 2) {
+                node = node.get("previous");
+                legacy = true;
+            }
+            return legacy ? (node.isNull() ? null : RAW_JSON.writeValueAsString(node)) : current;
+        } catch (JsonProcessingException exception) {
+            return current;
+        }
     }
 
     private String asJsonValue(String value) {
