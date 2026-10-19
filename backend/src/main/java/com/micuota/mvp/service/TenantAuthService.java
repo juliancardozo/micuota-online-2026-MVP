@@ -8,8 +8,10 @@ import com.micuota.mvp.repository.TeacherProfileRepository;
 import com.micuota.mvp.repository.TenantRepository;
 import com.micuota.mvp.repository.UserRepository;
 import java.text.Normalizer;
+import java.security.SecureRandom;
 import java.time.OffsetDateTime;
 import java.util.Locale;
+import java.util.UUID;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +26,7 @@ public class TenantAuthService {
     private final CrmLeadService crmLeadService;
     private final OnboardingEmailService onboardingEmailService;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private final SecureRandom random = new SecureRandom();
 
     public TenantAuthService(
         TenantRepository tenantRepository,
@@ -46,6 +49,36 @@ public class TenantAuthService {
         throw new IllegalArgumentException("El alta de tenants esta restringida al administrador de plataforma");
     }
 
+    /**
+     * Alta autoservicio: se llama solo despues de que la persona demostro ser duena del email con un codigo.
+     * Crea una cuenta individual (rol TEACHER) sin contrasena; entra siempre con codigo por email.
+     */
+    @Transactional
+    public AuthResponse createSelfServiceTenant(String fullName, String email, String phone, String activity) {
+        String base = slugBase(fullName);
+        String slug = null;
+        for (int i = 0; i < 10 && slug == null; i++) {
+            String candidate = base + "-" + (100 + random.nextInt(900));
+            if (tenantRepository.findBySlug(candidate).isEmpty()) {
+                slug = candidate;
+            }
+        }
+        if (slug == null) {
+            slug = base + "-" + UUID.randomUUID().toString().substring(0, 8);
+        }
+
+        AuthResponse response = createTenant(fullName, slug, fullName, email, UUID.randomUUID().toString(), null, UserRole.TEACHER);
+        String source = "SELF_SIGNUP" + (activity == null || activity.isBlank() ? "" : "_" + activity.trim().toUpperCase(Locale.ROOT));
+        crmLeadService.captureInterestedLead(new CreateLeadRequest(email, phone, fullName, source));
+        return response;
+    }
+
+    @Transactional
+    public AuthResponse signIn(User user) {
+        String token = authSessionService.createSession(user.getTenant().getId(), user.getId(), user.getRole());
+        return new AuthResponse(token, user.getTenant().getId(), user.getTenant().getSlug(), user.getId(), user.getRole(), resolveDashboardUrl(user.getRole(), token));
+    }
+
     @Transactional
     public AdminTenantProvisioningResult createTenantFromPlatform(AdminCreateTenantRequest request) {
         AuthResponse response = createTenant(
@@ -55,7 +88,7 @@ public class TenantAuthService {
             request.adminEmail(),
             request.adminPassword(),
             null,
-            false
+            UserRole.TENANT_ADMIN
         );
         return new AdminTenantProvisioningResult(
             response.tenantId(),
@@ -73,7 +106,7 @@ public class TenantAuthService {
         String email,
         String password,
         String mpAccessToken,
-        boolean captureLead
+        UserRole role
     ) {
         String slug = normalizeSlug(tenantSlug == null || tenantSlug.isBlank() ? tenantName : tenantSlug);
         if (tenantRepository.findBySlug(slug).isPresent()) {
@@ -101,7 +134,7 @@ public class TenantAuthService {
         admin.setTenant(tenant);
         admin.setEmail(normalizedEmail);
         admin.setFullName(fullName);
-        admin.setRole(UserRole.TENANT_ADMIN);
+        admin.setRole(role);
         admin.setPasswordHash(passwordEncoder.encode(password));
         admin = userRepository.save(admin);
 
@@ -114,26 +147,11 @@ public class TenantAuthService {
         String token = authSessionService.createSession(tenant.getId(), admin.getId(), admin.getRole());
         String dashboardUrl = resolveDashboardUrl(admin.getRole(), token);
 
-        if (captureLead) {
-            CrmLeadService.LeadCaptureResult leadCaptureResult = crmLeadService.captureInterestedLead(
-                new CreateLeadRequest(
-                    email,
-                    null,
-                    fullName,
-                    "LANDING_TENANT_REGISTRATION"
-                )
-            );
-
-            if (leadCaptureResult.newLead()) {
-                onboardingEmailService.sendNewLeadCampaignEmail(leadCaptureResult.lead());
-            }
-        }
         onboardingEmailService.sendNewTenantWelcomeEmail(
             email,
             fullName,
             tenantName,
-            tenant.getSlug(),
-            dashboardUrl
+            tenant.getSlug()
         );
 
         return new AuthResponse(token, tenant.getId(), tenant.getSlug(), admin.getId(), admin.getRole(), dashboardUrl);
@@ -169,6 +187,15 @@ public class TenantAuthService {
             case TEACHER -> "/profesor.html?token=" + token;
             case STUDENT -> "/alumno.html?token=" + token;
         };
+    }
+
+    private String slugBase(String name) {
+        try {
+            String slug = normalizeSlug(name);
+            return slug.length() > 40 ? slug.substring(0, 40).replaceAll("-$", "") : slug;
+        } catch (IllegalArgumentException ex) {
+            return "cuenta";
+        }
     }
 
     private String normalizeSlug(String raw) {
