@@ -12,11 +12,21 @@
     (apiBaseParam && apiBaseParam !== "clear" ? apiBaseParam : "") ||
     localStorage.getItem("micuota.apiBase") ||
     document.querySelector('meta[name="micuota-api-base"]')?.getAttribute("content");
-  const defaultApiBase = isLocalhost ? "http://localhost:8080" : "https://micuota-online-2026-backend.onrender.com";
+  // Produccion: backend oficial. Localhost: backend de pruebas desplegado (CORS permite http://localhost:*).
+  // Para usar un backend local: abri cualquier pagina con ?apiBase=http://localhost:8080 (se recuerda; ?apiBase=clear lo borra).
+  const PRODUCTION_API_BASE = "https://micuota-online-2026-backend.onrender.com";
+  const LOCAL_DEV_API_BASE = "https://micuota-backend-dev.onrender.com";
+  const defaultApiBase = isLocalhost ? LOCAL_DEV_API_BASE : PRODUCTION_API_BASE;
   const apiBase = (configuredApiBase || defaultApiBase).replace(/\/$/, "");
 
   window.__MICUOTA_API_BASE__ = apiBase;
-  window.MicuotaConfig = { apiBase, hasApiBase: Boolean(apiBase) };
+  window.MicuotaConfig = {
+    apiBase,
+    hasApiBase: Boolean(apiBase),
+    // Cuando exista OAuth de Mercado Pago en el backend, completar esta URL y la app
+    // muestra el boton "Conectar con Mercado Pago" en lugar de pegar el Access Token.
+    mercadoPagoOAuthUrl: window.__MICUOTA_MP_OAUTH_URL__ || ""
+  };
 
   async function parseBody(response) {
     const text = await response.text();
@@ -45,12 +55,16 @@
     try {
       response = await fetch(`${apiBase}${path}`, options);
     } catch (_error) {
-      throw new Error("No pudimos conectar con el backend de MiCuota. Revisa la configuracion de API.");
+      const networkError = new Error("No pudimos conectar con MiCuota. Revisa tu conexion e intenta de nuevo.");
+      networkError.network = true;
+      throw networkError;
     }
 
     const data = await parseBody(response);
     if (!response.ok) {
-      throw new Error((data && data.error) || `Error de API (${response.status})`);
+      const apiError = new Error((data && data.error) || `Error de API (${response.status})`);
+      apiError.status = response.status;
+      throw apiError;
     }
     return data || {};
   }

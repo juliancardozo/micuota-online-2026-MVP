@@ -16,6 +16,28 @@
   to = "/landing.html"
   status = 200
 
+# Atajos faciles de dictar o escribir
+[[redirects]]
+  from = "/entrar"
+  to = "/cuenta.html#entrar"
+  status = 302
+
+[[redirects]]
+  from = "/empezar"
+  to = "/cuenta.html#crear"
+  status = 302
+
+[[redirects]]
+  from = "/app"
+  to = "/profesor.html"
+  status = 302
+
+# Link corto de pago: micuota.online/p/123 -> pagina publica de pago
+[[redirects]]
+  from = "/p/:id"
+  to = "/pago.html?operationId=:id"
+  status = 302
+
 [[redirects]]
   from = "/swagger"
   to = "/swagger.html"
