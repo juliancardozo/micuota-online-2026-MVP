@@ -14,6 +14,7 @@ import com.micuota.mvp.repository.UserRepository;
 import java.time.OffsetDateTime;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -24,6 +25,8 @@ public class SeedDataConfig {
     @Bean
     @ConditionalOnProperty(name = "app.demo-seed.enabled", havingValue = "true")
     CommandLineRunner seedUsers(
+        @Value("${app.demo-seed.password:demo}") String demoPassword,
+        @Value("${app.demo-seed.platform-admin-password:ADMIN1234}") String platformAdminPassword,
         UserRepository userRepository,
         TeacherProfileRepository teacherProfileRepository,
         TenantRepository tenantRepository,
@@ -32,6 +35,7 @@ public class SeedDataConfig {
     ) {
         return args -> {
             BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+            String demoPasswordHash = passwordEncoder.encode(demoPassword);
             Tenant tenant = tenantRepository.findBySlug("demo-academia")
                 .orElseGet(() -> {
                     Tenant t = new Tenant();
@@ -51,7 +55,7 @@ public class SeedDataConfig {
                 .orElseGet(() -> {
                     User user = new User();
                     user.setEmail("admin@micuota.online");
-                    user.setPasswordHash("demo");
+                    user.setPasswordHash(demoPasswordHash);
                     user.setFullName("Admin Demo");
                     user.setRole(UserRole.TENANT_ADMIN);
                     user.setTenant(tenant);
@@ -63,11 +67,12 @@ public class SeedDataConfig {
                     User user = new User();
                     user.setEmail("platform-admin@micuota.online");
                     user.setFullName("Platform Admin");
+                    user.setPasswordHash(passwordEncoder.encode(platformAdminPassword));
                     user.setRole(UserRole.ADMIN);
                     user.setTenant(tenant);
                     return userRepository.save(user);
                 });
-            platformAdmin.setPasswordHash(passwordEncoder.encode("ADMIN1234"));
+            platformAdmin.setPasswordHash(passwordEncoder.encode(platformAdminPassword));
             platformAdmin.setRole(UserRole.ADMIN);
             userRepository.save(platformAdmin);
 
@@ -88,7 +93,7 @@ public class SeedDataConfig {
                 .orElseGet(() -> {
                     User user = new User();
                     user.setEmail("teacher@micuota.online");
-                    user.setPasswordHash("demo");
+                    user.setPasswordHash(demoPasswordHash);
                     user.setFullName("Profe Demo");
                     user.setRole(UserRole.TEACHER);
                     user.setTenant(tenant);
@@ -112,7 +117,7 @@ public class SeedDataConfig {
                 .orElseGet(() -> {
                     User user = new User();
                     user.setEmail("student@micuota.online");
-                    user.setPasswordHash("demo");
+                    user.setPasswordHash(demoPasswordHash);
                     user.setFullName("Alumno Demo");
                     user.setRole(UserRole.STUDENT);
                     user.setTenant(tenant);
