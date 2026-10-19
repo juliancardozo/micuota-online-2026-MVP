@@ -1,12 +1,18 @@
 package com.micuota.mvp.web;
 
+import com.micuota.mvp.domain.OperationStatus;
 import com.micuota.mvp.domain.PaymentOperation;
 import com.micuota.mvp.repository.PaymentOperationRepository;
+import com.micuota.mvp.service.PaymentService;
+import java.util.Map;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -14,11 +20,36 @@ import org.springframework.web.bind.annotation.RestController;
 public class SandboxCheckoutController {
 
     private final PaymentOperationRepository paymentOperationRepository;
+    private final PaymentService paymentService;
+
+    // Simular estados solo tiene sentido en desarrollo: en produccion un pago sandbox nunca debe quedar aprobado.
+    @Value("${app.payments.sandbox-simulation-enabled:false}")
+    private boolean simulationEnabled;
 
     public SandboxCheckoutController(
-    PaymentOperationRepository paymentOperationRepository
+        PaymentOperationRepository paymentOperationRepository,
+        PaymentService paymentService
     ) {
         this.paymentOperationRepository = paymentOperationRepository;
+        this.paymentService = paymentService;
+    }
+
+    @PostMapping("/{provider}/checkout/{providerReference}/simulate")
+    public ResponseEntity<Map<String, Object>> simulate(
+        @PathVariable String provider,
+        @PathVariable String providerReference,
+        @RequestParam OperationStatus status
+    ) {
+        if (!simulationEnabled) {
+            return ResponseEntity.status(404).body(Map.of("error", "Simulacion sandbox deshabilitada"));
+        }
+        PaymentOperation operation = paymentOperationRepository.findByProviderReference(providerReference)
+            .orElse(null);
+        if (operation == null) {
+            return ResponseEntity.status(404).body(Map.of("error", "Operacion no encontrada"));
+        }
+        PaymentOperation updated = paymentService.updateStatus(operation.getId(), status);
+        return ResponseEntity.ok(Map.of("operationId", updated.getId(), "status", updated.getStatus()));
     }
 
     @GetMapping(value = "/{provider}/checkout/{providerReference}", produces = MediaType.TEXT_HTML_VALUE)
@@ -65,9 +96,10 @@ public class SandboxCheckoutController {
     private String renderCheckout(String provider, String providerReference, PaymentOperation operation) {
         String operationUrl = "/api/public/payments/" + operation.getId();
         String appPaymentUrl = "/pago.html?operationId=" + operation.getId();
-        String successHookUrl = "/api/callbacks/success?operationId=" + operation.getId();
-        String pendingHookUrl = "/api/callbacks/pending?operationId=" + operation.getId();
-        String failureHookUrl = "/api/callbacks/failure?operationId=" + operation.getId();
+        String simulateUrl = "/sandbox/" + provider + "/checkout/" + providerReference + "/simulate?status=";
+        String successHookUrl = simulateUrl + "SUCCESS";
+        String pendingHookUrl = simulateUrl + "PENDING";
+        String failureHookUrl = simulateUrl + "FAILURE";
 
         return """
             <!doctype html>
@@ -107,7 +139,7 @@ public class SandboxCheckoutController {
                       <button class=\"btn\" type=\"button\" onclick=\"simulate('%s')\">Simular pendiente</button>
                       <button class=\"btn\" type=\"button\" onclick=\"simulate('%s')\">Simular fallo</button>
                     </div>
-                    <p class=\"hint\">Los botones llaman a los hooks reales del backend en <code>/api/callbacks/*</code>.</p>
+                    <p class=\"hint\">Simulacion disponible solo en entorno de desarrollo.</p>
 
                     <div class=\"actions\" style=\"margin-top: 12px;\">
                       <a class=\"btn\" href=\"%s\" target=\"_blank\" rel=\"noopener noreferrer\">Ver API publica</a>
@@ -127,9 +159,9 @@ public class SandboxCheckoutController {
 
                       async function simulate(hookUrl) {
                         try {
-                          const response = await fetch(hookUrl);
+                          const response = await fetch(hookUrl, { method: 'POST' });
                           if (!response.ok) {
-                            alert('No se pudo actualizar el estado via hook.');
+                            alert('No se pudo simular el estado (solo disponible en desarrollo).');
                             return;
                           }
                           await refreshStatus();

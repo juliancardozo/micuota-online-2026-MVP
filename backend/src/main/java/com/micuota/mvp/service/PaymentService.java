@@ -322,11 +322,6 @@ public class PaymentService {
     }
 
     @Transactional
-    public PaymentOperation updateStatusByProviderReference(String providerReference, OperationStatus status) {
-        return updateStatusByProviderReference(providerReference, status, null);
-    }
-
-    @Transactional
     public PaymentOperation updateStatusByProviderReference(String providerReference, OperationStatus status, String rawResponseEvent) {
         PaymentOperation operation = paymentOperationRepository.findByProviderReference(providerReference)
             .orElseThrow(() -> new IllegalArgumentException("Operacion no encontrada para providerReference: " + providerReference));
@@ -355,19 +350,16 @@ public class PaymentService {
         return saved;
     }
 
-    @Transactional
-    public PaymentOperation updateStatusByCallbackReference(
-        String providerReference,
-        String externalReference,
-        OperationStatus status
-    ) {
-        if (providerReference != null && !providerReference.isBlank()) {
-            return updateStatusByProviderReference(providerReference, status);
-        }
+    @Transactional(readOnly = true)
+    public Optional<Long> findOperationIdByCallbackReference(String providerReference, String externalReference) {
+        Optional<PaymentOperation> operation = Optional.empty();
         if (externalReference != null && !externalReference.isBlank()) {
-            return updateStatusByExternalReference(externalReference, status, null);
+            operation = paymentOperationRepository.findByExternalReference(externalReference);
         }
-        throw new IllegalArgumentException("Callback sin providerReference ni externalReference");
+        if (operation.isEmpty() && providerReference != null && !providerReference.isBlank()) {
+            operation = paymentOperationRepository.findByProviderReference(providerReference);
+        }
+        return operation.map(PaymentOperation::getId);
     }
 
     @Transactional

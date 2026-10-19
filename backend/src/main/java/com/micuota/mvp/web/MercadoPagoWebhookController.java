@@ -11,11 +11,15 @@ import com.micuota.mvp.service.PaymentService;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -31,6 +35,8 @@ public class MercadoPagoWebhookController {
     private final MercadoPagoService mercadoPagoService;
     private final ObjectMapper objectMapper;
 
+    private static final Logger log = LoggerFactory.getLogger(MercadoPagoWebhookController.class);
+
     @Value("${app.payments.mercadopago.webhook-secret:}")
     private String webhookSecret;
 
@@ -45,105 +51,78 @@ public class MercadoPagoWebhookController {
     }
 
     @PostMapping
-    public PaymentOperation receive(
+    public ResponseEntity<Map<String, Object>> receive(
         @RequestHeader HttpHeaders headers,
         @RequestParam Map<String, String> queryParams,
         @RequestBody(required = false) String rawBody
     ) {
         JsonNode payload = parsePayload(rawBody);
         String dataId = extractDataId(payload, queryParams);
-        validateSignatureIfConfigured(headers, dataId);
+        validateSignature(headers, queryParams, dataId);
+        if (dataId == null || dataId.isBlank()) {
+            throw new IllegalArgumentException("Webhook Mercado Pago sin data.id");
+        }
 
-        String typeHint = firstNonBlank(text(payload, "type"), text(payload, "topic"), queryParams.get("type"), queryParams.get("topic"));
-        String externalReferenceHint = firstNonBlank(
-            text(payload, "external_reference"),
-            queryParams.get("external_reference"),
-            queryParams.get("externalReference")
-        );
-        String providerReferenceHint = isPreapprovalNotification(typeHint)
-            ? dataId
-            : firstNonBlank(text(payload, "preference_id"), queryParams.get("preference_id"));
+        String type = firstNonBlank(text(payload, "type"), text(payload, "topic"), queryParams.get("type"), queryParams.get("topic"));
+        boolean preapproval = isPreapprovalNotification(type);
+        if (!preapproval && !isPaymentNotification(type)) {
+            return ignored("Tipo de notificacion no soportado: " + type);
+        }
+
+        // Los hints solo sirven para elegir el token del profesor; el estado y las referencias salen de la API de Mercado Pago.
+        String externalReferenceHint = firstNonBlank(queryParams.get("externalReference"), queryParams.get("external_reference"));
         String accessToken = paymentService
-            .mercadoPagoAccessTokenForOperationReference(externalReferenceHint, providerReferenceHint)
+            .mercadoPagoAccessTokenForOperationReference(externalReferenceHint, preapproval ? dataId : null)
             .orElse(null);
+        if (accessToken == null) {
+            log.warn("Webhook Mercado Pago ignorado: sin operacion/token para dataId={} externalReference={}", dataId, externalReferenceHint);
+            return ignored("Operacion sin Access Token Mercado Pago asociado");
+        }
 
-        MercadoPagoLookup lookup = enrichFromMercadoPago(payload, queryParams, dataId, accessToken);
-        OperationStatus status = toOperationStatus(firstNonBlank(lookup.status(), text(payload, "status"), queryParams.get("status")));
+        JsonNode providerLookup = preapproval
+            ? mercadoPagoService.getPreapproval(accessToken, dataId).body()
+            : mercadoPagoService.getPayment(accessToken, dataId).body();
+        MercadoPagoLookup lookup = new MercadoPagoLookup(
+            type,
+            firstNonBlank(providerLookup.path("status").asText("")),
+            firstNonBlank(providerLookup.path("external_reference").asText("")),
+            firstNonBlank(providerLookup.path(preapproval ? "id" : "preference_id").asText("")),
+            providerLookup
+        );
+        OperationStatus status = toOperationStatus(lookup.status());
         String rawEvent = buildRawEvent(headers, queryParams, payload, lookup);
 
-        String externalReference = firstNonBlank(
-            lookup.externalReference(),
-            text(payload, "external_reference"),
-            queryParams.get("external_reference"),
-            queryParams.get("externalReference")
-        );
-        if (externalReference != null && !externalReference.isBlank()) {
-            return paymentService.updateStatusByExternalReference(externalReference, status, rawEvent);
+        PaymentOperation operation;
+        if (lookup.externalReference() != null) {
+            operation = paymentService.updateStatusByExternalReference(lookup.externalReference(), status, rawEvent);
+        } else if (lookup.providerReference() != null) {
+            operation = paymentService.updateStatusByProviderReference(lookup.providerReference(), status, rawEvent);
+        } else {
+            return ignored("Mercado Pago no devolvio referencia de operacion");
         }
 
-        String providerReference = firstNonBlank(lookup.providerReference(), dataIdForProviderReference(lookup.type(), dataId));
-        if (providerReference != null && !providerReference.isBlank()) {
-            return paymentService.updateStatusByProviderReference(providerReference, status, rawEvent);
-        }
-
-        throw new IllegalArgumentException("Webhook Mercado Pago sin referencia de operacion");
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("operationId", operation.getId());
+        body.put("status", operation.getStatus());
+        return ResponseEntity.ok(body);
     }
 
-    private MercadoPagoLookup enrichFromMercadoPago(JsonNode payload, Map<String, String> queryParams, String dataId, String accessToken) {
-        String type = firstNonBlank(text(payload, "type"), text(payload, "topic"), queryParams.get("type"), queryParams.get("topic"));
-        String status = firstNonBlank(text(payload, "status"), queryParams.get("status"));
-        String externalReference = firstNonBlank(
-            text(payload, "external_reference"),
-            queryParams.get("external_reference"),
-            queryParams.get("externalReference")
-        );
-        String providerReference = firstNonBlank(text(payload, "preference_id"), queryParams.get("preference_id"));
-        JsonNode providerLookup = null;
-        String providerLookupError = null;
-
-        if (isPaymentNotification(type) && dataId != null && !dataId.isBlank()) {
-            if (accessToken == null || accessToken.isBlank()) {
-                providerLookupError = "La operacion no tiene Access Token Mercado Pago del profesor para consultar payment";
-            } else {
-                try {
-                    MercadoPagoService.MercadoPagoApiResponse response = mercadoPagoService.getPayment(accessToken, dataId);
-                    providerLookup = response.body();
-                    status = firstNonBlank(providerLookup.path("status").asText(""), status);
-                    externalReference = firstNonBlank(providerLookup.path("external_reference").asText(""), externalReference);
-                    providerReference = firstNonBlank(providerLookup.path("preference_id").asText(""), providerReference);
-                } catch (RuntimeException exception) {
-                    providerLookupError = exception.getMessage();
-                }
-            }
-        } else if (isPreapprovalNotification(type) && dataId != null && !dataId.isBlank()) {
-            providerReference = firstNonBlank(dataId, providerReference);
-            if (accessToken == null || accessToken.isBlank()) {
-                providerLookupError = "La operacion no tiene Access Token Mercado Pago del profesor para consultar preapproval";
-            } else {
-                try {
-                    MercadoPagoService.MercadoPagoApiResponse response = mercadoPagoService.getPreapproval(accessToken, dataId);
-                    providerLookup = response.body();
-                    status = firstNonBlank(providerLookup.path("status").asText(""), status);
-                    externalReference = firstNonBlank(providerLookup.path("external_reference").asText(""), externalReference);
-                    providerReference = firstNonBlank(providerLookup.path("id").asText(""), providerReference);
-                } catch (RuntimeException exception) {
-                    providerLookupError = exception.getMessage();
-                }
-            }
-        }
-
-        return new MercadoPagoLookup(type, status, externalReference, providerReference, providerLookup, providerLookupError);
+    private ResponseEntity<Map<String, Object>> ignored(String reason) {
+        return ResponseEntity.ok(Map.of("ignored", true, "reason", reason));
     }
 
-    private void validateSignatureIfConfigured(HttpHeaders headers, String dataId) {
+    /**
+     * Valida x-signature si hay secreto configurado. El estado nunca sale del payload sino de la API de Mercado Pago,
+     * asi que sin secreto (p. ej. tokens de apps propias de cada profesor) el webhook se procesa igual de forma segura.
+     */
+    private void validateSignature(HttpHeaders headers, Map<String, String> queryParams, String dataId) {
         if (webhookSecret == null || webhookSecret.isBlank()) {
             return;
         }
 
         String xSignature = headers.getFirst("x-signature");
-        String xRequestId = headers.getFirst("x-request-id");
-        if (xSignature == null || xSignature.isBlank() || xRequestId == null || xRequestId.isBlank() || dataId == null || dataId.isBlank()) {
-            throw new IllegalArgumentException("Webhook Mercado Pago sin headers o data.id para validar firma");
+        if (xSignature == null || xSignature.isBlank()) {
+            throw new IllegalArgumentException("Webhook Mercado Pago sin x-signature");
         }
 
         Map<String, String> signatureParts = parseSignature(xSignature);
@@ -153,11 +132,26 @@ public class MercadoPagoWebhookController {
             throw new IllegalArgumentException("Webhook Mercado Pago con x-signature invalida");
         }
 
-        String manifest = "id:" + dataId + ";request-id:" + xRequestId + ";ts:" + ts + ";";
-        String expected = hmacSha256(manifest, webhookSecret);
-        if (!MessageDigest.isEqual(expected.getBytes(StandardCharsets.UTF_8), v1.trim().toLowerCase().getBytes(StandardCharsets.UTF_8))) {
+        String expected = hmacSha256(
+            signatureManifest(firstNonBlank(queryParams.get("data.id"), dataId), headers.getFirst("x-request-id"), ts),
+            webhookSecret
+        );
+        if (!MessageDigest.isEqual(expected.getBytes(StandardCharsets.UTF_8), v1.trim().toLowerCase(Locale.ROOT).getBytes(StandardCharsets.UTF_8))) {
             throw new IllegalArgumentException("Firma de webhook Mercado Pago invalida");
         }
+    }
+
+    // Template oficial: id:[data.id];request-id:[x-request-id];ts:[ts]; — data.id en minusculas y se omite cada valor ausente.
+    static String signatureManifest(String dataId, String requestId, String ts) {
+        StringBuilder manifest = new StringBuilder();
+        if (dataId != null && !dataId.isBlank()) {
+            manifest.append("id:").append(dataId.trim().toLowerCase(Locale.ROOT)).append(';');
+        }
+        if (requestId != null && !requestId.isBlank()) {
+            manifest.append("request-id:").append(requestId.trim()).append(';');
+        }
+        manifest.append("ts:").append(ts.trim()).append(';');
+        return manifest.toString();
     }
 
     private Map<String, String> parseSignature(String xSignature) {
@@ -230,13 +224,6 @@ public class MercadoPagoWebhookController {
         };
     }
 
-    private String dataIdForProviderReference(String type, String dataId) {
-        if (isPreapprovalNotification(type)) {
-            return dataId;
-        }
-        return null;
-    }
-
     private boolean isPaymentNotification(String type) {
         return type == null || type.isBlank() || "payment".equalsIgnoreCase(type);
     }
@@ -261,12 +248,7 @@ public class MercadoPagoWebhookController {
         event.put("status", lookup.status());
         event.put("external_reference", lookup.externalReference());
         event.put("provider_reference", lookup.providerReference());
-        if (lookup.providerLookup() != null) {
-            event.set("provider_lookup", lookup.providerLookup());
-        }
-        if (lookup.providerLookupError() != null) {
-            event.put("provider_lookup_error", lookup.providerLookupError());
-        }
+        event.set("provider_lookup", lookup.providerLookup());
         try {
             return objectMapper.writeValueAsString(event);
         } catch (JsonProcessingException exception) {
@@ -293,8 +275,7 @@ public class MercadoPagoWebhookController {
         String status,
         String externalReference,
         String providerReference,
-        JsonNode providerLookup,
-        String providerLookupError
+        JsonNode providerLookup
     ) {
     }
 }
