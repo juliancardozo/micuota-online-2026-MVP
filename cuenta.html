@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Entrar o crear cuenta | MiCuota</title>
+    <meta name="description" content="Entrá a MiCuota o creá tu cuenta gratis para cobrar tus cuotas con Mercado Pago." />
+    <meta name="robots" content="noindex,follow" />
+    <meta name="theme-color" content="#0b6b4d" />
+    <link rel="icon" type="image/png" href="/assets/micuota-mate-mark.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600..800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/mc.css" />
+    <style>
+      body { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
+      .auth-top { padding: 16px 0; }
+      .auth-main { flex: 1; padding: 8px 0 48px; }
+      .auth-card { max-width: 480px; margin: 0 auto; }
+      .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: var(--bg-soft); padding: 6px; border-radius: var(--r-md); margin-bottom: 22px; }
+      .tab { min-height: 48px; border: 0; border-radius: 10px; background: transparent; font: 700 var(--fs-md)/1 var(--font-body); color: var(--text-muted); cursor: pointer; }
+      .tab[aria-selected="true"] { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
+      .pw-wrap { position: relative; }
+      .pw-wrap .input { padding-right: 96px; }
+      .pw-toggle { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); min-height: 40px; }
+      .slug-known { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 12px 14px; border-radius: var(--r-md); background: var(--surface-2); border: 1px solid var(--border); margin-bottom: 16px; }
+      .done-list { list-style: none; padding: 0; margin: 16px 0 0; display: grid; gap: 10px; }
+      .done-list li { display: flex; gap: 10px; align-items: flex-start; }
+      .done-list .n { flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--brand-soft); color: var(--brand); font-weight: 700; }
+    </style>
+    <script src="/micuota-config.js"></script>
+    <script src="/app.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#contenido">Ir al contenido</a>
+    <header class="auth-top">
+      <div class="container row-between">
+        <a class="brand" href="/landing.html"><img src="/assets/micuota-mate-mark.png" alt="" width="36" height="36" />MiCuota</a>
+        <a href="/landing.html" class="small">Volver al inicio</a>
+      </div>
+    </header>
+
+    <main id="contenido" class="auth-main">
+      <div class="container">
+        <div class="card auth-card">
+          <div class="tabs" role="tablist" aria-label="Elegí una opción">
+            <button class="tab" role="tab" id="tab-crear" aria-controls="panel-crear" aria-selected="true" type="button">Crear cuenta</button>
+            <button class="tab" role="tab" id="tab-entrar" aria-controls="panel-entrar" aria-selected="false" type="button">Ya tengo cuenta</button>
+          </div>
+
+          <!-- Crear cuenta -->
+          <section id="panel-crear" role="tabpanel" aria-labelledby="tab-crear">
+            <h1>Empezá gratis</h1>
+            <p class="muted">En 2 minutos tenés tu cuenta. Sin tarjeta, sin contratos.</p>
+            <form id="form-crear" novalidate>
+              <div class="field">
+                <label for="c-name">Tu nombre</label>
+                <input class="input" id="c-name" name="fullName" autocomplete="name" required placeholder="Ej: Ana Pérez" />
+              </div>
+              <div class="field">
+                <label for="c-email">Tu email</label>
+                <input class="input" id="c-email" name="email" type="email" autocomplete="email" inputmode="email" required placeholder="ana@gmail.com" />
+              </div>
+              <div class="field">
+                <label for="c-phone">Tu WhatsApp <span class="muted">(opcional)</span></label>
+                <input class="input" id="c-phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="099 123 456" />
+                <p class="hint">Solo para ayudarte si te trabás. No mandamos publicidad.</p>
+              </div>
+              <fieldset class="choice-group">
+                <legend>¿Qué cobrás?</legend>
+                <div class="chips" id="c-activity">
+                  <button type="button" class="chip" aria-pressed="true" data-value="CLASES">Clases</button>
+                  <button type="button" class="chip" aria-pressed="false" data-value="CONSULTAS">Consultas o terapia</button>
+                  <button type="button" class="chip" aria-pressed="false" data-value="TALLERES">Talleres</button>
+                  <button type="button" class="chip" aria-pressed="false" data-value="ALQUILER">Alquiler</button>
+                  <button type="button" class="chip" aria-pressed="false" data-value="OTRO">Otra cosa</button>
+                </div>
+              </fieldset>
+              <div class="field">
+                <label for="c-pass">Elegí una contraseña</label>
+                <div class="pw-wrap">
+                  <input class="input" id="c-pass" name="password" type="password" autocomplete="new-password" minlength="8" required aria-describedby="c-pass-hint" />
+                  <button type="button" class="btn btn-ghost btn-sm pw-toggle" data-toggle="c-pass">Mostrar</button>
+                </div>
+                <p class="hint" id="c-pass-hint">Mínimo 8 caracteres.</p>
+              </div>
+              <p class="field-error" id="crear-error" role="alert" hidden></p>
+              <button class="btn btn-primary btn-lg btn-block" type="submit" id="crear-submit">Crear mi cuenta gratis</button>
+              <p class="hint center" style="margin-top:12px">Al crear tu cuenta aceptás la <a href="/privacy.html">política de privacidad</a>.</p>
+            </form>
+          </section>
+
+          <!-- Pedido recibido (cuando el alta automatica esta cerrada) -->
+          <section id="panel-recibido" hidden aria-live="polite">
+            <div class="empty-icon" style="width:72px;height:72px;border-radius:50%;display:grid;place-items:center;background:var(--ok-soft);color:var(--ok);margin-bottom:16px" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+            </div>
+            <h1 id="recibido-title">¡Listo, recibimos tus datos!</h1>
+            <p>Estamos activando las cuentas nuevas una por una para acompañarte en el arranque. <strong>Te escribimos en menos de 24 horas hábiles</strong> a <strong id="recibido-email"></strong> con tu acceso.</p>
+            <p class="muted">Mientras tanto, para ganar tiempo:</p>
+            <ol class="done-list">
+              <li><span class="n">1</span><span>Tené a mano el usuario y la contraseña de tu <strong>Mercado Pago</strong>. Ahí te va a llegar la plata.</span></li>
+              <li><span class="n">2</span><span>Pensá tu primer cobro: a quién, por qué y cuánto. Por ejemplo, <em>“Cuota de noviembre, $ 1.800”</em>.</span></li>
+              <li><span class="n">3</span><span>Ya tenés todo. Después lo mandás por WhatsApp en un toque.</span></li>
+            </ol>
+            <a class="btn btn-block" href="/landing.html" style="margin-top:22px">Volver al inicio</a>
+          </section>
+
+          <!-- Entrar -->
+          <section id="panel-entrar" role="tabpanel" aria-labelledby="tab-entrar" hidden>
+            <h1>Hola de nuevo</h1>
+            <p class="muted">Entrá para ver quién te pagó.</p>
+            <form id="form-entrar" novalidate>
+              <div class="slug-known" id="slug-known" hidden>
+                <span>Tu cuenta: <strong id="slug-known-value"></strong></span>
+                <button type="button" class="btn btn-ghost btn-sm" id="slug-change">Cambiar</button>
+              </div>
+              <div class="field" id="slug-field">
+                <label for="e-slug">Código de tu cuenta</label>
+                <input class="input" id="e-slug" name="tenantSlug" autocomplete="organization" autocapitalize="none" spellcheck="false" required placeholder="Ej: yoga-ana" aria-describedby="e-slug-hint" />
+                <p class="hint" id="e-slug-hint">Está en el email de bienvenida de MiCuota. Lo pedimos una sola vez: después lo recordamos.</p>
+              </div>
+              <div class="field">
+                <label for="e-email">Email</label>
+                <input class="input" id="e-email" name="email" type="email" autocomplete="username" inputmode="email" required />
+              </div>
+              <div class="field">
+                <label for="e-pass">Contraseña</label>
+                <div class="pw-wrap">
+                  <input class="input" id="e-pass" name="password" type="password" autocomplete="current-password" required />
+                  <button type="button" class="btn btn-ghost btn-sm pw-toggle" data-toggle="e-pass">Mostrar</button>
+                </div>
+              </div>
+              <p class="field-error" id="entrar-error" role="alert" hidden></p>
+              <button class="btn btn-primary btn-lg btn-block" type="submit" id="entrar-submit">Entrar</button>
+              <p class="hint center" style="margin-top:14px">¿Te olvidaste la contraseña? Escribinos a <a href="mailto:hola@micuota.online">hola@micuota.online</a> y te ayudamos.</p>
+            </form>
+          </section>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      (function () {
+        const { api, session, humanError, busy, store } = window.MC;
+        const $ = (id) => document.getElementById(id);
+        const params = new URLSearchParams(location.search);
+
+        /* ---------- Pestañas ---------- */
+        function selectTab(name, updateHash = true) {
+          const isCrear = name !== "entrar";
+          $("tab-crear").setAttribute("aria-selected", String(isCrear));
+          $("tab-entrar").setAttribute("aria-selected", String(!isCrear));
+          $("panel-crear").hidden = !isCrear;
+          $("panel-entrar").hidden = isCrear;
+          $("panel-recibido").hidden = true;
+          if (updateHash) history.replaceState(null, "", "#" + (isCrear ? "crear" : "entrar"));
+        }
+        $("tab-crear").addEventListener("click", () => selectTab("crear"));
+        $("tab-entrar").addEventListener("click", () => selectTab("entrar"));
+        document.querySelector('[role="tablist"]').addEventListener("keydown", (e) => {
+          if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+            const next = $("tab-crear").getAttribute("aria-selected") === "true" ? "entrar" : "crear";
+            selectTab(next); $("tab-" + next).focus();
+          }
+        });
+
+        /* ---------- Mostrar contraseña ---------- */
+        document.querySelectorAll("[data-toggle]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const input = $(btn.dataset.toggle);
+            const show = input.type === "password";
+            input.type = show ? "text" : "password";
+            btn.textContent = show ? "Ocultar" : "Mostrar";
+          });
+        });
+
+        /* ---------- Chips de actividad ---------- */
+        let activity = "CLASES";
+        $("c-activity").addEventListener("click", (e) => {
+          const chip = e.target.closest(".chip");
+          if (!chip) return;
+          activity = chip.dataset.value;
+          $("c-activity").querySelectorAll(".chip").forEach((c) => c.setAttribute("aria-pressed", String(c === chip)));
+        });
+
+        function showError(id, message) { const n = $(id); n.textContent = message; n.hidden = !message; }
+
+        function slugify(text) {
+          return String(text || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "")
+            .replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 40);
+        }
+
+        function goHome(result) {
+          session.save(result);
+          window.location.href = session.homeFor(result.role) + (result.role === "TEACHER" ? "#inicio" : "");
+        }
+
+        /* ---------- Crear cuenta ---------- */
+        $("form-crear").addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const f = e.target;
+          const fullName = f.fullName.value.trim();
+          const email = f.email.value.trim();
+          const phone = f.phone.value.trim();
+          const password = f.password.value;
+          [f.fullName, f.email, f.password].forEach((i) => i.removeAttribute("aria-invalid"));
+          if (!fullName) { f.fullName.setAttribute("aria-invalid", "true"); f.fullName.focus(); return showError("crear-error", "Contanos tu nombre."); }
+          if (!/^\S+@\S+\.\S+$/.test(email)) { f.email.setAttribute("aria-invalid", "true"); f.email.focus(); return showError("crear-error", "Revisá el email: parece que le falta algo."); }
+          if (password.length < 8) { f.password.setAttribute("aria-invalid", "true"); f.password.focus(); return showError("crear-error", "La contraseña tiene que tener al menos 8 caracteres."); }
+          showError("crear-error", "");
+          const btn = $("crear-submit");
+          busy(btn, true, "Creando tu cuenta…");
+          try {
+            const base = slugify(fullName) || "cuenta";
+            const result = await api("/api/auth/register-tenant", {
+              method: "POST", auth: false,
+              body: { tenantName: fullName, tenantSlug: `${base}-${Math.floor(100 + Math.random() * 900)}`, fullName, email, password }
+            });
+            goHome(result);
+          } catch (error) {
+            if (/restringida/i.test(error.message || "")) {
+              // El alta automatica esta cerrada: guardamos el pedido para activarla a mano.
+              try {
+                await api("/api/public/leads/interested", {
+                  method: "POST", auth: false,
+                  body: { fullName, email, phone: phone || null, source: `LANDING_SIGNUP_${activity}` }
+                });
+                $("recibido-email").textContent = email;
+                $("recibido-title").textContent = `¡Listo, ${fullName.split(/\s+/)[0]}! Recibimos tus datos`;
+                $("panel-crear").hidden = true;
+                $("panel-recibido").hidden = false;
+                document.querySelector(".tabs").hidden = true;
+                $("recibido-title").setAttribute("tabindex", "-1");
+                $("recibido-title").focus();
+              } catch (leadError) {
+                showError("crear-error", humanError(leadError));
+              }
+            } else {
+              showError("crear-error", humanError(error));
+            }
+          } finally {
+            busy(btn, false);
+          }
+        });
+
+        /* ---------- Entrar ---------- */
+        const knownSlug = params.get("cuenta") || params.get("tenantSlug") || session.slug();
+        function setSlugKnown(slug) {
+          if (slug) {
+            $("e-slug").value = slug;
+            $("slug-known-value").textContent = slug;
+            $("slug-known").hidden = false;
+            $("slug-field").hidden = true;
+          } else {
+            $("slug-known").hidden = true;
+            $("slug-field").hidden = false;
+          }
+        }
+        setSlugKnown(knownSlug);
+        $("slug-change").addEventListener("click", () => { setSlugKnown(""); $("e-slug").focus(); });
+        const lastEmail = store.get("micuota.lastEmail");
+        if (lastEmail) $("e-email").value = lastEmail;
+
+        $("form-entrar").addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const f = e.target;
+          const tenantSlug = slugify(f.tenantSlug.value.trim());
+          const email = f.email.value.trim();
+          const password = f.password.value;
+          if (!tenantSlug) { setSlugKnown(""); f.tenantSlug.focus(); return showError("entrar-error", "Falta el código de tu cuenta."); }
+          if (!email || !password) { (email ? f.password : f.email).focus(); return showError("entrar-error", "Completá tu email y contraseña."); }
+          showError("entrar-error", "");
+          const btn = $("entrar-submit");
+          busy(btn, true, "Entrando…");
+          try {
+            const result = await api("/api/auth/login", { method: "POST", auth: false, body: { tenantSlug, email, password } });
+            store.set("micuota.lastEmail", email);
+            goHome(result);
+          } catch (error) {
+            showError("entrar-error", humanError(error));
+            if (/tenant no encontrado/i.test(error.message || "")) setSlugKnown("");
+          } finally {
+            busy(btn, false);
+          }
+        });
+
+        /* ---------- Pestaña inicial ---------- */
+        const initial = location.hash.replace("#", "") || (knownSlug ? "entrar" : "crear");
+        selectTab(initial === "entrar" ? "entrar" : "crear", false);
+
+        // Si ya hay sesion, ofrecemos seguir directo.
+        if (session.token() && !params.has("salir")) {
+          api("/api/auth/me", { slowAfter: 60000 }).then((me) => {
+            window.location.replace(session.homeFor(me.role));
+          }).catch((err) => { if (window.MC.isSessionError(err) || err.status === 400) session.clear(); });
+        }
+      })();
+    </script>
+  </body>
+</html>
