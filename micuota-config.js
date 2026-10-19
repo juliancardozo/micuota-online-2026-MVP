@@ -12,9 +12,10 @@
     (apiBaseParam && apiBaseParam !== "clear" ? apiBaseParam : "") ||
     localStorage.getItem("micuota.apiBase") ||
     document.querySelector('meta[name="micuota-api-base"]')?.getAttribute("content");
-  // Produccion: backend oficial. Localhost: backend de pruebas desplegado (CORS permite http://localhost:*).
+  // Produccion y localhost usan por ahora el backend de pruebas desplegado (CORS permite http://localhost:* y *.netlify.app):
+  // micuota-online-2026-backend (render.yaml) todavia no esta creado en Render. Cuando exista, volver a apuntar PRODUCTION_API_BASE ahi.
   // Para usar un backend local: abri cualquier pagina con ?apiBase=http://localhost:8080 (se recuerda; ?apiBase=clear lo borra).
-  const PRODUCTION_API_BASE = "https://micuota-online-2026-backend.onrender.com";
+  const PRODUCTION_API_BASE = "https://micuota-backend-dev.onrender.com";
   const LOCAL_DEV_API_BASE = "https://micuota-backend-dev.onrender.com";
   const defaultApiBase = isLocalhost ? LOCAL_DEV_API_BASE : PRODUCTION_API_BASE;
   const apiBase = (configuredApiBase || defaultApiBase).replace(/\/$/, "");
