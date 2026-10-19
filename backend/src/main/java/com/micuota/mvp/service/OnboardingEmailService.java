@@ -17,8 +17,8 @@ public class OnboardingEmailService {
     @Value("${app.mail.from:no-reply@micuota.online}")
     private String fromEmail;
 
-    @Value("${app.base-url:http://localhost:8080}")
-    private String appBaseUrl;
+    @Value("${app.frontend-base-url:${app.base-url:http://localhost:8080}}")
+    private String frontendBaseUrl;
 
     public OnboardingEmailService(JavaMailSender mailSender) {
         this.mailSender = mailSender;
@@ -56,7 +56,7 @@ public class OnboardingEmailService {
                         <li>Dia 3: como ordenar cobros semanales y mensuales sin planillas.</li>
                       </ol>
                       <p style="margin:0 0 18px;">
-                        <a href="%s/landing.html#acceso" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#cc5a16;color:#fff8f0;text-decoration:none;font-weight:700;">Empezar ahora</a>
+                        <a href="%s/cuenta.html#crear" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#cc5a16;color:#fff8f0;text-decoration:none;font-weight:700;">Empezar ahora</a>
                       </p>
                       <p style="margin:0;font-size:12px;color:#7b705f;">Si no solicitaste este registro, ignora este mensaje.</p>
                     </td>
@@ -64,20 +64,46 @@ public class OnboardingEmailService {
                 </table>
               </body>
             </html>
-            """.formatted(fullName, appBaseUrl);
+            """.formatted(fullName, frontendBaseUrl);
 
         send(lead.email(), "MiCuota | Comenzo tu onboarding de cobros", html);
     }
 
-    public void sendNewTenantWelcomeEmail(String toEmail, String fullName, String tenantName, String tenantSlug, String dashboardUrl) {
+    /** Codigo de 6 digitos para entrar o crear cuenta. A diferencia del resto, si falla el envio se avisa al usuario. */
+    public void sendLoginCode(String toEmail, String code, int ttlMinutes) {
+        String html = """
+            <!doctype html>
+            <html lang="es">
+              <head>
+                <meta charset="UTF-8" />
+                <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+                <title>Tu código de MiCuota</title>
+              </head>
+              <body style="margin:0;padding:24px;background:#f4f8f6;font-family:Arial,sans-serif;color:#1f2a24;">
+                <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="max-width:520px;margin:0 auto;background:#ffffff;border-radius:16px;border:1px solid #d7e7df;">
+                  <tr>
+                    <td style="padding:28px;">
+                      <p style="margin:0 0 8px;font-size:16px;">Tu código para entrar a MiCuota es:</p>
+                      <p style="margin:0 0 16px;font-size:36px;font-weight:700;letter-spacing:8px;color:#0b6b4d;">%s</p>
+                      <p style="margin:0 0 8px;color:#4b5a52;">Vence en %d minutos. Escribilo en la pantalla donde lo pediste.</p>
+                      <p style="margin:0;font-size:12px;color:#6b7a72;">Si no lo pediste vos, ignorá este mensaje: nadie puede entrar sin este código.</p>
+                    </td>
+                  </tr>
+                </table>
+              </body>
+            </html>
+            """.formatted(code, ttlMinutes);
+
+        sendOrThrow(toEmail, code + " es tu código de MiCuota", html);
+    }
+
+    public void sendNewTenantWelcomeEmail(String toEmail, String fullName, String tenantName, String tenantSlug) {
         if (toEmail == null || toEmail.isBlank()) {
             return;
         }
 
-        String safeName = fullName == null || fullName.isBlank() ? "Hola" : escapeHtml(fullName);
-        String safeTenantName = tenantName == null || tenantName.isBlank() ? "Tu tenant" : escapeHtml(tenantName);
-        String safeTenantSlug = tenantSlug == null ? "" : escapeHtml(tenantSlug);
-        String safeDashboardUrl = dashboardUrl == null || dashboardUrl.isBlank() ? appBaseUrl + "/backoffice.html" : escapeHtml(dashboardUrl);
+        String firstName = fullName == null || fullName.isBlank() ? "Hola" : escapeHtml(fullName.trim().split("\\s+")[0]);
+        String entrarUrl = escapeHtml(frontendBaseUrl + "/cuenta.html#entrar");
 
         String html = """
             <!doctype html>
@@ -87,37 +113,40 @@ public class OnboardingEmailService {
                 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
                 <title>Bienvenida MiCuota</title>
               </head>
-              <body style="margin:0;padding:24px;background:#f3f7ff;font-family:Arial,sans-serif;color:#1f2937;">
-                <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="max-width:640px;margin:0 auto;background:#ffffff;border-radius:16px;border:1px solid #dbe7ff;overflow:hidden;">
+              <body style="margin:0;padding:24px;background:#f4f8f6;font-family:Arial,sans-serif;color:#1f2a24;">
+                <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:16px;border:1px solid #d7e7df;">
                   <tr>
-                    <td style="padding:24px;background:linear-gradient(135deg,#0f3d6e,#0b7ec2);color:#ffffff;">
-                      <h1 style="margin:0;font-size:24px;line-height:1.2;">Tu tenant ya esta listo</h1>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style="padding:24px;">
-                      <p style="margin:0 0 12px;">%s, tu cuenta fue creada correctamente.</p>
-                      <p style="margin:0 0 16px;color:#4b5563;">Estos son los datos de tu tenant:</p>
-                      <ul style="margin:0 0 16px;padding-left:20px;line-height:1.7;">
-                        <li><strong>Tenant:</strong> %s</li>
-                        <li><strong>Slug:</strong> %s</li>
-                        <li><strong>Email de acceso:</strong> %s</li>
-                      </ul>
+                    <td style="padding:28px;">
+                      <h1 style="margin:0 0 12px;font-size:24px;line-height:1.2;">%s, tu cuenta ya está lista</h1>
+                      <p style="margin:0 0 16px;color:#4b5a52;">Para entrar no necesitás contraseña: ponés tu email (%s) y te mandamos un código.</p>
+                      <ol style="margin:0 0 20px;padding-left:20px;line-height:1.7;">
+                        <li>Conectá tu Mercado Pago: ahí te llega la plata.</li>
+                        <li>Creá tu primer cobro, por ejemplo "Cuota de noviembre".</li>
+                        <li>Mandalo por WhatsApp. Te avisamos cuando te paguen.</li>
+                      </ol>
                       <p style="margin:0 0 18px;">
-                        <a href="%s" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#0f3d6e;color:#ffffff;text-decoration:none;font-weight:700;">Entrar a mi panel</a>
+                        <a href="%s" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#0b6b4d;color:#ffffff;text-decoration:none;font-weight:700;">Entrar a MiCuota</a>
                       </p>
-                      <p style="margin:0;font-size:12px;color:#6b7280;">Siguiente paso recomendado: crear tu primer curso y compartir tu primer link de cobro.</p>
+                      <p style="margin:0;font-size:12px;color:#6b7a72;">Código de tu cuenta: %s</p>
                     </td>
                   </tr>
                 </table>
               </body>
             </html>
-            """.formatted(safeName, safeTenantName, safeTenantSlug, escapeHtml(toEmail), safeDashboardUrl);
+            """.formatted(firstName, escapeHtml(toEmail), entrarUrl, escapeHtml(tenantSlug == null ? "" : tenantSlug));
 
-        send(toEmail, "MiCuota | Tenant creado correctamente", html);
+        send(toEmail, "Bienvenida a MiCuota", html);
     }
 
     private void send(String to, String subject, String html) {
+        try {
+            sendOrThrow(to, subject, html);
+        } catch (IllegalStateException ex) {
+            log.warn("No se pudo enviar email onboarding a {}: {}", to, ex.getMessage());
+        }
+    }
+
+    private void sendOrThrow(String to, String subject, String html) {
         try {
             var mime = mailSender.createMimeMessage();
             var helper = new MimeMessageHelper(mime, "UTF-8");
@@ -127,7 +156,7 @@ public class OnboardingEmailService {
             helper.setText(html, true);
             mailSender.send(mime);
         } catch (Exception ex) {
-            log.warn("No se pudo enviar email onboarding a {}: {}", to, ex.getMessage());
+            throw new IllegalStateException("Fallo el envio de email: " + ex.getMessage(), ex);
         }
     }
 

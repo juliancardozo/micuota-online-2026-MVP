@@ -53,12 +53,15 @@ services:
         value: true
       - key: APP_PROMETEO_API_KEY
         sync: false
+      - key: APP_AUTH_SESSION_SECRET
+        generateValue: true
+      # Mails transaccionales via SMTP de Resend; MAIL_PASSWORD es la API key de Resend (re_...).
       - key: MAIL_HOST
-        sync: false
+        value: smtp.resend.com
       - key: MAIL_PORT
         value: 587
       - key: MAIL_USERNAME
-        sync: false
+        value: resend
       - key: MAIL_PASSWORD
         sync: false
       - key: MAIL_FROM

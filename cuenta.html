@@ -20,13 +20,9 @@
       .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: var(--bg-soft); padding: 6px; border-radius: var(--r-md); margin-bottom: 22px; }
       .tab { min-height: 48px; border: 0; border-radius: 10px; background: transparent; font: 700 var(--fs-md)/1 var(--font-body); color: var(--text-muted); cursor: pointer; }
       .tab[aria-selected="true"] { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
-      .pw-wrap { position: relative; }
-      .pw-wrap .input { padding-right: 96px; }
-      .pw-toggle { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); min-height: 40px; }
-      .slug-known { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 12px 14px; border-radius: var(--r-md); background: var(--surface-2); border: 1px solid var(--border); margin-bottom: 16px; }
-      .done-list { list-style: none; padding: 0; margin: 16px 0 0; display: grid; gap: 10px; }
-      .done-list li { display: flex; gap: 10px; align-items: flex-start; }
-      .done-list .n { flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--brand-soft); color: var(--brand); font-weight: 700; }
+      .code-input { font-size: 28px; letter-spacing: 10px; text-align: center; font-variant-numeric: tabular-nums; }
+      .account-list { display: grid; gap: 8px; }
+      .account-list .btn { justify-content: flex-start; text-align: left; }
     </style>
     <script src="/micuota-config.js"></script>
     <script src="/app.js"></script>
@@ -51,7 +47,7 @@
           <!-- Crear cuenta -->
           <section id="panel-crear" role="tabpanel" aria-labelledby="tab-crear">
             <h1>Empezá gratis</h1>
-            <p class="muted">En 2 minutos tenés tu cuenta. Sin tarjeta, sin contratos.</p>
+            <p class="muted">Sin contraseña, sin tarjeta, sin contratos. Te mandamos un código a tu email y listo.</p>
             <form id="form-crear" novalidate>
               <div class="field">
                 <label for="c-name">Tu nombre</label>
@@ -76,65 +72,50 @@
                   <button type="button" class="chip" aria-pressed="false" data-value="OTRO">Otra cosa</button>
                 </div>
               </fieldset>
-              <div class="field">
-                <label for="c-pass">Elegí una contraseña</label>
-                <div class="pw-wrap">
-                  <input class="input" id="c-pass" name="password" type="password" autocomplete="new-password" minlength="8" required aria-describedby="c-pass-hint" />
-                  <button type="button" class="btn btn-ghost btn-sm pw-toggle" data-toggle="c-pass">Mostrar</button>
-                </div>
-                <p class="hint" id="c-pass-hint">Mínimo 8 caracteres.</p>
-              </div>
               <p class="field-error" id="crear-error" role="alert" hidden></p>
               <button class="btn btn-primary btn-lg btn-block" type="submit" id="crear-submit">Crear mi cuenta gratis</button>
               <p class="hint center" style="margin-top:12px">Al crear tu cuenta aceptás la <a href="/privacy.html">política de privacidad</a>.</p>
             </form>
           </section>
 
-          <!-- Pedido recibido (cuando el alta automatica esta cerrada) -->
-          <section id="panel-recibido" hidden aria-live="polite">
-            <div class="empty-icon" style="width:72px;height:72px;border-radius:50%;display:grid;place-items:center;background:var(--ok-soft);color:var(--ok);margin-bottom:16px" aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-            </div>
-            <h1 id="recibido-title">¡Listo, recibimos tus datos!</h1>
-            <p>Estamos activando las cuentas nuevas una por una para acompañarte en el arranque. <strong>Te escribimos en menos de 24 horas hábiles</strong> a <strong id="recibido-email"></strong> con tu acceso.</p>
-            <p class="muted">Mientras tanto, para ganar tiempo:</p>
-            <ol class="done-list">
-              <li><span class="n">1</span><span>Tené a mano el usuario y la contraseña de tu <strong>Mercado Pago</strong>. Ahí te va a llegar la plata.</span></li>
-              <li><span class="n">2</span><span>Pensá tu primer cobro: a quién, por qué y cuánto. Por ejemplo, <em>“Cuota de noviembre, $ 1.800”</em>.</span></li>
-              <li><span class="n">3</span><span>Ya tenés todo. Después lo mandás por WhatsApp en un toque.</span></li>
-            </ol>
-            <a class="btn btn-block" href="/landing.html" style="margin-top:22px">Volver al inicio</a>
-          </section>
-
           <!-- Entrar -->
           <section id="panel-entrar" role="tabpanel" aria-labelledby="tab-entrar" hidden>
             <h1>Hola de nuevo</h1>
-            <p class="muted">Entrá para ver quién te pagó.</p>
+            <p class="muted">Poné tu email y te mandamos un código para entrar. No necesitás contraseña.</p>
             <form id="form-entrar" novalidate>
-              <div class="slug-known" id="slug-known" hidden>
-                <span>Tu cuenta: <strong id="slug-known-value"></strong></span>
-                <button type="button" class="btn btn-ghost btn-sm" id="slug-change">Cambiar</button>
-              </div>
-              <div class="field" id="slug-field">
-                <label for="e-slug">Código de tu cuenta</label>
-                <input class="input" id="e-slug" name="tenantSlug" autocomplete="organization" autocapitalize="none" spellcheck="false" required placeholder="Ej: yoga-ana" aria-describedby="e-slug-hint" />
-                <p class="hint" id="e-slug-hint">Está en el email de bienvenida de MiCuota. Lo pedimos una sola vez: después lo recordamos.</p>
-              </div>
               <div class="field">
-                <label for="e-email">Email</label>
-                <input class="input" id="e-email" name="email" type="email" autocomplete="username" inputmode="email" required />
-              </div>
-              <div class="field">
-                <label for="e-pass">Contraseña</label>
-                <div class="pw-wrap">
-                  <input class="input" id="e-pass" name="password" type="password" autocomplete="current-password" required />
-                  <button type="button" class="btn btn-ghost btn-sm pw-toggle" data-toggle="e-pass">Mostrar</button>
-                </div>
+                <label for="e-email">Tu email</label>
+                <input class="input" id="e-email" name="email" type="email" autocomplete="email" inputmode="email" required placeholder="ana@gmail.com" />
               </div>
               <p class="field-error" id="entrar-error" role="alert" hidden></p>
-              <button class="btn btn-primary btn-lg btn-block" type="submit" id="entrar-submit">Entrar</button>
-              <p class="hint center" style="margin-top:14px">¿Te olvidaste la contraseña? Escribinos a <a href="mailto:hola@micuota.online">hola@micuota.online</a> y te ayudamos.</p>
+              <button class="btn btn-primary btn-lg btn-block" type="submit" id="entrar-submit">Mandame el código</button>
             </form>
+          </section>
+
+          <!-- Codigo por email (crear y entrar) -->
+          <section id="panel-codigo" hidden aria-live="polite">
+            <h1 id="codigo-title" tabindex="-1">Revisá tu email</h1>
+            <p>Te mandamos un código de 6 números a <strong id="codigo-email"></strong>. Si no lo ves, fijate en spam o promociones.</p>
+            <form id="form-codigo" novalidate>
+              <div class="field">
+                <label for="k-code">Código</label>
+                <input class="input code-input" id="k-code" name="code" autocomplete="one-time-code" inputmode="numeric" pattern="[0-9]*" maxlength="6" required placeholder="123456" />
+              </div>
+              <div class="field" id="k-name-field" hidden>
+                <label for="k-name">Es tu primera vez: ¿cómo te llamás?</label>
+                <input class="input" id="k-name" name="fullName" autocomplete="name" placeholder="Ej: Ana Pérez" />
+              </div>
+              <div class="field" id="k-accounts" hidden>
+                <p><strong>Tenés más de una cuenta con este email.</strong> ¿A cuál querés entrar?</p>
+                <div class="account-list" id="k-accounts-list"></div>
+              </div>
+              <p class="field-error" id="codigo-error" role="alert" hidden></p>
+              <button class="btn btn-primary btn-lg btn-block" type="submit" id="codigo-submit">Entrar</button>
+            </form>
+            <div class="row-between" style="margin-top:16px;gap:10px;flex-wrap:wrap">
+              <button type="button" class="btn btn-ghost btn-sm" id="codigo-reenviar">Reenviar código</button>
+              <button type="button" class="btn btn-ghost btn-sm" id="codigo-cambiar">Usar otro email</button>
+            </div>
           </section>
         </div>
       </div>
@@ -153,7 +134,7 @@
           $("tab-entrar").setAttribute("aria-selected", String(!isCrear));
           $("panel-crear").hidden = !isCrear;
           $("panel-entrar").hidden = isCrear;
-          $("panel-recibido").hidden = true;
+          $("panel-codigo").hidden = true;
           if (updateHash) history.replaceState(null, "", "#" + (isCrear ? "crear" : "entrar"));
         }
         $("tab-crear").addEventListener("click", () => selectTab("crear"));
@@ -163,16 +144,6 @@
             const next = $("tab-crear").getAttribute("aria-selected") === "true" ? "entrar" : "crear";
             selectTab(next); $("tab-" + next).focus();
           }
-        });
-
-        /* ---------- Mostrar contraseña ---------- */
-        document.querySelectorAll("[data-toggle]").forEach((btn) => {
-          btn.addEventListener("click", () => {
-            const input = $(btn.dataset.toggle);
-            const show = input.type === "password";
-            input.type = show ? "text" : "password";
-            btn.textContent = show ? "Ocultar" : "Mostrar";
-          });
         });
 
         /* ---------- Chips de actividad ---------- */
@@ -185,108 +156,152 @@
         });
 
         function showError(id, message) { const n = $(id); n.textContent = message; n.hidden = !message; }
-
-        function slugify(text) {
-          return String(text || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "")
-            .replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 40);
-        }
+        const validEmail = (email) => /^\S+@\S+\.\S+$/.test(email);
 
         function goHome(result) {
           session.save(result);
           window.location.href = session.homeFor(result.role) + (result.role === "TEACHER" ? "#inicio" : "");
         }
 
-        /* ---------- Crear cuenta ---------- */
+        /* ---------- Paso 1: pedir el codigo ---------- */
+        // Lo que la persona ya nos dio; se manda junto con el codigo al verificarlo.
+        const pending = { email: "", fullName: "", phone: "", activity: "", tenantSlug: "" };
+        const RESEND_SECONDS = 30;
+        let resendTimer = null;
+
+        function startResendCountdown() {
+          const btn = $("codigo-reenviar");
+          let left = RESEND_SECONDS;
+          clearInterval(resendTimer);
+          btn.disabled = true;
+          btn.textContent = `Reenviar código (${left})`;
+          resendTimer = setInterval(() => {
+            left -= 1;
+            if (left <= 0) { clearInterval(resendTimer); btn.disabled = false; btn.textContent = "Reenviar código"; return; }
+            btn.textContent = `Reenviar código (${left})`;
+          }, 1000);
+        }
+
+        function showCodePanel() {
+          $("panel-crear").hidden = true;
+          $("panel-entrar").hidden = true;
+          document.querySelector(".tabs").hidden = true;
+          $("panel-codigo").hidden = false;
+          $("codigo-email").textContent = pending.email;
+          $("k-name-field").hidden = true;
+          $("k-accounts").hidden = true;
+          $("codigo-submit").hidden = false;
+          $("k-code").value = "";
+          showError("codigo-error", "");
+          startResendCountdown();
+          $("k-code").focus();
+        }
+
+        async function sendCode(btn, errorId) {
+          busy(btn, true, "Mandando el código…");
+          try {
+            await api("/api/auth/email-code", { method: "POST", auth: false, body: { email: pending.email } });
+            store.set("micuota.lastEmail", pending.email);
+            return true;
+          } catch (error) {
+            showError(errorId, humanError(error));
+            return false;
+          } finally {
+            busy(btn, false);
+          }
+        }
+
         $("form-crear").addEventListener("submit", async (e) => {
           e.preventDefault();
           const f = e.target;
           const fullName = f.fullName.value.trim();
           const email = f.email.value.trim();
-          const phone = f.phone.value.trim();
-          const password = f.password.value;
-          [f.fullName, f.email, f.password].forEach((i) => i.removeAttribute("aria-invalid"));
+          [f.fullName, f.email].forEach((i) => i.removeAttribute("aria-invalid"));
           if (!fullName) { f.fullName.setAttribute("aria-invalid", "true"); f.fullName.focus(); return showError("crear-error", "Contanos tu nombre."); }
-          if (!/^\S+@\S+\.\S+$/.test(email)) { f.email.setAttribute("aria-invalid", "true"); f.email.focus(); return showError("crear-error", "Revisá el email: parece que le falta algo."); }
-          if (password.length < 8) { f.password.setAttribute("aria-invalid", "true"); f.password.focus(); return showError("crear-error", "La contraseña tiene que tener al menos 8 caracteres."); }
+          if (!validEmail(email)) { f.email.setAttribute("aria-invalid", "true"); f.email.focus(); return showError("crear-error", "Revisá el email: parece que le falta algo."); }
           showError("crear-error", "");
-          const btn = $("crear-submit");
-          busy(btn, true, "Creando tu cuenta…");
-          try {
-            const base = slugify(fullName) || "cuenta";
-            const result = await api("/api/auth/register-tenant", {
-              method: "POST", auth: false,
-              body: { tenantName: fullName, tenantSlug: `${base}-${Math.floor(100 + Math.random() * 900)}`, fullName, email, password }
-            });
-            goHome(result);
-          } catch (error) {
-            if (/restringida/i.test(error.message || "")) {
-              // El alta automatica esta cerrada: guardamos el pedido para activarla a mano.
-              try {
-                await api("/api/public/leads/interested", {
-                  method: "POST", auth: false,
-                  body: { fullName, email, phone: phone || null, source: `LANDING_SIGNUP_${activity}` }
-                });
-                $("recibido-email").textContent = email;
-                $("recibido-title").textContent = `¡Listo, ${fullName.split(/\s+/)[0]}! Recibimos tus datos`;
-                $("panel-crear").hidden = true;
-                $("panel-recibido").hidden = false;
-                document.querySelector(".tabs").hidden = true;
-                $("recibido-title").setAttribute("tabindex", "-1");
-                $("recibido-title").focus();
-              } catch (leadError) {
-                showError("crear-error", humanError(leadError));
-              }
-            } else {
-              showError("crear-error", humanError(error));
-            }
-          } finally {
-            busy(btn, false);
-          }
+          Object.assign(pending, { email, fullName, phone: f.phone.value.trim(), activity, tenantSlug: "" });
+          if (await sendCode($("crear-submit"), "crear-error")) showCodePanel();
         });
 
-        /* ---------- Entrar ---------- */
-        const knownSlug = params.get("cuenta") || params.get("tenantSlug") || session.slug();
-        function setSlugKnown(slug) {
-          if (slug) {
-            $("e-slug").value = slug;
-            $("slug-known-value").textContent = slug;
-            $("slug-known").hidden = false;
-            $("slug-field").hidden = true;
-          } else {
-            $("slug-known").hidden = true;
-            $("slug-field").hidden = false;
-          }
-        }
-        setSlugKnown(knownSlug);
-        $("slug-change").addEventListener("click", () => { setSlugKnown(""); $("e-slug").focus(); });
         const lastEmail = store.get("micuota.lastEmail");
         if (lastEmail) $("e-email").value = lastEmail;
 
         $("form-entrar").addEventListener("submit", async (e) => {
           e.preventDefault();
-          const f = e.target;
-          const tenantSlug = slugify(f.tenantSlug.value.trim());
-          const email = f.email.value.trim();
-          const password = f.password.value;
-          if (!tenantSlug) { setSlugKnown(""); f.tenantSlug.focus(); return showError("entrar-error", "Falta el código de tu cuenta."); }
-          if (!email || !password) { (email ? f.password : f.email).focus(); return showError("entrar-error", "Completá tu email y contraseña."); }
+          const email = e.target.email.value.trim();
+          if (!validEmail(email)) { e.target.email.focus(); return showError("entrar-error", "Revisá el email: parece que le falta algo."); }
           showError("entrar-error", "");
-          const btn = $("entrar-submit");
-          busy(btn, true, "Entrando…");
+          Object.assign(pending, { email, fullName: "", phone: "", activity: "", tenantSlug: "" });
+          if (await sendCode($("entrar-submit"), "entrar-error")) showCodePanel();
+        });
+
+        /* ---------- Paso 2: verificar el codigo ---------- */
+        async function verifyCode() {
+          const code = $("k-code").value.replace(/\D/g, "");
+          if (code.length !== 6) { $("k-code").focus(); return showError("codigo-error", "El código tiene 6 números."); }
+          if (!$("k-name-field").hidden) {
+            pending.fullName = $("k-name").value.trim();
+            if (!pending.fullName) { $("k-name").focus(); return showError("codigo-error", "Contanos tu nombre para crear tu cuenta."); }
+          }
+          showError("codigo-error", "");
+          const btn = $("codigo-submit");
+          busy(btn, true, pending.fullName ? "Preparando tu cuenta…" : "Entrando…");
           try {
-            const result = await api("/api/auth/login", { method: "POST", auth: false, body: { tenantSlug, email, password } });
-            store.set("micuota.lastEmail", email);
-            goHome(result);
+            const result = await api("/api/auth/email-code/verify", {
+              method: "POST", auth: false,
+              body: {
+                email: pending.email, code,
+                fullName: pending.fullName || null, phone: pending.phone || null,
+                activity: pending.activity || null, tenantSlug: pending.tenantSlug || null
+              }
+            });
+            if (result.status === "SIGNED_IN") return goHome(result.session);
+            if (result.status === "NEEDS_NAME") {
+              $("k-name-field").hidden = false;
+              $("k-name").focus();
+              return;
+            }
+            if (result.status === "CHOOSE_ACCOUNT") {
+              const list = $("k-accounts-list");
+              list.replaceChildren(...result.accounts.map((acc) => {
+                const b = document.createElement("button");
+                b.type = "button";
+                b.className = "btn btn-block";
+                b.textContent = acc.tenantName ? `${acc.tenantName} (${acc.tenantSlug})` : acc.tenantSlug;
+                b.addEventListener("click", () => { pending.tenantSlug = acc.tenantSlug; verifyCode(); });
+                return b;
+              }));
+              $("k-accounts").hidden = false;
+              $("codigo-submit").hidden = true;
+            }
           } catch (error) {
-            showError("entrar-error", humanError(error));
-            if (/tenant no encontrado/i.test(error.message || "")) setSlugKnown("");
+            showError("codigo-error", humanError(error));
+            $("k-code").select();
           } finally {
             busy(btn, false);
           }
+        }
+
+        $("form-codigo").addEventListener("submit", (e) => { e.preventDefault(); verifyCode(); });
+        // Al pegar o completar los 6 numeros entramos solos (si no falta el nombre).
+        $("k-code").addEventListener("input", (e) => {
+          const digits = e.target.value.replace(/\D/g, "").slice(0, 6);
+          if (digits !== e.target.value) e.target.value = digits;
+          if (digits.length === 6 && $("k-name-field").hidden && $("k-accounts").hidden) verifyCode();
+        });
+        $("codigo-reenviar").addEventListener("click", async () => {
+          if (await sendCode($("codigo-reenviar"), "codigo-error")) { startResendCountdown(); $("k-code").focus(); }
+        });
+        $("codigo-cambiar").addEventListener("click", () => {
+          clearInterval(resendTimer);
+          $("panel-codigo").hidden = true;
+          document.querySelector(".tabs").hidden = false;
+          selectTab(pending.fullName ? "crear" : "entrar");
         });
 
         /* ---------- Pestaña inicial ---------- */
-        const initial = location.hash.replace("#", "") || (knownSlug ? "entrar" : "crear");
+        const initial = location.hash.replace("#", "") || (lastEmail ? "entrar" : "crear");
         selectTab(initial === "entrar" ? "entrar" : "crear", false);
 
         // Si ya hay sesion, ofrecemos seguir directo.

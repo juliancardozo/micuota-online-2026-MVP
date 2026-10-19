@@ -5,6 +5,10 @@ import com.micuota.mvp.domain.UserRole;
 import com.micuota.mvp.repository.UserRepository;
 import com.micuota.mvp.service.AuthSessionService;
 import com.micuota.mvp.service.AuthResponse;
+import com.micuota.mvp.service.EmailCodeAuthService;
+import com.micuota.mvp.service.EmailCodeRequest;
+import com.micuota.mvp.service.EmailCodeVerifyRequest;
+import com.micuota.mvp.service.EmailCodeVerifyResponse;
 import com.micuota.mvp.service.LoginRequest;
 import com.micuota.mvp.service.RegisterTenantRequest;
 import com.micuota.mvp.service.SessionActivityService;
@@ -16,7 +20,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import java.util.Map;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -33,17 +39,51 @@ public class AuthController {
     private final AuthSessionService authSessionService;
     private final SessionActivityService sessionActivityService;
     private final UserRepository userRepository;
+    private final EmailCodeAuthService emailCodeAuthService;
 
     public AuthController(
         TenantAuthService tenantAuthService,
         AuthSessionService authSessionService,
         SessionActivityService sessionActivityService,
-        UserRepository userRepository
+        UserRepository userRepository,
+        EmailCodeAuthService emailCodeAuthService
     ) {
         this.tenantAuthService = tenantAuthService;
         this.authSessionService = authSessionService;
         this.sessionActivityService = sessionActivityService;
         this.userRepository = userRepository;
+        this.emailCodeAuthService = emailCodeAuthService;
+    }
+
+    @PostMapping("/email-code")
+    @Operation(
+        summary = "Pedir codigo por email",
+        description = "Manda un codigo de 6 digitos al email para entrar o crear cuenta sin contrasena. Vence en 10 minutos."
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Codigo enviado"),
+        @ApiResponse(responseCode = "400", description = "Demasiados pedidos o fallo el envio", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public Map<String, Object> requestEmailCode(@Valid @RequestBody EmailCodeRequest request, HttpServletRequest httpRequest) {
+        emailCodeAuthService.requestCode(request.email(), clientIp(httpRequest));
+        return Map.of("sent", true);
+    }
+
+    @PostMapping("/email-code/verify")
+    @Operation(
+        summary = "Verificar codigo por email",
+        description = "Valida el codigo. Si el email ya tiene cuenta inicia sesion; si no, crea la cuenta (requiere fullName). " +
+            "Responde NEEDS_NAME o CHOOSE_ACCOUNT cuando falta un dato; el mismo codigo sirve para reenviar."
+    )
+    public EmailCodeVerifyResponse verifyEmailCode(@Valid @RequestBody EmailCodeVerifyRequest request) {
+        return emailCodeAuthService.verify(request);
+    }
+
+    private static String clientIp(HttpServletRequest request) {
+        // Render y Netlify ponen la IP real primera en X-Forwarded-For.
+        String forwarded = request.getHeader("X-Forwarded-For");
+        String ip = forwarded != null && !forwarded.isBlank() ? forwarded.split(",")[0].trim() : request.getRemoteAddr();
+        return ip == null ? null : ip.substring(0, Math.min(ip.length(), 64));
     }
 
     @PostMapping("/register-tenant")
