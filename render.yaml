@@ -38,9 +38,9 @@ services:
       - key: APP_PAYMENTS_EXTERNAL_PROVIDERS_ENABLED
         value: false
       - key: APP_PAYMENTS_DEFAULT_PROVIDER
-        value: STRIPE
+        value: MERCADOPAGO
       - key: APP_PAYMENTS_FALLBACK_PROVIDER
-        value: SQUARE
+        value: MERCADOPAGO
       - key: APP_CRM_DEFAULT_OWNER
         value: ventas@micuota.online
       - key: APP_CRM_API_KEY

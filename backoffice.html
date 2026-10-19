@@ -1235,9 +1235,6 @@
         return `<div class="item"><strong>Link cliente MiCuota:</strong> <a href="${appUrl}" target="_blank" rel="noopener noreferrer">${appUrl}</a></div>`;
       }
 
-      function callbacksMarkup(operationId) {
-        return `<div class="item"><strong>Callbacks:</strong> <a href="${API_BASE}/api/callbacks/success?operationId=${operationId}" target="_blank" rel="noopener noreferrer">success</a> | <a href="${API_BASE}/api/callbacks/pending?operationId=${operationId}" target="_blank" rel="noopener noreferrer">pending</a> | <a href="${API_BASE}/api/callbacks/failure?operationId=${operationId}" target="_blank" rel="noopener noreferrer">failure</a></div>`;
-      }
 
       function setBackofficeEnabled(enabled) {
         [createUserForm, createCourseForm, createEnrollmentForm, oneTimeForm, subscriptionForm].forEach((form) => {
@@ -1602,7 +1599,7 @@
 
           const operation = await apiPost("/api/backoffice/payments/one-time", payload);
           setNote(note, `Pago unico #${operation.id} creado.`, false);
-          result.innerHTML = createClientMarkup(operation.id) + createQrMarkup(operation.checkoutUrl) + callbacksMarkup(operation.id);
+          result.innerHTML = createClientMarkup(operation.id) + createQrMarkup(operation.checkoutUrl);
           await refreshAllData();
         } catch (error) {
           showSessionError(error.message, note);
@@ -1628,7 +1625,7 @@
 
           const operation = await apiPost("/api/backoffice/payments/subscriptions", payload);
           setNote(note, `Suscripcion #${operation.id} creada.`, false);
-          result.innerHTML = createClientMarkup(operation.id) + createQrMarkup(operation.checkoutUrl) + callbacksMarkup(operation.id);
+          result.innerHTML = createClientMarkup(operation.id) + createQrMarkup(operation.checkoutUrl);
           await refreshAllData();
         } catch (error) {
           showSessionError(error.message, note);

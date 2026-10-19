@@ -197,6 +197,8 @@ sequenceDiagram
 
 ## 7. Callbacks mínimos
 
+> Desactualizado: los callbacks por `operationId` ya no cambian estados; solo redirigen a `pago.html`. El estado lo define el webhook de Mercado Pago consultando su API (ver `docs/api/callbacks.md`).
+
 Objetivo: actualizar el estado de la operación según resultado del proveedor.
 
 Actor principal: Proveedor de pago.

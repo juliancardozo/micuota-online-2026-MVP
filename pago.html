@@ -2,809 +2,314 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MiCuota | Completar pago</title>
-    <meta name="robots" content="noindex,nofollow,noarchive" />
-    <link rel="canonical" href="https://micuota.online/pago.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Pagar | MiCuota</title>
+    <meta name="description" content="Pagá tu cuota de forma segura con Mercado Pago." />
+    <meta name="robots" content="noindex,nofollow" />
+    <meta name="theme-color" content="#0b6b4d" />
+    <meta property="og:title" content="Tenés un pago pendiente" />
+    <meta property="og:description" content="Tocá para ver el detalle y pagar con Mercado Pago en un paso." />
+    <meta property="og:image" content="https://micuota.online/assets/micuota-mate-mark.png" />
     <link rel="icon" type="image/png" href="/assets/micuota-mate-mark.png" />
-    <link rel="apple-touch-icon" href="/assets/micuota-mate-mark.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap"
-      rel="stylesheet"
-    />
-    <script src="/micuota-config.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600..800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/mc.css" />
     <style>
-      :root {
-        --bg: #f5efe4;
-        --paper: rgba(255, 251, 244, 0.84);
-        --paper-strong: #fffaf2;
-        --ink: #211f1a;
-        --muted: #6f6659;
-        --line: rgba(93, 73, 43, 0.12);
-        --line-strong: rgba(93, 73, 43, 0.2);
-        --accent: #cc5a16;
-        --accent-2: #f0a64a;
-        --accent-3: #ffe5b3;
-        --ok: #297e59;
-        --pending: #9a6712;
-        --danger: #bf4056;
-        --shadow: 0 28px 70px rgba(60, 40, 12, 0.12);
-        --radius-xl: 30px;
-        --radius-lg: 22px;
-        --radius-md: 16px;
-      }
-
-      * {
-        box-sizing: border-box;
-      }
-
-      html,
-      body {
-        margin: 0;
-        padding: 0;
-      }
-
-      body {
-        min-height: 100vh;
-        font-family: "Outfit", "Space Grotesk", sans-serif;
-        color: var(--ink);
-        background:
-          radial-gradient(circle at 0% 0%, rgba(204, 90, 22, 0.2), transparent 26%),
-          radial-gradient(circle at 100% 10%, rgba(240, 166, 74, 0.24), transparent 24%),
-          linear-gradient(135deg, #f8f2e8 0%, #f4ead9 48%, #f9f4ea 100%);
-      }
-
-      body::before {
-        content: "";
-        position: fixed;
-        inset: 0;
-        pointer-events: none;
-        background-image:
-          linear-gradient(rgba(117, 93, 57, 0.03) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(117, 93, 57, 0.03) 1px, transparent 1px);
-        background-size: 30px 30px;
-        mask-image: radial-gradient(circle at 50% 10%, black 0%, transparent 75%);
-      }
-
-      a,
-      button {
-        font: inherit;
-      }
-
-      .payment-page {
-        width: min(1180px, calc(100vw - 28px));
-        margin: 18px auto;
-        display: grid;
-        grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.82fr);
-        gap: 18px;
-        align-items: stretch;
-      }
-
-      .hero-card,
-      .summary-card {
-        position: relative;
-        overflow: hidden;
-        border: 1px solid var(--line);
-        border-radius: var(--radius-xl);
-        background: var(--paper);
-        backdrop-filter: blur(18px);
-        box-shadow: var(--shadow);
-      }
-
-      .hero-card {
-        padding: clamp(24px, 4vw, 42px);
-        display: grid;
-        gap: 24px;
-      }
-
-      .hero-card::after {
-        content: "";
-        position: absolute;
-        right: -120px;
-        top: -120px;
-        width: 280px;
-        height: 280px;
-        border-radius: 50%;
-        background: radial-gradient(circle, rgba(240, 166, 74, 0.36) 0%, transparent 70%);
-        pointer-events: none;
-      }
-
-      .summary-card {
-        padding: 24px;
-        display: grid;
-        gap: 18px;
-        align-self: start;
-        position: sticky;
-        top: 18px;
-      }
-
-      .eyebrow,
-      .section-label {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 0.78rem;
-        font-weight: 800;
-        letter-spacing: 0.18em;
-        text-transform: uppercase;
-        color: var(--accent);
-      }
-
-      .eyebrow::before,
-      .section-label::before {
-        content: "";
-        width: 10px;
-        height: 10px;
-        border-radius: 999px;
-        background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
-        box-shadow: 0 0 0 6px rgba(204, 90, 22, 0.08);
-      }
-
-      .checkout-brand {
-        display: inline-flex;
-        align-items: center;
-        gap: 12px;
-      }
-
-      .checkout-brand-logo {
-        width: 36px;
-        height: 36px;
-        border-radius: 10px;
-        border: 1px solid rgba(93, 73, 43, 0.1);
-        background: #fffaf2;
-        object-fit: contain;
-        padding: 4px;
-        box-shadow: 0 0 0 4px rgba(204, 90, 22, 0.07);
-      }
-
-      h1,
-      h2,
-      h3,
-      p {
-        margin: 0;
-      }
-
-      h1 {
-        font-size: clamp(2.5rem, 5vw, 4.5rem);
-        line-height: 0.94;
-        letter-spacing: -0.04em;
-        max-width: 10ch;
-      }
-
-      .subtitle {
-        max-width: 52ch;
-        color: var(--muted);
-        font-size: 1.02rem;
-        line-height: 1.65;
-      }
-
-      .hero-meta {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-      }
-
-      .chip {
-        display: inline-flex;
-        align-items: center;
-        min-height: 36px;
-        padding: 0 14px;
-        border-radius: 999px;
-        border: 1px solid var(--line);
-        background: rgba(255, 255, 255, 0.6);
-        color: var(--muted);
-        font-size: 0.84rem;
-        font-weight: 600;
-      }
-
-      .chip strong {
-        color: var(--ink);
-        margin-left: 6px;
-      }
-
-      .hero-grid {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(280px, 0.78fr);
-        gap: 18px;
-      }
-
-      .detail-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 14px;
-      }
-
-      .detail-card,
-      .trust-card,
-      .timeline-card,
-      .summary-block,
-      .transfer-card {
-        border: 1px solid var(--line);
-        border-radius: var(--radius-lg);
-        background: rgba(255, 255, 255, 0.56);
-        padding: 18px;
-      }
-
-      .detail-card small,
-      .summary-block small,
-      .timeline-step small {
-        display: block;
-        margin-bottom: 8px;
-        color: var(--muted);
-        font-size: 0.78rem;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-      }
-
-      .detail-card strong {
-        font-size: 1.08rem;
-        line-height: 1.3;
-      }
-
-      .highlight-amount {
-        background: linear-gradient(135deg, #fff5df 0%, #fff0cb 100%);
-        border-color: rgba(204, 90, 22, 0.18);
-      }
-
-      .highlight-amount strong {
-        font-size: clamp(1.6rem, 3vw, 2.3rem);
-        color: var(--accent);
-      }
-
-      .status-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        min-height: 36px;
-        padding: 0 14px;
-        border-radius: 999px;
-        font-size: 0.84rem;
-        font-weight: 700;
-        border: 1px solid transparent;
-      }
-
-      .status-badge::before {
-        content: "";
-        width: 9px;
-        height: 9px;
-        border-radius: 50%;
-        background: currentColor;
-      }
-
-      .status-created {
-        background: rgba(154, 103, 18, 0.1);
-        border-color: rgba(154, 103, 18, 0.15);
-        color: var(--pending);
-      }
-
-      .status-pending {
-        background: rgba(154, 103, 18, 0.1);
-        border-color: rgba(154, 103, 18, 0.15);
-        color: var(--pending);
-      }
-
-      .status-success {
-        background: rgba(41, 126, 89, 0.12);
-        border-color: rgba(41, 126, 89, 0.16);
-        color: var(--ok);
-      }
-
-      .status-failure {
-        background: rgba(191, 64, 86, 0.1);
-        border-color: rgba(191, 64, 86, 0.14);
-        color: var(--danger);
-      }
-
-      .actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
-      }
-
-      .method-reco {
-        border: 1px solid rgba(204, 90, 22, 0.2);
-        border-radius: 16px;
-        background: linear-gradient(135deg, rgba(255, 241, 214, 0.9) 0%, rgba(255, 250, 238, 0.95) 100%);
-        padding: 14px;
-        display: grid;
-        gap: 8px;
-      }
-
-      .method-reco strong {
-        font-size: 1rem;
-      }
-
-      .method-reco p {
-        color: var(--muted);
-        line-height: 1.5;
-        font-size: 0.92rem;
-      }
-
-      .btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 50px;
-        padding: 0 20px;
-        border-radius: 16px;
-        text-decoration: none;
-        font-weight: 700;
-        cursor: pointer;
-        transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease;
-      }
-
-      .btn:hover {
-        transform: translateY(-1px);
-      }
-
-      .btn-primary {
-        color: #fffaf2;
-        background: linear-gradient(135deg, #c04e11 0%, #ef9a2b 100%);
-        box-shadow: 0 14px 26px rgba(192, 78, 17, 0.18);
-      }
-
-      .btn-secondary {
-        color: var(--ink);
-        background: rgba(255, 255, 255, 0.72);
-        border: 1px solid var(--line-strong);
-      }
-
-      .summary-card h2 {
-        font-size: 1.35rem;
-        line-height: 1.1;
-      }
-
-      .summary-stack,
-      .timeline {
-        display: grid;
-        gap: 12px;
-      }
-
-      .summary-block strong {
-        display: block;
-        font-size: 1rem;
-        line-height: 1.35;
-      }
-
-      .summary-block p {
-        margin-top: 6px;
-        color: var(--muted);
-        line-height: 1.55;
-        font-size: 0.92rem;
-      }
-
-      .qr-card {
-        display: grid;
-        gap: 14px;
-        place-items: center;
-        text-align: center;
-        background: linear-gradient(180deg, rgba(255, 252, 247, 0.92) 0%, rgba(255, 247, 232, 0.84) 100%);
-      }
-
-      .qr-frame {
-        width: min(220px, 100%);
-        aspect-ratio: 1;
-        border-radius: 22px;
-        border: 1px solid var(--line);
-        background:
-          linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(252, 244, 228, 0.95) 100%);
-        display: grid;
-        place-items: center;
-        padding: 12px;
-      }
-
-      .qr-frame img {
-        width: 100%;
-        height: auto;
-        border-radius: 14px;
-      }
-
-      .trust-list,
-      .timeline {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-      }
-
-      .trust-list li,
-      .timeline-step {
-        display: grid;
-        gap: 4px;
-        padding: 14px 0;
-        border-top: 1px solid var(--line);
-      }
-
-      .trust-list li:first-child,
-      .timeline-step:first-child {
-        border-top: 0;
-        padding-top: 0;
-      }
-
-      .timeline-step strong,
-      .trust-list strong {
-        font-size: 0.97rem;
-      }
-
-      .trust-list p,
-      .timeline-step p,
-      .footer-note {
-        color: var(--muted);
-        line-height: 1.6;
-      }
-
-      .footer-note {
-        font-size: 0.92rem;
-      }
-
-      .transfer-card {
-        display: grid;
-        gap: 12px;
-        background: linear-gradient(135deg, rgba(255, 247, 235, 0.88) 0%, rgba(255, 239, 214, 0.92) 100%);
-      }
-
-      .transfer-card code {
-        display: inline-flex;
-        align-items: center;
-        min-height: 42px;
-        padding: 0 12px;
-        border-radius: 12px;
-        border: 1px solid var(--line);
-        background: rgba(255, 255, 255, 0.76);
-        font-size: 0.92rem;
-      }
-
-      .empty-state,
-      .error-state {
-        border-radius: var(--radius-lg);
-        border: 1px dashed var(--line-strong);
-        padding: 18px;
-        background: rgba(255, 255, 255, 0.46);
-      }
-
-      .error-state {
-        color: var(--danger);
-        border-color: rgba(191, 64, 86, 0.22);
-        background: rgba(255, 243, 245, 0.84);
-      }
-
-      @media (max-width: 980px) {
-        .payment-page,
-        .hero-grid {
-          grid-template-columns: 1fr;
-        }
-
-        .summary-card {
-          position: static;
-        }
-      }
-
-      @media (max-width: 640px) {
-        .payment-page {
-          width: min(100vw - 16px, 100%);
-          margin: 8px auto 20px;
-          gap: 12px;
-        }
-
-        .hero-card,
-        .summary-card {
-          padding: 18px;
-          border-radius: 24px;
-        }
-
-        .detail-grid {
-          grid-template-columns: 1fr;
-        }
-
-        h1 {
-          max-width: none;
-        }
-      }
+      body { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
+      .pay-top { padding: 16px 0 8px; }
+      .pay-main { flex: 1; padding: 8px 0 32px; }
+      .pay-card { max-width: 480px; margin: 0 auto; padding: 28px 22px; }
+      .payee { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+      .payee .eyebrow { margin: 0; color: var(--text-muted); font-size: var(--fs-sm); }
+      .payee .name { margin: 0; font-family: var(--font-display); font-size: 1.35rem; font-weight: 750; line-height: 1.15; }
+      .concept { font-size: var(--fs-lg); margin: 0 0 4px; font-weight: 700; }
+      .big-amount { font-family: var(--font-display); font-size: clamp(2.6rem, 13vw, 3.6rem); font-weight: 800; letter-spacing: -.03em; line-height: 1; margin: 8px 0 6px; }
+      .big-amount .cur { font-size: .4em; font-weight: 700; color: var(--text-muted); letter-spacing: 0; margin-left: 6px; }
+      .meta-line { color: var(--text-muted); margin: 0 0 22px; }
+      .status-hero { text-align: center; padding: 6px 0 4px; }
+      .status-hero .icon { width: 84px; height: 84px; border-radius: 50%; display: grid; place-items: center; margin: 0 auto 14px; }
+      .status-hero .icon svg { width: 46px; height: 46px; }
+      .status-hero.ok .icon { background: var(--ok-soft); color: var(--ok); }
+      .status-hero.wait .icon { background: var(--info-soft); color: var(--info); }
+      .status-hero.bad .icon { background: var(--late-soft); color: var(--late); }
+      .status-hero h1 { font-size: 1.8rem; }
+      .methods { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 14px; color: var(--text-muted); font-size: var(--fs-sm); margin: 14px 0 0; padding: 0; list-style: none; }
+      .methods li::before { content: "✓ "; color: var(--ok); font-weight: 700; }
+      .trust { display: flex; gap: 10px; align-items: flex-start; color: var(--text-muted); font-size: var(--fs-sm); margin-top: 20px; }
+      .trust svg { width: 20px; height: 20px; flex: none; margin-top: 2px; color: var(--ok); }
+      details.alt { margin-top: 18px; border-top: 1px solid var(--border); padding-top: 14px; }
+      details.alt summary { cursor: pointer; font-weight: 700; color: var(--brand); min-height: 44px; display: flex; align-items: center; }
+      .receipt { margin: 18px 0 0; padding: 16px; border-radius: var(--r-md); background: var(--surface-2); border: 1px dashed var(--border-strong); }
+      .receipt dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 0; }
+      .receipt dt { color: var(--text-muted); }
+      .receipt dd { margin: 0; text-align: right; font-weight: 700; overflow-wrap: anywhere; }
+      .pay-foot { text-align: center; color: var(--text-muted); font-size: var(--fs-sm); padding: 16px 0 calc(20px + env(safe-area-inset-bottom)); }
+      .pay-foot a { color: var(--text-muted); }
+      .loading-card .skeleton { margin-bottom: 14px; }
+      .sticky-pay { position: sticky; bottom: 0; padding: 12px 0 calc(12px + env(safe-area-inset-bottom)); background: linear-gradient(to top, var(--surface) 70%, transparent); }
+      @media (min-width: 640px) { .pay-card { padding: 36px 36px; } .sticky-pay { position: static; background: none; padding: 0; } }
     </style>
+    <script src="/micuota-config.js"></script>
+    <script src="/app.js"></script>
   </head>
   <body>
-    <div class="payment-page">
-      <main class="hero-card">
-        <div class="hero-copy">
-          <span class="eyebrow checkout-brand">
-            <img class="checkout-brand-logo" src="/assets/micuota-mate-mark.png" alt="" />
-            MiCuota Checkout
-          </span>
-          <h1>Completa tu pago sin vueltas.</h1>
-          <p class="subtitle" id="subtitle">Estamos preparando el detalle de tu operacion.</p>
-        </div>
+    <a class="skip-link" href="#contenido">Ir al contenido</a>
+    <header class="pay-top no-print">
+      <div class="container row-between">
+        <span class="brand" aria-label="MiCuota"><img src="/assets/micuota-mate-mark.png" alt="" width="36" height="36" />MiCuota</span>
+        <span class="row small muted"><span aria-hidden="true">🔒</span> Pago seguro</span>
+      </div>
+    </header>
 
-        <div class="hero-meta" id="hero-meta">
-          <span class="chip">Operacion <strong id="operation-id">--</strong></span>
-          <span class="chip">Proveedor <strong id="provider-name">--</strong></span>
-          <span class="chip">Estado <strong id="status-inline">Cargando</strong></span>
-        </div>
-
-        <section class="detail-grid" id="payment-grid" hidden>
-          <article class="detail-card">
-            <small>Profesional</small>
-            <strong id="professional-name"></strong>
-          </article>
-          <article class="detail-card">
-            <small>Concepto</small>
-            <strong id="description"></strong>
-          </article>
-          <article class="detail-card highlight-amount">
-            <small>Monto</small>
-            <strong id="amount"></strong>
-          </article>
-          <article class="detail-card">
-            <small>Tipo</small>
-            <strong id="flow-type"></strong>
-          </article>
+    <main id="contenido" class="pay-main">
+      <div class="container">
+        <!-- Cargando -->
+        <section id="view-loading" class="card pay-card loading-card" aria-busy="true" aria-live="polite">
+          <div class="payee"><div class="avatar avatar-lg skeleton" aria-hidden="true"></div><div class="grow"><div class="skeleton" style="width:40%"></div><div class="skeleton" style="width:70%;height:1.4em"></div></div></div>
+          <div class="skeleton" style="width:60%;height:1.3em"></div>
+          <div class="skeleton" style="width:50%;height:3rem"></div>
+          <div class="skeleton" style="width:100%;height:60px;margin-top:24px"></div>
+          <p class="center muted small" id="loading-copy">Cargando tu pago…</p>
         </section>
 
-        <div class="actions" id="payment-actions" hidden>
-          <a id="pay-now" class="btn btn-primary" href="#" target="_blank" rel="noopener noreferrer">Ir al pago seguro</a>
-          <button id="copy-link" class="btn btn-secondary" type="button">Copiar link</button>
-        </div>
-
-        <section class="method-reco" id="method-recommendation" hidden>
-          <small class="section-label">Recomendado ahora</small>
-          <strong id="method-recommendation-title">Metodo recomendado</strong>
-          <p id="method-recommendation-copy">Elegimos el mejor camino para que pagues en menos pasos.</p>
-        </section>
-
-        <section class="transfer-card" id="transfer-block" hidden>
-          <span class="section-label">Alternativa manual AR</span>
-          <div>
-            <small>Alias</small>
-            <code id="transfer-alias">--</code>
+        <!-- Error -->
+        <section id="view-error" class="card pay-card" hidden>
+          <div class="status-hero bad">
+            <div class="icon" aria-hidden="true"></div>
+            <h1 id="error-title">No pudimos abrir este pago</h1>
+            <p id="error-copy" class="muted"></p>
           </div>
-          <div>
-            <small>Banco</small>
-            <strong id="transfer-bank-name">--</strong>
-          </div>
-          <p>Si prefieres transferencia, comparte este alias con el alumno y luego valida el estado desde MiCuota.</p>
+          <button id="retry" class="btn btn-primary btn-block btn-lg" type="button">Intentar de nuevo</button>
         </section>
 
-        <section class="trust-card">
-          <span class="section-label">Que va a pasar</span>
-          <ol class="timeline">
-            <li class="timeline-step">
-              <small>Paso 1</small>
-              <strong>Revisas el resumen</strong>
-              <p>Confirmas monto, concepto y profesional antes de abrir el proveedor.</p>
-            </li>
-            <li class="timeline-step">
-              <small>Paso 2</small>
-              <strong>Pagas en el proveedor</strong>
-              <p>El boton principal te lleva al checkout seguro que corresponde a tu operacion.</p>
-            </li>
-            <li class="timeline-step">
-              <small>Paso 3</small>
-              <strong>Tu estado se actualiza</strong>
-              <p>No necesitas mandar comprobantes manuales. MiCuota sincroniza el estado para tu profesional.</p>
-            </li>
-          </ol>
-        </section>
-
-        <p class="footer-note">
-          Si ya abriste este pago desde WhatsApp o email, puedes copiar el link y retomarlo en otro dispositivo sin perder contexto.
-        </p>
-
-        <div id="error" class="error-state" hidden></div>
-      </main>
-
-      <aside class="summary-card">
-        <span class="section-label">Resumen</span>
-        <h2>Una vista limpia para decidir rapido.</h2>
-
-        <div class="summary-stack">
-          <div class="summary-block">
-            <small>Estado actual</small>
-            <span id="status-badge" class="status-badge status-created">Preparando</span>
-            <p id="status-copy">Estamos cargando la operacion para mostrarte el estado correcto.</p>
-          </div>
-
-          <div class="summary-block qr-card">
-            <small>Continuar desde otro dispositivo</small>
-            <div class="qr-frame">
-              <img id="checkout-qr" alt="QR de pago" hidden />
+        <!-- Pago -->
+        <article id="view-payment" class="card pay-card" hidden>
+          <div class="payee">
+            <div class="avatar avatar-lg" id="payee-initials" aria-hidden="true"></div>
+            <div>
+              <p class="eyebrow">Le pagás a</p>
+              <p class="name" id="payee-name"></p>
             </div>
-            <p>Escanea este QR para abrir el mismo link de pago en tu celular.</p>
           </div>
 
-          <div class="summary-block">
-            <small>Confianza</small>
-            <ul class="trust-list">
-              <li>
-                <strong>Checkout seguro</strong>
-                <p>El cobro se procesa en el proveedor configurado para esta operacion.</p>
-              </li>
-              <li>
-                <strong>Sin seguimiento manual</strong>
-                <p>La plataforma informa automaticamente el resultado al profesional.</p>
-              </li>
-              <li>
-                <strong>Ideal para retomar</strong>
-                <p>Puedes copiar el link y abrirlo luego sin perder el detalle de la operacion.</p>
-              </li>
-            </ul>
+          <!-- Estado: pagado / en proceso / fallido -->
+          <div id="status-block" class="status-hero" hidden>
+            <div class="icon" aria-hidden="true" id="status-icon"></div>
+            <h1 id="status-title"></h1>
+            <p id="status-copy" class="muted"></p>
           </div>
-        </div>
-      </aside>
-    </div>
+
+          <div id="summary">
+            <p class="concept" id="concept"></p>
+            <p class="big-amount" id="amount"></p>
+            <p class="meta-line" id="flow-copy"></p>
+          </div>
+
+          <div id="receipt" class="receipt" hidden>
+            <dl>
+              <dt>Concepto</dt><dd id="r-concept"></dd>
+              <dt>Monto</dt><dd id="r-amount"></dd>
+              <dt>A</dt><dd id="r-payee"></dd>
+              <dt>Estado</dt><dd id="r-status">Pagado</dd>
+              <dt>Comprobante</dt><dd id="r-id"></dd>
+            </dl>
+          </div>
+
+          <div id="pay-actions" class="sticky-pay no-print">
+            <a id="pay-now" class="btn btn-mp btn-lg btn-block" href="#" rel="noopener">Pagar con Mercado Pago</a>
+          </div>
+          <ul id="methods" class="methods no-print" aria-label="Formas de pago">
+            <li>Tarjeta de crédito o débito</li>
+            <li>Dinero en Mercado Pago</li>
+            <li>Y otros medios de Mercado Pago</li>
+          </ul>
+
+          <div id="after-actions" class="stack no-print" hidden style="margin-top:20px"></div>
+
+          <p class="trust no-print" id="trust">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+            <span>El pago lo procesa <strong>Mercado Pago</strong> y la plata va directo a <span class="payee-ref"></span>. MiCuota nunca ve los datos de tu tarjeta.</span>
+          </p>
+
+          <details class="alt no-print" id="transfer" hidden>
+            <summary>¿Preferís pagar por transferencia?</summary>
+            <p class="muted small">Transferí a esta cuenta y mandale el comprobante a <span class="payee-ref"></span>. Ojo: los pagos por transferencia no se marcan solos como pagados.</p>
+            <div class="receipt" style="margin-top:8px">
+              <dl>
+                <dt>Alias</dt><dd id="t-alias"></dd>
+                <dt>Banco</dt><dd id="t-bank"></dd>
+              </dl>
+            </div>
+            <button type="button" class="btn btn-sm" id="copy-alias" style="margin-top:10px">Copiar alias</button>
+          </details>
+        </article>
+      </div>
+    </main>
+
+    <footer class="pay-foot no-print">
+      Cobro hecho con <a href="/landing.html">MiCuota</a> · <a href="/privacy.html">Privacidad</a>
+    </footer>
 
     <script>
-      const API_BASE = window.MicuotaConfig?.apiBase || window.__MICUOTA_API_BASE__;
-      const params = new URLSearchParams(window.location.search);
-      const operationId = params.get("operationId");
+      (function () {
+        const { api, money, esc, initials, firstName, icons, copy, toast } = window.MC;
+        const params = new URLSearchParams(location.search);
+        const operationId = (params.get("operationId") || "").trim();
+        // ?status= lo agrega el retorno desde Mercado Pago. Solo lo usamos como pista: la verdad la tiene la API.
+        const returnedStatus = (params.get("status") || params.get("collection_status") || "").toUpperCase();
 
-      const subtitle = document.getElementById("subtitle");
-      const paymentGrid = document.getElementById("payment-grid");
-      const actions = document.getElementById("payment-actions");
-      const payNow = document.getElementById("pay-now");
-      const copyLink = document.getElementById("copy-link");
-      const errorNode = document.getElementById("error");
-      const qrImage = document.getElementById("checkout-qr");
-      const statusBadge = document.getElementById("status-badge");
-      const statusCopy = document.getElementById("status-copy");
-      const transferBlock = document.getElementById("transfer-block");
-      const methodRecommendation = document.getElementById("method-recommendation");
+        const $ = (id) => document.getElementById(id);
+        const views = ["view-loading", "view-error", "view-payment"];
+        function show(id) { views.forEach((v) => { $(v).hidden = v !== id; }); }
 
-      function formatFlowType(flowType) {
-        return flowType === "SUBSCRIPTION" ? "Suscripcion" : "Pago unico";
-      }
+        let pollTimer = null;
+        let pollCount = 0;
+        let data = null;
 
-      function formatProvider(provider) {
-        const labels = {
-          MERCADOPAGO: "MercadoPago",
-          PROMETEO: "Prometeo",
-          WOOCOMMERCE: "WooCommerce",
-          STRIPE: "Stripe",
-          SQUARE: "Square",
-          PLEXO: "Plexo"
-        };
-        return labels[provider] || provider || "Proveedor";
-      }
-
-      function formatStatus(status) {
-        const labels = {
-          CREATED: "Listo para pagar",
-          PENDING: "Pendiente",
-          SUCCESS: "Pagado",
-          FAILURE: "No completado"
-        };
-        return labels[status] || status || "Sin estado";
-      }
-
-      function statusClass(status) {
-        if (status === "SUCCESS") return "status-success";
-        if (status === "FAILURE") return "status-failure";
-        if (status === "PENDING") return "status-pending";
-        return "status-created";
-      }
-
-      function statusDescription(status) {
-        if (status === "SUCCESS") {
-          return "Este pago ya figura como completado. Puedes cerrar esta ventana si solo estabas verificando el estado.";
-        }
-        if (status === "FAILURE") {
-          return "La operacion no se completo. Puedes volver a intentar desde el mismo link si sigue vigente.";
-        }
-        if (status === "PENDING") {
-          return "El proveedor aun esta confirmando el resultado. Si ya pagaste, espera un instante antes de salir.";
-        }
-        return "La operacion esta lista para completarse. Revisa el resumen y continua cuando quieras.";
-      }
-
-      function recommendedMethod(data) {
-        const amount = Number(data.amount || 0);
-        const currency = (data.currency || "").toUpperCase();
-        if (data.flowType === "SUBSCRIPTION") {
-          return {
-            buttonLabel: "Activar cobro recurrente",
-            title: "Suscripcion recurrente recomendada",
-            copy: "Este cobro es recurrente. Completarlo ahora evita friccion en renovaciones y mejora continuidad."
-          };
-        }
-        if ((currency === "UYU" || currency === "ARS") && amount <= 3000) {
-          return {
-            buttonLabel: "Pagar ahora (modo rapido)",
-            title: "Pago inmediato recomendado",
-            copy: "Para este monto, la ruta de pago inmediato suele convertir mejor y reducir abandono."
-          };
-        }
-        return {
-          buttonLabel: "Continuar al pago seguro",
-          title: "Checkout seguro recomendado",
-          copy: "Completa el pago desde este checkout embebido en un paso y sin perder contexto."
-        };
-      }
-
-      function trackSprintEvent(eventName, payload) {
-        try {
-          const key = "micuota.sprint1.checkout.events";
-          const current = JSON.parse(localStorage.getItem(key) || "[]");
-          current.push({ eventName, payload, at: new Date().toISOString() });
-          localStorage.setItem(key, JSON.stringify(current.slice(-200)));
-        } catch (error) {
-          // ignore telemetry persistence errors
-        }
-      }
-
-      async function loadPayment() {
-        if (!operationId) {
-          showError("No se recibio identificador de operacion.");
-          return;
+        function showError(title, message, canRetry = true) {
+          show("view-error");
+          $("view-error").querySelector(".icon").innerHTML = icons.alert;
+          $("error-title").textContent = title;
+          $("error-copy").textContent = message;
+          $("retry").hidden = !canRetry;
         }
 
-        document.getElementById("operation-id").textContent = `#${operationId}`;
+        function setStatusBlock(kind, icon, title, copyText) {
+          const block = $("status-block");
+          block.hidden = false;
+          block.className = "status-hero " + kind;
+          $("status-icon").innerHTML = icon;
+          $("status-title").textContent = title;
+          $("status-copy").textContent = copyText;
+        }
 
-        try {
-          const data = await window.MicuotaApi.request(`/api/public/payments/${operationId}`);
+        // "Esperando": Mercado Pago dice pendiente, o volvimos del checkout aprobado y el aviso automatico aun no llego.
+        function isWaiting(d, fromReturn = true) {
+          return d.status === "PENDING" || (fromReturn && returnedStatus === "SUCCESS" && d.status === "CREATED");
+        }
 
-          document.title = `MiCuota | ${data.description}`;
-          document.getElementById("professional-name").textContent = data.professionalName || "Profesional";
-          document.getElementById("description").textContent = data.description;
-          document.getElementById("amount").textContent = `${data.currency} ${data.amount}`;
-          document.getElementById("flow-type").textContent = formatFlowType(data.flowType);
-          document.getElementById("provider-name").textContent = formatProvider(data.provider);
-          document.getElementById("status-inline").textContent = formatStatus(data.status);
+        function render(d, { fromReturn = false } = {}) {
+          data = d;
+          const payee = d.professionalName || "quien te cobra";
+          const amountText = money(d.amount, d.currency);
+          const isMonthly = d.flowType === "SUBSCRIPTION";
 
-          subtitle.textContent = "Revisa el resumen y continua con tu pago seguro en un solo paso.";
-          payNow.href = data.checkoutUrl;
+          document.title = `${d.status === "SUCCESS" ? "Pagado" : "Pagar"} ${amountText} a ${payee} | MiCuota`;
+          $("payee-initials").textContent = initials(payee);
+          $("payee-name").textContent = payee;
+          document.querySelectorAll(".payee-ref").forEach((n) => { n.textContent = payee; });
+          $("concept").textContent = d.description || "Pago";
+          $("amount").innerHTML = `${esc(amountText)}<span class="cur">${esc((d.currency || "UYU").toUpperCase())}</span>`;
+          $("flow-copy").textContent = isMonthly
+            ? "Cuota mensual: con tu autorización, Mercado Pago la cobra sola cada mes. La podés cancelar cuando quieras desde Mercado Pago."
+            : "Pago único. Se paga una sola vez.";
 
-          const recommendation = recommendedMethod(data);
-          payNow.textContent = recommendation.buttonLabel;
-          document.getElementById("method-recommendation-title").textContent = recommendation.title;
-          document.getElementById("method-recommendation-copy").textContent = recommendation.copy;
-          methodRecommendation.hidden = false;
+          const payNow = $("pay-now");
+          payNow.href = d.checkoutUrl || "#";
+          payNow.innerHTML = `${isMonthly ? "Activar cuota con Mercado Pago" : "Pagar con Mercado Pago"}`;
 
-          statusBadge.className = `status-badge ${statusClass(data.status)}`;
-          statusBadge.textContent = formatStatus(data.status);
-          statusCopy.textContent = statusDescription(data.status);
+          const afterActions = $("after-actions");
+          afterActions.hidden = true;
+          afterActions.innerHTML = "";
+          $("status-block").hidden = true;
+          $("summary").hidden = false;
+          $("receipt").hidden = true;
+          $("pay-actions").hidden = false;
+          $("methods").hidden = false;
+          $("trust").hidden = false;
 
-          const qr = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(data.checkoutUrl)}`;
-          qrImage.src = qr;
-          qrImage.hidden = false;
-
-          if (data.transferAlias) {
-            document.getElementById("transfer-alias").textContent = data.transferAlias;
-            document.getElementById("transfer-bank-name").textContent = data.transferBankName || "Banco a confirmar";
-            transferBlock.hidden = false;
+          if (d.transferAlias && d.status !== "SUCCESS") {
+            $("transfer").hidden = false;
+            $("t-alias").textContent = d.transferAlias;
+            $("t-bank").textContent = d.transferBankName || "—";
+          } else {
+            $("transfer").hidden = true;
           }
 
-          copyLink.addEventListener("click", async () => {
-            await navigator.clipboard.writeText(data.checkoutUrl);
-            copyLink.textContent = "Link copiado";
-            trackSprintEvent("checkout_copy_link", { operationId: data.operationId, provider: data.provider, flowType: data.flowType });
-            setTimeout(() => {
-              copyLink.textContent = "Copiar link";
-            }, 1400);
-          });
+          if (d.status === "SUCCESS") {
+            setStatusBlock("ok", icons.checkCircle, "¡Listo! Tu pago está confirmado",
+              `${payee} ya puede ver que pagaste. No hace falta que le mandes comprobante.`);
+            $("summary").hidden = true;
+            $("receipt").hidden = false;
+            $("r-concept").textContent = d.description || "Pago";
+            $("r-amount").textContent = amountText;
+            $("r-payee").textContent = payee;
+            $("r-id").textContent = `MiCuota #${d.operationId}`;
+            $("pay-actions").hidden = true;
+            $("methods").hidden = true;
+            $("trust").hidden = true;
+            afterActions.hidden = false;
+            afterActions.innerHTML = `<button type="button" class="btn btn-block" id="print">${icons.printer} Guardar comprobante</button>`;
+            $("print").addEventListener("click", () => window.print());
+          } else if (d.status === "FAILURE") {
+            setStatusBlock("bad", icons.alert, "El pago no se completó",
+              "Si no se completó, no se te cobró. Podés intentar de nuevo, por ejemplo con otra tarjeta.");
+            payNow.textContent = "Intentar de nuevo con Mercado Pago";
+          } else if (isWaiting(d, fromReturn)) {
+            setStatusBlock("wait", icons.clock, "Estamos confirmando tu pago",
+              "Mercado Pago nos avisa apenas se acredita. Si pagaste con tarjeta suele ser cuestión de segundos; en efectivo puede tardar hasta 2 días hábiles. No hace falta que pagues de nuevo.");
+            $("pay-actions").hidden = true;
+            $("methods").hidden = true;
+            afterActions.hidden = false;
+            afterActions.innerHTML = `<button type="button" class="btn btn-block" id="check-again">${icons.refresh} Ver si ya se confirmó</button>`;
+            $("check-again").addEventListener("click", () => load({ manual: true }));
+            startPolling();
+          }
 
-          payNow.addEventListener("click", () => {
-            trackSprintEvent("checkout_open_provider", { operationId: data.operationId, provider: data.provider, flowType: data.flowType });
-          });
-
-          paymentGrid.hidden = false;
-          actions.hidden = false;
-        } catch (error) {
-          showError(error.message);
+          show("view-payment");
         }
-      }
 
-      function showError(message) {
-        subtitle.textContent = "No pudimos cargar este pago en este momento.";
-        errorNode.hidden = false;
-        errorNode.textContent = message;
-        statusBadge.className = "status-badge status-failure";
-        statusBadge.textContent = "Error";
-        statusCopy.textContent = "No se pudo recuperar la informacion de la operacion.";
-        methodRecommendation.hidden = true;
-      }
+        function startPolling() {
+          if (pollTimer) return;
+          pollTimer = setInterval(async () => {
+            pollCount += 1;
+            if (pollCount > 24) { clearInterval(pollTimer); pollTimer = null; return; } // ~2 minutos
+            try {
+              const d = await api(`/api/public/payments/${encodeURIComponent(operationId)}`, { auth: false, slowAfter: 60000 });
+              if (!isWaiting(d)) {
+                clearInterval(pollTimer); pollTimer = null;
+                render(d);
+                if (d.status === "SUCCESS") toast("¡Pago confirmado!");
+              }
+            } catch (_e) { /* seguimos intentando */ }
+          }, 5000);
+        }
 
-      loadPayment();
+        async function load({ manual = false, silent = false } = {}) {
+          if (!/^\d+$/.test(operationId)) {
+            showError("Este link está incompleto", "Pedile a quien te lo mandó que te lo reenvíe. Tiene que terminar con un número, por ejemplo …pago.html?operationId=123.", false);
+            return;
+          }
+          if (!manual) show("view-loading");
+          try {
+            const d = await api(`/api/public/payments/${encodeURIComponent(operationId)}`, { auth: false, retries: 2 });
+            render(d, { fromReturn: Boolean(returnedStatus) });
+            if (manual && !silent && isWaiting(d)) toast("Todavía no se confirmó. Te avisamos acá apenas pase.");
+          } catch (error) {
+            if (error.status === 400 || error.status === 404) {
+              showError("No encontramos este pago", "Puede que el link esté mal copiado. Pedile a quien te lo mandó que te lo reenvíe.", false);
+            } else {
+              showError("No pudimos abrir este pago", "Revisá tu conexión a internet e intentá de nuevo. Tu pago no se vio afectado.");
+            }
+          }
+        }
+
+        $("retry").addEventListener("click", () => load());
+        $("copy-alias").addEventListener("click", async () => {
+          const ok = await copy(data && data.transferAlias || "");
+          toast(ok ? "Alias copiado" : "No se pudo copiar", !ok);
+        });
+        $("pay-now").addEventListener("click", (event) => {
+          if (!data || !data.checkoutUrl) { event.preventDefault(); toast("Este pago todavía no tiene link de Mercado Pago. Avisale a quien te cobra.", true); }
+        });
+        // Al volver a la pestaña (por ejemplo, desde la app de Mercado Pago) refrescamos el estado.
+        document.addEventListener("visibilitychange", () => {
+          if (document.visibilityState === "visible" && data && data.status !== "SUCCESS") load({ manual: true, silent: true });
+        });
+
+        load();
+      })();
     </script>
-    <script src="https://sdk.mercadopago.com/js/v2"></script>
-    <script src="/chatbot.js"></script>
   </body>
 </html>

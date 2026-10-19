@@ -61,7 +61,7 @@ Variables relevantes:
 
 Mercado Pago usa `POST /checkout/preferences` para pagos puntuales y `POST /preapproval` para suscripciones. El backend guarda el `id` devuelto por Mercado Pago como `providerReference`, publica el webhook en `/api/callbacks/mercadopago?externalReference=...` y mantiene la respuesta completa de la API y las notificaciones en `PaymentOperation.rawResponse`.
 
-Para validar webhooks, configura `MERCADOPAGO_WEBHOOK_SECRET` con el secreto de la app de Mercado Pago. Si el webhook trae solo `data.id`, el backend usa el `externalReference` de la URL para encontrar la operacion, obtiene el token del profesor y consulta `/v1/payments/{id}` para resolver `status`, `external_reference` y `preference_id`.
+Si `MERCADOPAGO_WEBHOOK_SECRET` esta configurado, se valida `x-signature` (template `id:[data.id];request-id:[x-request-id];ts:[ts];`, `data.id` en minusculas, omitiendo valores ausentes). Mientras cada profesor use el token de su propia app, MP firma con el secreto de esa app, por eso la firma no es obligatoria; la seguridad la da la consulta a la API. El backend toma unicamente el `data.id` notificado, usa el `externalReference` de la URL para elegir el token del profesor y consulta `/v1/payments/{id}` o `/preapproval/{id}`: el `status` y las referencias salen siempre de la API de Mercado Pago, nunca del payload. Si la consulta falla responde error para que Mercado Pago reintente.
 
 ### Ledger minimo de pagos
 
@@ -336,12 +336,9 @@ Notas:
 
 ## API principal
 
-- `POST /api/payments/one-time`
-- `POST /api/payments/subscriptions`
-- `GET /api/payments/teacher/{teacherId}`
-- `GET /api/callbacks/success?operationId=...`
-- `GET /api/callbacks/pending?operationId=...`
-- `GET /api/callbacks/failure?operationId=...`
+- `POST /api/backoffice/payments/one-time` y `POST /api/backoffice/payments/subscriptions` (requieren `X-Auth-Token`)
+- `POST /api/callbacks/mercadopago`: webhook de Mercado Pago; unica fuente de cambios de estado (el estado sale de la API de MP)
+- `GET /api/callbacks/{success|pending|failure}[/by-reference]`: retorno del navegador; solo redirige a `pago.html`, no modifica estados
 
 ## Postman (onboarding guiado)
 
@@ -393,7 +390,6 @@ Flujo recomendado:
 Notas:
 
 - Endpoints publicos como `/api/public/payments/*` y callbacks no requieren token.
-- Existen endpoints legacy en `/api/payments/*` sin `X-Auth-Token`, documentados para compatibilidad MVP.
 
 ## API multi-tenant y backoffice
 

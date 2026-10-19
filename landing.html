@@ -2,615 +2,244 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MiCuota.online | Cobros simples para profesionales</title>
-    <meta
-      name="description"
-      content="MiCuota.online te ayuda a cobrar con links, QR y suscripciones en una experiencia clara para vos y tus clientes."
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>MiCuota | Cobrá tus cuotas por WhatsApp con Mercado Pago</title>
+    <meta name="description" content="Creá un cobro, mandalo por WhatsApp y tus alumnos pagan con Mercado Pago. MiCuota te muestra solo quién pagó y quién no. Gratis para empezar." />
     <meta name="robots" content="index,follow,max-image-preview:large" />
     <link rel="canonical" href="https://micuota.online/" />
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="MiCuota.online" />
-    <meta property="og:locale" content="es_LA" />
-    <meta property="og:title" content="MiCuota.online | Cobros simples para profesionales" />
-    <meta
-      property="og:description"
-      content="Cobra por link, QR o suscripcion sin perseguir pagos. MiCuota.online simplifica cobros recurrentes para profesionales en LATAM."
-    />
+    <meta property="og:site_name" content="MiCuota" />
+    <meta property="og:locale" content="es_UY" />
+    <meta property="og:title" content="MiCuota | Cobrá tus cuotas por WhatsApp" />
+    <meta property="og:description" content="Mandá el link, tu alumno paga con Mercado Pago y vos ves quién pagó. Sin planillas, sin perseguir a nadie." />
     <meta property="og:url" content="https://micuota.online/" />
     <meta property="og:image" content="https://micuota.online/assets/micuota-mate-logo.png" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="MiCuota.online | Cobros simples para profesionales" />
-    <meta
-      name="twitter:description"
-      content="MiCuota.online te ayuda a cobrar con links, QR y suscripciones con una experiencia clara para vos y tus clientes."
-    />
+    <meta name="twitter:title" content="MiCuota | Cobrá tus cuotas por WhatsApp" />
+    <meta name="twitter:description" content="Mandá el link, tu alumno paga con Mercado Pago y vos ves quién pagó." />
     <meta name="twitter:image" content="https://micuota.online/assets/micuota-mate-logo.png" />
+    <meta name="theme-color" content="#0b6b4d" />
     <link rel="icon" type="image/png" href="/assets/micuota-mate-mark.png" />
     <link rel="apple-touch-icon" href="/assets/micuota-mate-mark.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="ui.css" />
-    <link rel="stylesheet" href="landing.css" />
-    <script src="/micuota-config.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600..800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/mc.css" />
+    <link rel="stylesheet" href="/landing.css" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "MiCuota",
+        "applicationCategory": "FinanceApplication",
+        "operatingSystem": "Web",
+        "url": "https://micuota.online/",
+        "description": "Cobros y cuotas recurrentes por WhatsApp con Mercado Pago para profesores y profesionales.",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "UYU" }
+      }
+    </script>
   </head>
-  <body class="landing-mp">
-    <div class="lp-bg"></div>
+  <body>
+    <a class="skip-link" href="#contenido">Ir al contenido</a>
 
-    <header class="lp-nav-wrap">
-      <div class="lp-nav">
-        <a class="lp-brand" href="/landing.html">
-          <span class="lp-brand-mark" aria-hidden="true">
-            <img src="/assets/micuota-mate-mark.png" alt="" />
-          </span>
-          MiCuota.online
-        </a>
-        <a
-          class="lp-nav-badge"
-          href="https://www.producthunt.com/products/micuota-online?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-micuota-online"
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="View MiCuota.online on Product Hunt"
-        >
-          <img
-            alt="MiCuota.online - Recurring payments made simple for teachers and professional | Product Hunt"
-            width="250"
-            height="54"
-            src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1126896&amp;theme=light&amp;t=1776534994798"
-          />
-        </a>
-        <nav class="lp-links">
-          <a href="#como-funciona">Como funciona</a>
-          <a href="#beneficios">Beneficios</a>
-          <a href="#acceso">Demo</a>
-          <a href="/privacy.html">Privacidad</a>
-          <a href="http://localhost:5173" target="_blank" rel="noopener noreferrer">Demo embebida</a>
-          <a href="/backoffice.html">Backoffice</a>
+    <header class="lp-nav">
+      <div class="container row-between">
+        <a class="brand" href="/landing.html"><img src="/assets/micuota-mate-mark.png" alt="" width="36" height="36" />MiCuota</a>
+        <nav class="row" aria-label="Principal">
+          <a class="lp-nav-link" href="#como-funciona">Cómo funciona</a>
+          <a class="lp-nav-link" href="#precio">Precio</a>
+          <a class="btn btn-sm" href="/cuenta.html#entrar">Entrar</a>
         </nav>
-        <a class="lp-btn lp-btn-dark" href="#acceso">Ingresar</a>
       </div>
     </header>
 
-    <main class="lp-main">
-      <section class="lp-hero">
-        <div class="lp-hero-copy">
-          <p class="lp-overline">Cobros digitales para profesionales</p>
-          <h1>Cobra por link, QR o suscripcion sin perseguir pagos.</h1>
-          <p class="lp-lead">
-            MiCuota.online ordena tus cobros para que un psicologo cobre su terapia semanal y una
-            profe de guitarra cobre con QR al llegar o al salir de clase, sin friccion y sin
-            perseguir pagos.
-          </p>
-          <div class="lp-cta-row">
-            <a class="lp-btn lp-btn-primary" href="#registro">Empezar gratis</a>
-            <a class="lp-btn lp-btn-light" href="/pago.html">Probar experiencia de pago</a>
+    <main id="contenido">
+      <!-- HERO -->
+      <section class="hero">
+        <div class="container hero-grid">
+          <div class="hero-copy">
+            <p class="eyebrow">Para profes, terapeutas y quien cobre todos los meses</p>
+            <h1>Cobrá tus cuotas por WhatsApp. <span class="hl">Sin perseguir a nadie.</span></h1>
+            <p class="lead">Mandás un link, tu alumno paga con Mercado Pago y MiCuota te muestra <strong>solo</strong> quién pagó y quién no.</p>
+            <div class="hero-cta">
+              <a class="btn btn-primary btn-lg" href="/cuenta.html#crear" data-cta="hero">Empezar gratis</a>
+              <a class="btn btn-ghost btn-lg" href="#como-funciona">Ver cómo funciona</a>
+            </div>
+            <ul class="ticks" aria-label="Ventajas">
+              <li>Gratis para empezar</li>
+              <li>La plata va directo a tu Mercado Pago</li>
+              <li>Sin contratos</li>
+            </ul>
           </div>
-          <ul class="lp-trust-list">
-            <li>Plan free para aprender con tus primeros 50 clientes</li>
-            <li>Checkout claro en celular</li>
-            <li>Estado de cobros en tiempo real</li>
-            <li>Onboarding guiado con asistente</li>
+
+          <!-- Ilustracion: celular con WhatsApp + aviso de pago -->
+          <div class="hero-art" aria-hidden="true">
+            <div class="phone">
+              <div class="phone-top"><span class="avatar" style="width:34px;height:34px;font-size:.8rem">LG</span><span><strong>Laura Gómez</strong><small>en línea</small></span></div>
+              <div class="chat">
+                <div class="bubble out">¡Hola Laura! Te paso el link para pagar la <b>Cuota de noviembre ($ 1.800)</b>. Es seguro, con Mercado Pago 👇<br /><span class="fake-link">micuota.online/pago…</span><span class="time">9:41 ✓✓</span></div>
+                <div class="bubble in">¡Genial! Ya pagué 🙌<span class="time">9:43</span></div>
+              </div>
+            </div>
+            <div class="notif">
+              <span class="notif-icon">✓</span>
+              <span><strong>Laura te pagó $ 1.800</strong><small>Confirmado por Mercado Pago</small></span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CONFIANZA -->
+      <section class="trust-strip" aria-label="Por qué confiar">
+        <div class="container trust-grid">
+          <div class="trust-item"><span class="ti-icon">🔒</span><p><strong>Pagos procesados por Mercado Pago</strong><br /><span class="muted">Tarjeta, débito o dinero en cuenta.</span></p></div>
+          <div class="trust-item"><span class="ti-icon">💸</span><p><strong>La plata va directo a vos</strong><br /><span class="muted">MiCuota nunca toca tu dinero.</span></p></div>
+          <div class="trust-item"><span class="ti-icon">✅</span><p><strong>Se marca solo como pagado</strong><br /><span class="muted">Mercado Pago nos avisa. Vos no anotás nada.</span></p></div>
+          <a class="ph-badge" href="https://www.producthunt.com/products/micuota-online?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-micuota-online" target="_blank" rel="noopener noreferrer">
+            <img alt="MiCuota destacado en Product Hunt" width="250" height="54" loading="lazy" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1126896&amp;theme=light" />
+          </a>
+        </div>
+      </section>
+
+      <!-- PARA QUIEN -->
+      <section class="section">
+        <div class="container">
+          <h2 class="center">Hecho para quien cobra todos los meses</h2>
+          <p class="center muted lead-sm">Si sabés mandar un WhatsApp, sabés usar MiCuota.</p>
+          <ul class="who">
+            <li><span>🧘</span>Profes de yoga, danza o gimnasia</li>
+            <li><span>🎹</span>Clases de música, idiomas o apoyo</li>
+            <li><span>🛋️</span>Psicólogos y terapeutas</li>
+            <li><span>🎨</span>Talleres y cursos</li>
+            <li><span>🏠</span>Alquileres y gastos chicos</li>
           </ul>
         </div>
-        <aside class="lp-hero-media">
-          <div class="lp-visual-frame lp-visual-hero lp-studio-board" aria-hidden="true">
-            <div class="lp-board-header">
-              <span class="lp-board-chip">Cobros hoy</span>
-              <strong>Workspace vivo</strong>
-            </div>
-            <div class="lp-board-balance">
-              <small>Ingresos confirmados</small>
-              <strong>UYU 24.600</strong>
-            </div>
-            <div class="lp-board-columns">
-              <div class="lp-board-card">
-                <small>Links activos</small>
-                <strong>12</strong>
-                <span>WhatsApp, QR y checkout</span>
-              </div>
-              <div class="lp-board-card">
-                <small>Suscripciones</small>
-                <strong>31</strong>
-                <span>Recurrencia al dia</span>
-              </div>
-            </div>
-            <div class="lp-board-people">
-              <div class="lp-avatar-stack">
-                <span>AM</span>
-                <span>LC</span>
-                <span>DV</span>
-              </div>
-              <p>Profesionales operando desde un panel claro, sin perseguir pagos a mano.</p>
-            </div>
-          </div>
-          <div class="lp-hero-card">
-            <p class="lp-kicker">Esta semana</p>
-            <div class="lp-kpi">
-              <small>Cobros completados</small>
-              <strong>+37</strong>
-            </div>
-            <div class="lp-kpi">
-              <small>Pagos pendientes</small>
-              <strong>6</strong>
-            </div>
-            <div class="lp-kpi">
-              <small>Tiempo ahorrado</small>
-              <strong>4h</strong>
-            </div>
-            <p class="lp-card-note">Visual simple para tomar decisiones rapido, sin planillas.</p>
-          </div>
-        </aside>
       </section>
 
-      <section class="lp-section lp-use-cases">
-        <h2>Casos de uso que ya resuelve hoy</h2>
-        <p>
-          Dos escenarios simples, reales y frecuentes: terapia semanal con recurrencia y clase
-          presencial con QR rapido para pagar en el momento.
-        </p>
-        <div class="lp-use-case-grid">
-          <article class="lp-use-case-card">
-            <div class="lp-use-case-head">
-              <span class="lp-use-case-tag">Terapia semanal</span>
-              <h3>Alumno de Psicologo Rolón</h3>
-            </div>
-            <p class="lp-use-case-copy">
-              El alumno se anota a terapia semanal. Queda asociado al profesional, a su plan y a
-              sus pagos recurrentes sin ida y vuelta manual.
-            </p>
-            <div class="lp-use-case-steps">
-              <div class="lp-use-case-step">
-                <strong>1. Alta simple</strong>
-                <span>Se registra al alumno y se lo vincula a la terapia semanal.</span>
-              </div>
-              <div class="lp-use-case-step">
-                <strong>2. Cobro recurrente</strong>
-                <span>MiCuota genera la cuota o suscripcion para cobrar cada semana.</span>
-              </div>
-              <div class="lp-use-case-step">
-                <strong>3. Seguimiento claro</strong>
-                <span>El psicologo ve pagos, pendientes y confirmados desde su panel.</span>
-              </div>
-            </div>
-          </article>
-
-          <article class="lp-use-case-card">
-            <div class="lp-use-case-head">
-              <span class="lp-use-case-tag">Clase presencial</span>
-              <h3>Alumna de guitarra semanal</h3>
-            </div>
-            <p class="lp-use-case-copy">
-              La alumna llega a clase, escanea un QR rapido y claro, y paga antes de entrar o al
-              irse. Cero friccion, cero explicaciones.
-            </p>
-            <div class="lp-use-case-steps">
-              <div class="lp-use-case-step">
-                <strong>1. QR listo</strong>
-                <span>La profe genera un cobro puntual o recurrente y lo deja visible.</span>
-              </div>
-              <div class="lp-use-case-step">
-                <strong>2. Pago en segundos</strong>
-                <span>La alumna escanea, paga desde el celu y vuelve a la clase.</span>
-              </div>
-              <div class="lp-use-case-step">
-                <strong>3. Estado al instante</strong>
-                <span>La clase termina y el cobro ya queda confirmado en el dashboard.</span>
-              </div>
-            </div>
-          </article>
+      <!-- COMO FUNCIONA -->
+      <section class="section section-soft" id="como-funciona">
+        <div class="container">
+          <h2 class="center">Cómo funciona</h2>
+          <p class="center muted lead-sm">Tres pasos. El primero lo hacés una sola vez.</p>
+          <ol class="steps3">
+            <li>
+              <span class="num">1</span>
+              <h3>Conectás tu Mercado Pago</h3>
+              <p>Una sola vez, con una guía paso a paso. Así la plata llega directo a tu cuenta.</p>
+            </li>
+            <li>
+              <span class="num">2</span>
+              <h3>Creás el cobro y lo mandás</h3>
+              <p>A quién, por qué y cuánto. Tocás <strong>Mandar por WhatsApp</strong> y listo. Puede ser de una vez o todos los meses.</p>
+            </li>
+            <li>
+              <span class="num">3</span>
+              <h3>Ves quién te pagó</h3>
+              <p>Cuando pagan, se marca solo. A los que faltan les mandás un recordatorio amable con un toque.</p>
+            </li>
+          </ol>
+          <div class="center" style="margin-top:32px"><a class="btn btn-primary btn-lg" href="/cuenta.html#crear" data-cta="steps">Empezar gratis</a></div>
         </div>
       </section>
 
-      <section id="beneficios" class="lp-section">
-        <h2>Todo lo que necesitas para cobrar mejor</h2>
-        <div class="lp-feature-grid">
-          <article class="lp-feature">
-            <h3>Links listos para WhatsApp</h3>
-            <p>Genera cobros puntuales en segundos y comparte un mensaje claro para cada caso.</p>
-          </article>
-          <article class="lp-feature">
-            <h3>Suscripciones mensuales</h3>
-            <p>Ideal para cuotas recurrentes con seguimiento del estado de cada pago.</p>
-          </article>
-          <article class="lp-feature">
-            <h3>QR para cobro presencial</h3>
-            <p>Cobro inmediato en clase o consulta, sin pasos extra para tus clientes.</p>
-          </article>
-          <article class="lp-feature">
-            <h3>Panel por rol</h3>
-            <p>Admin, profesor y alumno ven solo lo que necesitan para operar sin ruido.</p>
-          </article>
-        </div>
-        <div class="lp-benefits-visuals">
-          <div class="lp-visual-frame lp-dashboard-preview" aria-hidden="true">
-            <div class="lp-preview-card lp-preview-large">
-              <small>Resumen semanal</small>
-              <strong>+18 pagos confirmados</strong>
-              <span>Seguimiento rapido por curso y por profesional.</span>
+      <!-- ANTES / DESPUES -->
+      <section class="section">
+        <div class="container">
+          <h2 class="center">Lo que se termina</h2>
+          <div class="compare">
+            <div class="compare-col before">
+              <h3>Antes</h3>
+              <ul>
+                <li>Pasar el alias por WhatsApp y esperar el comprobante</li>
+                <li>Revisar el home banking para ver quién transfirió</li>
+                <li>Anotar en un cuaderno o una planilla</li>
+                <li>Perseguir a quien se olvidó, con vergüenza</li>
+              </ul>
             </div>
-            <div class="lp-preview-row">
-              <div class="lp-preview-card">
-                <small>Pendientes</small>
-                <strong>6</strong>
-              </div>
-              <div class="lp-preview-card">
-                <small>Suscripciones</small>
-                <strong>14</strong>
-              </div>
-            </div>
-          </div>
-          <div class="lp-visual-frame lp-people-collage" aria-hidden="true">
-            <div class="lp-collage-card">
-              <span>Psicologia</span>
-              <strong>Terapia semanal con pagos asociados</strong>
-            </div>
-            <div class="lp-collage-card">
-              <span>Musica</span>
-              <strong>QR simple para pagar al llegar o al salir</strong>
-            </div>
-            <div class="lp-collage-card">
-              <span>Operativa</span>
-              <strong>Panel claro para seguir pagos y pendientes</strong>
+            <div class="compare-col after">
+              <h3>Con MiCuota</h3>
+              <ul>
+                <li>Un link que se paga en un toque desde el celular</li>
+                <li>Mercado Pago confirma el pago automáticamente</li>
+                <li>Una lista clara: pagado, sin pagar, vencido</li>
+                <li>Recordatorio listo para mandar, con buena onda</li>
+              </ul>
             </div>
           </div>
         </div>
       </section>
 
-      <section id="billing-global" class="lp-section lp-billing-global">
-        <p class="lp-overline">Monetizacion global, gestion de suscripciones e incentivos</p>
-        <h2>Elimina friccion de cobro, compliance y ciclo de vida en mercados globales</h2>
-        <p>
-          MiCuota centraliza pagos, suscripciones y cumplimiento operativo para que tu equipo automatice
-          altas, upgrades, renovaciones y cobro recurrente sin perder control de metricas clave.
-        </p>
-
-        <div class="lp-billing-suite">
-          <h3>Todo-en-uno para operar tu SaaS</h3>
-          <p>
-            Pagos, suscripciones, cumplimiento fiscal global, prevencion de fraude, soporte multi-moneda,
-            recupero de pagos fallidos, PayPal y mas. MiCuota simplifica la operacion para que tu equipo
-            se enfoque en producto y crecimiento.
-          </p>
-          <div class="lp-billing-pillars">
-            <article class="lp-billing-pillar">
-              <span>01</span>
-              <h4>Global tax compliance</h4>
-              <p>Modelo merchant of record para delegar cobros, tasas, fraude e impuestos de venta.</p>
-            </article>
-            <article class="lp-billing-pillar">
-              <span>02</span>
-              <h4>Borderless SaaS payments</h4>
-              <p>Cobros transfronterizos con menor friccion para acelerar conversion internacional.</p>
-            </article>
-            <article class="lp-billing-pillar">
-              <span>03</span>
-              <h4>Instant payment methods</h4>
-              <p>Metodos de pago inmediatos para reducir abandono y mejorar aprobacion.</p>
-            </article>
-            <article class="lp-billing-pillar">
-              <span>04</span>
-              <h4>Local currency support</h4>
-              <p>Experiencia de compra en moneda local para aumentar confianza y cierre.</p>
-            </article>
-            <article class="lp-billing-pillar">
-              <span>05</span>
-              <h4>A.I. fraud prevention</h4>
-              <p>Prevencion antifraude asistida por IA para proteger ingresos y reducir riesgo.</p>
-            </article>
-            <article class="lp-billing-pillar">
-              <span>06</span>
-              <h4>Failed payment recovery</h4>
-              <p>Reintentos inteligentes y recordatorios para recuperar pagos rechazados.</p>
-            </article>
-          </div>
-        </div>
-
-        <div class="lp-billing-split">
-          <article class="lp-billing-panel">
-            <h3>El desafio</h3>
-            <ul class="lp-billing-list">
-              <li>Tickets promedio bajos que exigen eficiencia por transaccion.</li>
-              <li>Friccion en cobros internacionales que reduce conversion.</li>
-              <li>Cambios de plan, renovaciones y bajas que hoy consumen soporte manual.</li>
+      <!-- PRECIO -->
+      <section class="section section-soft" id="precio">
+        <div class="container">
+          <h2 class="center">Un precio simple</h2>
+          <div class="price-card">
+            <p class="price-tag">Gratis</p>
+            <p class="price-sub">para crear tu cuenta y tus cobros</p>
+            <hr class="divider" />
+            <p class="price-fee"><strong>3,5%</strong> solo de los cobros que te pagan</p>
+            <ul class="ticks ticks-col">
+              <li>Sin mensualidad, sin contratos</li>
+              <li>Si no cobrás, no pagás nada</li>
+              <li>Cobros únicos y cuotas mensuales</li>
+              <li>WhatsApp, link y QR</li>
             </ul>
-          </article>
-          <article class="lp-billing-panel lp-billing-panel-accent">
-            <h3>La solucion MiCuota</h3>
-            <ul class="lp-billing-list">
-              <li>Catalogo de planes para pricing fijo, recurrente, por uso o hibrido.</li>
-              <li>Billing unificado con checkout adaptado por region, moneda y metodo de pago.</li>
-              <li>Automatizacion de lifecycle: renovaciones, recordatorios y recupero de pagos.</li>
-            </ul>
-          </article>
-        </div>
-
-        <div class="lp-billing-grid">
-          <article class="lp-feature lp-billing-feature">
-            <h3>Catalogo y modelos de pricing</h3>
-            <p>Define planes por contrato, por cliente o por uso sin depender de cambios de codigo.</p>
-          </article>
-          <article class="lp-feature lp-billing-feature">
-            <h3>Cobro recurrente y renovaciones</h3>
-            <p>Automatiza facturacion periodica, renovaciones y alertas previas al vencimiento para reducir churn.</p>
-          </article>
-          <article class="lp-feature lp-billing-feature">
-            <h3>Self-serve para clientes</h3>
-            <p>Permite upgrade, downgrade, cancelacion y cambio de metodo de pago con prorrateo consistente.</p>
-          </article>
-          <article class="lp-feature lp-billing-feature">
-            <h3>Alcance internacional</h3>
-            <p>Vende en multiples monedas y habilita medios de pago locales para mejorar aprobacion y conversion.</p>
-          </article>
-          <article class="lp-feature lp-billing-feature">
-            <h3>Dunning y recupero de ingresos</h3>
-            <p>Configura recordatorios, reintentos y seguimiento de impagos para recuperar revenue sin friccion.</p>
-          </article>
-          <article class="lp-feature lp-billing-feature">
-            <h3>User Subscriptions Manager Incentive</h3>
-            <p>Activa incentivos por permanencia, upgrade o reactivacion para reducir churn y aumentar LTV.</p>
-          </article>
-          <article class="lp-feature lp-billing-feature">
-            <h3>Visibilidad en tiempo real</h3>
-            <p>Monitorea MRR, cambios de plan, churn e impacto de incentivos desde un unico panel operativo.</p>
-          </article>
-        </div>
-
-        <div class="lp-cta-row lp-billing-cta">
-          <a class="lp-btn lp-btn-primary" href="#interesados">Quiero una demo de subscription management</a>
-          <a class="lp-btn lp-btn-light" href="#acceso">Empezar por mi cuenta</a>
-        </div>
-      </section>
-
-      <section id="como-funciona" class="lp-section lp-steps">
-        <h2>Como funciona</h2>
-        <div class="lp-visual-frame lp-visual-flow lp-flow-board" aria-hidden="true">
-          <div class="lp-flow-pill">1. Crear cobro</div>
-          <div class="lp-flow-arrow"></div>
-          <div class="lp-flow-pill">2. Compartir link o QR</div>
-          <div class="lp-flow-arrow"></div>
-          <div class="lp-flow-pill">3. Confirmar y seguir</div>
-        </div>
-        <div class="lp-step-row">
-          <article class="lp-step">
-            <span>1</span>
-            <h3>Creas el cobro</h3>
-            <p>Define monto, concepto y modalidad: link, QR o suscripcion.</p>
-          </article>
-          <article class="lp-step">
-            <span>2</span>
-            <h3>Lo compartes</h3>
-            <p>Envialo por WhatsApp, email o muestro en presencial para pagar al instante.</p>
-          </article>
-          <article class="lp-step">
-            <span>3</span>
-            <h3>Haces seguimiento</h3>
-            <p>Revisa estados desde tu dashboard y reduce seguimiento manual.</p>
-          </article>
-        </div>
-      </section>
-
-      <section class="lp-section lp-interested-section" id="interesados">
-        <div class="lp-interested-grid">
-          <div class="lp-interested-copy">
-            <h2>Lista de interesados</h2>
-            <p>
-              Si aun no quieres crear tenant, deja tus datos y te enviamos una campana de onboarding
-              para ayudarte a cobrar sin perseguir pagos.
-            </p>
-            <ul>
-              <li>Guia de primeros pasos por email</li>
-              <li>Buenas practicas de cobro semanal y mensual</li>
-              <li>Recomendaciones para reducir seguimiento manual</li>
-            </ul>
-          </div>
-          <div class="lp-login-card">
-            <div class="lp-card-head">
-              <p class="lp-overline">CRM</p>
-              <h3>Quiero ser contactado</h3>
-            </div>
-            <form id="interested-form">
-              <div class="field">
-                <label for="interestedFullName">Nombre completo</label>
-                <input id="interestedFullName" name="fullName" placeholder="ej: Paula Rodriguez" required />
-              </div>
-              <div class="field">
-                <label for="interestedEmail">Email</label>
-                <input id="interestedEmail" name="email" type="email" placeholder="tu@email.com" required />
-              </div>
-              <div class="field">
-                <label for="interestedPhone">Telefono (opcional)</label>
-                <input id="interestedPhone" name="phone" placeholder="ej: +598 99 123 456" />
-              </div>
-              <input type="hidden" name="source" value="LANDING_INTERESTED_LIST" />
-              <button type="submit" class="lp-btn lp-btn-primary lp-btn-full">Sumarme a interesados</button>
-            </form>
-            <p id="interested-note" class="note"></p>
+            <a class="btn btn-primary btn-lg btn-block" href="/cuenta.html#crear" data-cta="pricing">Empezar gratis</a>
+            <p class="hint center" style="margin-top:10px">Mercado Pago cobra su comisión habitual aparte.</p>
           </div>
         </div>
       </section>
 
-      <section class="lp-section lp-final-cta-visual">
-        <div class="lp-final-cta-copy">
-          <h2>Menos seguimiento. Mas tiempo para tu trabajo real.</h2>
-          <p>
-            Organiza cobros recurrentes, comparte links en segundos y manten una experiencia clara para tus clientes.
-          </p>
-          <a class="lp-btn lp-btn-primary" href="#acceso">Empezar ahora</a>
-        </div>
-        <div class="lp-visual-frame lp-final-portrait" aria-hidden="true">
-          <div class="lp-portrait-badge">Cobro listo</div>
-          <div class="lp-portrait-note">
-            <small>Tu operacion</small>
-            <strong>Mas orden, menos seguimiento manual.</strong>
+      <!-- FAQ -->
+      <section class="section">
+        <div class="container narrow">
+          <h2 class="center">Preguntas frecuentes</h2>
+          <div class="faq">
+            <details><summary>¿Tengo que saber de tecnología?</summary><p>No. Si sabés mandar un mensaje de WhatsApp, sabés usar MiCuota. Lo único un poco técnico es conectar Mercado Pago, y te guiamos paso a paso (y te ayudamos si te trabás).</p></details>
+            <details><summary>¿La plata pasa por MiCuota?</summary><p>No. Cada pago va directo a tu cuenta de Mercado Pago. MiCuota solo crea el link y te muestra quién pagó.</p></details>
+            <details><summary>¿Y si mi alumno no tiene Mercado Pago?</summary><p>Puede pagar igual con tarjeta de crédito o débito desde la página de Mercado Pago, sin crear una cuenta.</p></details>
+            <details><summary>¿Cómo sé quién me pagó?</summary><p>Mercado Pago nos avisa automáticamente cada pago y lo marcamos como <strong>Pagado</strong>. No tenés que pedir comprobantes ni anotar nada.</p></details>
+            <details><summary>¿Puedo cobrar una cuota todos los meses?</summary><p>Sí. Elegís “Todos los meses”, tu alumno lo autoriza una vez y Mercado Pago le cobra solo cada mes. Lo puede cancelar cuando quiera.</p></details>
           </div>
-          <div class="lp-portrait-shape lp-portrait-shape-main"></div>
-          <div class="lp-portrait-shape lp-portrait-shape-side"></div>
         </div>
       </section>
 
-      <section id="acceso" class="lp-section lp-access">
-        <div class="lp-access-copy">
-          <h2>Empieza gratis. Sigue 3 hitos. Cobra hoy.</h2>
-          <p>Primero solicitamos el alta. Luego configuramos tu tenant. Luego generas tu primer link de cobro.</p>
-          <ul>
-            <li>1. Solicita el alta guiada</li>
-            <li>2. MiCuota crea tu tenant</li>
-            <li>3. Genera y comparte tu cobro</li>
-          </ul>
-        </div>
-        <div class="lp-access-stack">
-          <div class="lp-login-card" id="registro">
-            <div class="lp-card-head">
-              <p class="lp-overline">Alta guiada</p>
-              <h3>Solicita tu tenant</h3>
-            </div>
-            <div class="lp-primary-path">
-              <span class="lp-primary-badge">Setup MiCuota</span>
-              <p>Para el MVP, el equipo de plataforma crea cada tenant y acompana el setup inicial.</p>
-            </div>
-            <a class="lp-btn lp-btn-primary lp-btn-full" href="#interesados">Pedir alta del tenant</a>
-            <p id="register-note" class="note"></p>
-            <p class="lp-small-note">El administrador de plataforma provisiona el tenant y comparte el acceso inicial.</p>
-          </div>
-
-          <div class="lp-login-card">
-            <div class="lp-card-head">
-              <p class="lp-overline">Acceso</p>
-              <h3>Ingresa a tu panel</h3>
-            </div>
-            <div class="lp-demo-box">
-              <strong>Accesos demo rapidos</strong>
-              <div class="lp-demo-actions">
-                <button class="lp-btn lp-btn-demo" type="button" data-demo-role="admin">Admin tenant</button>
-                <button class="lp-btn lp-btn-demo" type="button" data-demo-role="teacher">Teacher</button>
-                <button class="lp-btn lp-btn-demo" type="button" data-demo-role="student">Alumno</button>
-              </div>
-              <p class="lp-small-note">
-                Tenant demo: <strong>demo-academia</strong> · password demo: <strong>demo</strong>
-              </p>
-            </div>
-            <form id="login-form">
-              <div class="field">
-                <label for="loginTenantSlug">Slug del tenant</label>
-                <input id="loginTenantSlug" name="tenantSlug" placeholder="ej: centro-fitness" required />
-              </div>
-              <div class="field">
-                <label for="loginEmail">Email</label>
-                <input id="loginEmail" name="email" type="email" placeholder="tu@email.com" required />
-              </div>
-              <div class="field">
-                <label for="loginPassword">Contrasena</label>
-                <input id="loginPassword" name="password" type="password" required />
-              </div>
-              <button type="submit" class="lp-btn lp-btn-light lp-btn-full">Entrar</button>
-            </form>
-            <p id="login-note" class="note"></p>
-            <p class="lp-small-note">Al iniciar sesion vas directo al dashboard correcto.</p>
-          </div>
+      <!-- CTA FINAL -->
+      <section class="final-cta">
+        <div class="container center">
+          <h2>Este mes, cobrá sin perseguir a nadie.</h2>
+          <p class="lead-sm">Creá tu cuenta en 2 minutos.</p>
+          <a class="btn btn-lg btn-on-brand" href="/cuenta.html#crear" data-cta="final">Empezar gratis</a>
         </div>
       </section>
     </main>
 
-    <footer class="lp-section" id="legal">
-      <p class="lp-small-note">
-        Legal y transparencia:
-        <a href="/privacy.html">Politica de privacidad</a> ·
-        <a href="/robots.txt">robots.txt</a> ·
-        <a href="/sitemap.xml">sitemap.xml</a> ·
-        <a href="/.well-known/security.txt">security.txt</a> ·
-        <a href="/llms.txt">llms.txt</a>
-      </p>
+    <footer class="lp-footer">
+      <div class="container row-between">
+        <span class="brand" style="font-size:1.1rem"><img src="/assets/micuota-mate-mark.png" alt="" width="28" height="28" style="width:28px;height:28px" />MiCuota</span>
+        <nav class="row small" aria-label="Pie de página">
+          <a href="/cuenta.html#entrar">Entrar</a>
+          <a href="/privacy.html">Privacidad</a>
+          <a href="mailto:hola@micuota.online">hola@micuota.online</a>
+        </nav>
+      </div>
     </footer>
 
+    <!-- CTA fijo en celular -->
+    <div class="mobile-cta" id="mobile-cta">
+      <a class="btn btn-primary btn-lg btn-block" href="/cuenta.html#crear" data-cta="sticky">Empezar gratis</a>
+    </div>
+
     <script>
-      const API_BASE = window.MicuotaConfig?.apiBase || window.__MICUOTA_API_BASE__;
-      const FIRST_TENANT_REDIRECT_KEY = "micuota.firstTenantRedirect";
-      const tenantInput = document.getElementById("loginTenantSlug");
-      const preferredTenant =
-        new URLSearchParams(window.location.search).get("tenantSlug") ||
-        localStorage.getItem("micuota.preferredTenantSlug") ||
-        localStorage.getItem("micuota.tenantSlug") ||
-        "";
-
-      if (preferredTenant) {
-        tenantInput.value = preferredTenant;
-      }
-
-      function setNote(element, message, hasError) {
-        element.textContent = message;
-        element.className = hasError ? "note error" : "note ok";
-      }
-
-      function storeSession(result) {
-        localStorage.setItem("micuota.authToken", result.token);
-        localStorage.setItem("micuota.tenantSlug", result.tenantSlug);
-        localStorage.setItem("micuota.preferredTenantSlug", result.tenantSlug);
-      }
-
-      function fillDemoCredentials(role) {
-        const demoMap = {
-          admin: "admin@micuota.online",
-          teacher: "teacher@micuota.online",
-          student: "student@micuota.online"
-        };
-        tenantInput.value = "demo-academia";
-        document.getElementById("loginEmail").value = demoMap[role] || "";
-        document.getElementById("loginPassword").value = "demo";
-        document.getElementById("login-note").textContent = "";
-      }
-
-      async function postJson(path, payload) {
-        return window.MicuotaApi.request(path, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-      }
-
-      document.getElementById("login-form").addEventListener("submit", async (event) => {
-        event.preventDefault();
-        const note = document.getElementById("login-note");
-        setNote(note, "Iniciando sesion...", false);
-
-        const formData = new FormData(event.target);
-        const payload = Object.fromEntries(formData.entries());
-
-        try {
-          const result = await postJson("/api/auth/login", payload);
-          storeSession(result);
-          setNote(note, "Sesion iniciada. Redirigiendo...", false);
-          window.location.href = result.backofficeUrl;
-        } catch (error) {
-          setNote(note, error.message, true);
-        }
-      });
-
-      document.querySelectorAll("[data-demo-role]").forEach((button) => {
-        button.addEventListener("click", () => fillDemoCredentials(button.dataset.demoRole));
-      });
-
-      document.getElementById("interested-form").addEventListener("submit", async (event) => {
-        event.preventDefault();
-        const note = document.getElementById("interested-note");
-        setNote(note, "Guardando tu interes en CRM...", false);
-
-        const formData = new FormData(event.target);
-        const payload = Object.fromEntries(formData.entries());
-
-        try {
-          const result = await postJson("/api/public/leads/interested", payload);
-          setNote(note, result.message || "Te agregamos a la lista de interesados.", false);
-          event.target.reset();
-        } catch (error) {
-          setNote(note, error.message, true);
-        }
-      });
+      // CTA fijo en celular: aparece cuando el boton del hero ya no se ve.
+      (function () {
+        var hero = document.querySelector(".hero-cta");
+        var bar = document.getElementById("mobile-cta");
+        if (!hero || !bar || !("IntersectionObserver" in window)) return;
+        new IntersectionObserver(function (entries) {
+          bar.classList.toggle("is-visible", !entries[0].isIntersecting);
+        }).observe(hero);
+      })();
     </script>
-    <script src="/chatbot.js"></script>
   </body>
 </html>
