@@ -10,6 +10,4 @@ public interface TeacherProfileRepository extends JpaRepository<TeacherProfile, 
     Optional<TeacherProfile> findByUserId(Long userId);
     List<TeacherProfile> findByUserTenantId(Long tenantId);
     List<TeacherProfile> findByMpOauthConnectedTrueAndMpTokenExpiresAtBefore(OffsetDateTime limit);
-    long countByUserTenantId(Long tenantId);
-    long countByUserTenantIdAndMpOauthConnectedTrue(Long tenantId);
 }

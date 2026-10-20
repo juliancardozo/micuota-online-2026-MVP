@@ -169,11 +169,13 @@ public class AuthController {
             session.tenantId(),
             user.getFullName(),
             user.getEmail(),
-            user.getRole()
+            user.getRole(),
+            user.getTenant().getName(),
+            user.getTenant().getSlug()
         );
     }
 
-    public record AuthMeResponse(Long userId, Long tenantId, String fullName, String email, UserRole role) {
+    public record AuthMeResponse(Long userId, Long tenantId, String fullName, String email, UserRole role, String tenantName, String tenantSlug) {
     }
 
     @PostMapping("/heartbeat")

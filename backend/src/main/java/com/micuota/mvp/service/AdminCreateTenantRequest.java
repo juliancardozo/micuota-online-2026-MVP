@@ -8,6 +8,7 @@ public record AdminCreateTenantRequest(
     String tenantSlug,
     @NotBlank String adminFullName,
     @NotBlank @Email String adminEmail,
-    @NotBlank String adminPassword
+    // Opcional: el administrador de la academia entra con codigo por email.
+    String adminPassword
 ) {
 }

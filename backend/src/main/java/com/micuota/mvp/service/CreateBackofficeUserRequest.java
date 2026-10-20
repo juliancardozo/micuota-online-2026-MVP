@@ -8,7 +8,8 @@ import jakarta.validation.constraints.NotNull;
 public record CreateBackofficeUserRequest(
     @NotBlank String fullName,
     @NotBlank @Email String email,
-    @NotBlank String password,
+    // Opcional: se entra con codigo por email; si no viene se genera una aleatoria.
+    String password,
     @NotNull UserRole role
 ) {
 }

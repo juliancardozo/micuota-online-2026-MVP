@@ -138,6 +138,54 @@ public class OnboardingEmailService {
         send(toEmail, "Bienvenida a MiCuota", html);
     }
 
+    /** Invitacion a sumarse a una cuenta: profesional del equipo o administrador de la academia. */
+    public void sendTeamInviteEmail(String toEmail, String fullName, String tenantName, boolean academyAdmin) {
+        if (toEmail == null || toEmail.isBlank()) {
+            return;
+        }
+
+        String firstName = fullName == null || fullName.isBlank() ? "Hola" : escapeHtml(fullName.trim().split("\\s+")[0]);
+        String entrarUrl = escapeHtml(frontendBaseUrl + "/cuenta.html#entrar");
+        String steps = academyAdmin
+            ? """
+                <li>Sumá a los profes de tu equipo.</li>
+                <li>Cada profe conecta su Mercado Pago: la plata va directo a su cuenta.</li>
+                <li>Creá cobros y seguí quién pagó desde un solo lugar.</li>
+                """
+            : """
+                <li>Conectá tu Mercado Pago: ahí te llega la plata.</li>
+                <li>Creá tus cobros y mandalos por WhatsApp.</li>
+                <li>Te avisamos cuando te paguen.</li>
+                """;
+
+        String html = """
+            <!doctype html>
+            <html lang="es">
+              <head>
+                <meta charset="UTF-8" />
+                <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+                <title>Te sumaron a MiCuota</title>
+              </head>
+              <body style="margin:0;padding:24px;background:#f4f8f6;font-family:Arial,sans-serif;color:#1f2a24;">
+                <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:16px;border:1px solid #d7e7df;">
+                  <tr>
+                    <td style="padding:28px;">
+                      <h1 style="margin:0 0 12px;font-size:24px;line-height:1.2;">%s, te sumaron a %s</h1>
+                      <p style="margin:0 0 16px;color:#4b5a52;">Para entrar no necesitás contraseña: ponés tu email (%s) y te mandamos un código.</p>
+                      <ol style="margin:0 0 20px;padding-left:20px;line-height:1.7;">%s</ol>
+                      <p style="margin:0;">
+                        <a href="%s" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#0b6b4d;color:#ffffff;text-decoration:none;font-weight:700;">Entrar a MiCuota</a>
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </body>
+            </html>
+            """.formatted(firstName, escapeHtml(tenantName == null ? "MiCuota" : tenantName), escapeHtml(toEmail), steps, entrarUrl);
+
+        send(toEmail, "Te sumaron a " + (tenantName == null ? "MiCuota" : tenantName), html);
+    }
+
     private void send(String to, String subject, String html) {
         try {
             sendOrThrow(to, subject, html);

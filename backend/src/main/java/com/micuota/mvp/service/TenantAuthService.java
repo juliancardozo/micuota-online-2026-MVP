@@ -13,6 +13,7 @@ import java.time.OffsetDateTime;
 import java.util.Locale;
 import java.util.UUID;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +26,9 @@ public class TenantAuthService {
     private final AuthSessionService authSessionService;
     private final CrmLeadService crmLeadService;
     private final OnboardingEmailService onboardingEmailService;
+
+    @Value("${app.frontend-base-url:${app.base-url:http://localhost:8080}}")
+    private String frontendBaseUrl;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final SecureRandom random = new SecureRandom();
 
@@ -81,21 +85,26 @@ public class TenantAuthService {
 
     @Transactional
     public AdminTenantProvisioningResult createTenantFromPlatform(AdminCreateTenantRequest request) {
+        String password = request.adminPassword() == null || request.adminPassword().isBlank()
+            ? UUID.randomUUID().toString()
+            : request.adminPassword();
         AuthResponse response = createTenant(
             request.tenantName(),
             request.tenantSlug(),
             request.adminFullName(),
             request.adminEmail(),
-            request.adminPassword(),
+            password,
             null,
             UserRole.TENANT_ADMIN
         );
+        onboardingEmailService.sendTeamInviteEmail(request.adminEmail(), request.adminFullName(), request.tenantName(), true);
+        // El administrador de la academia entra con codigo por email: no se expone su token de sesion.
         return new AdminTenantProvisioningResult(
             response.tenantId(),
             response.tenantSlug(),
             response.userId(),
             request.adminEmail().toLowerCase(Locale.ROOT),
-            response.backofficeUrl()
+            frontendEntrarUrl()
         );
     }
 
@@ -196,6 +205,10 @@ public class TenantAuthService {
             throw new IllegalArgumentException("Credenciales invalidas");
         }
         return signIn(admin);
+    }
+
+    private String frontendEntrarUrl() {
+        return frontendBaseUrl + "/cuenta.html#entrar";
     }
 
     private String resolveDashboardUrl(UserRole role, String token) {

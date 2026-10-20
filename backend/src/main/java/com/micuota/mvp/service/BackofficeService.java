@@ -20,6 +20,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
+import java.util.UUID;
 import java.util.Map;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -36,6 +38,7 @@ public class BackofficeService {
     private final PaymentOperationRepository paymentOperationRepository;
     private final PaymentKpiService paymentKpiService;
     private final MercadoPagoOAuthService mercadoPagoOAuthService;
+    private final OnboardingEmailService onboardingEmailService;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     public BackofficeService(
@@ -46,7 +49,8 @@ public class BackofficeService {
         CourseEnrollmentRepository courseEnrollmentRepository,
         PaymentOperationRepository paymentOperationRepository,
         PaymentKpiService paymentKpiService,
-        MercadoPagoOAuthService mercadoPagoOAuthService
+        MercadoPagoOAuthService mercadoPagoOAuthService,
+        OnboardingEmailService onboardingEmailService
     ) {
         this.userRepository = userRepository;
         this.teacherProfileRepository = teacherProfileRepository;
@@ -56,6 +60,7 @@ public class BackofficeService {
         this.paymentOperationRepository = paymentOperationRepository;
         this.paymentKpiService = paymentKpiService;
         this.mercadoPagoOAuthService = mercadoPagoOAuthService;
+        this.onboardingEmailService = onboardingEmailService;
     }
 
     @Transactional
@@ -76,17 +81,35 @@ public class BackofficeService {
         user.setFullName(request.fullName());
         user.setEmail(request.email().toLowerCase(Locale.ROOT));
         user.setRole(request.role());
-        user.setPasswordHash(passwordEncoder.encode(request.password()));
+        // Se entra con codigo por email: la contraseña solo existe por compatibilidad con el login viejo.
+        String password = request.password() == null || request.password().isBlank() ? UUID.randomUUID().toString() : request.password();
+        user.setPasswordHash(passwordEncoder.encode(password));
         user = userRepository.save(user);
 
+        TeacherProfile profile = null;
         if (request.role() == UserRole.TEACHER) {
-            TeacherProfile profile = new TeacherProfile();
+            profile = new TeacherProfile();
             profile.setUser(user);
             profile.setDisplayName(request.fullName());
-            teacherProfileRepository.save(profile);
+            profile = teacherProfileRepository.save(profile);
+            onboardingEmailService.sendTeamInviteEmail(user.getEmail(), user.getFullName(), tenant.getName(), false);
         }
 
-        return new BackofficeUserView(user.getId(), user.getFullName(), user.getEmail(), user.getRole());
+        return toUserView(user, profile);
+    }
+
+    private BackofficeUserView toUserView(User user, TeacherProfile profile) {
+        if (user.getRole() != UserRole.TEACHER) {
+            return new BackofficeUserView(user.getId(), user.getFullName(), user.getEmail(), user.getRole(), null, null);
+        }
+        return new BackofficeUserView(
+            user.getId(),
+            user.getFullName(),
+            user.getEmail(),
+            user.getRole(),
+            profile == null ? null : profile.getId(),
+            AdminAnalyticsService.mercadoPagoConnection(profile == null ? List.of() : List.of(profile))
+        );
     }
 
     @Transactional(readOnly = true)
@@ -95,8 +118,10 @@ public class BackofficeService {
             ? userRepository.findByTenantIdOrderByFullNameAsc(tenantId)
             : userRepository.findByTenantIdAndRoleOrderByFullNameAsc(tenantId, role);
 
+        Map<Long, TeacherProfile> profilesByUser = teacherProfileRepository.findByUserTenantId(tenantId).stream()
+            .collect(Collectors.toMap(profile -> profile.getUser().getId(), profile -> profile, (a, b) -> a));
         return users.stream()
-            .map(u -> new BackofficeUserView(u.getId(), u.getFullName(), u.getEmail(), u.getRole()))
+            .map(u -> toUserView(u, profilesByUser.get(u.getId())))
             .toList();
     }
 
