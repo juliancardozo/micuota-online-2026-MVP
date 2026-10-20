@@ -63,7 +63,7 @@
     wakeEl = document.createElement("div");
     wakeEl.className = "wake-banner";
     wakeEl.setAttribute("role", "status");
-    wakeEl.innerHTML = '<span class="spinner" aria-hidden="true"></span><div><strong>Un momento, estamos encendiendo MiCuota</strong>La primera carga del día puede tardar hasta un minuto. No cierres la página.</div>';
+    wakeEl.innerHTML = '<span class="spinner" aria-hidden="true"></span><div><strong>Un momento, estamos encendiendo MiCuota</strong>La primera carga del día puede tardar hasta tres minutos. No cierres la página.</div>';
     document.body.appendChild(wakeEl);
   }
   function hideWake() {
@@ -72,6 +72,12 @@
   }
 
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+  // Render free tier tarda ~2,5 min en arrancar en frio: lo despertamos apenas abre la pagina,
+  // asi arranca mientras la persona completa el formulario.
+  if (window.MicuotaConfig && window.MicuotaConfig.apiBase) {
+    fetch(`${window.MicuotaConfig.apiBase}/actuator/health`, { mode: "no-cors" }).catch(() => {});
+  }
 
   async function api(path, opts = {}) {
     const { method = "GET", body, auth = true, slowAfter = 3500, retries = 1 } = opts;
@@ -86,7 +92,7 @@
     try {
       for (let attempt = 0; ; attempt += 1) {
         const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
-        const abortTimer = controller ? setTimeout(() => controller.abort(), 90000) : null;
+        const abortTimer = controller ? setTimeout(() => controller.abort(), 240000) : null;
         try {
           return await window.MicuotaApi.request(path, {
             method,
