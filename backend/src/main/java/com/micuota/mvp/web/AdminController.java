@@ -5,8 +5,9 @@ import com.micuota.mvp.service.AdminCreateTenantRequest;
 import com.micuota.mvp.service.AdminAnalyticsService;
 import com.micuota.mvp.service.AdminBillingService;
 import com.micuota.mvp.service.AdminTenantBillingView;
-import com.micuota.mvp.service.AdminSystemDashboardView;
-import com.micuota.mvp.service.AdminTenantCleanupResult;
+import com.micuota.mvp.service.AdminOverviewView;
+import com.micuota.mvp.service.AdminResetRequest;
+import com.micuota.mvp.service.AdminResetResult;
 import com.micuota.mvp.service.AdminTenantProvisioningResult;
 import com.micuota.mvp.service.AuthSessionService;
 import com.micuota.mvp.service.TenantAuthService;
@@ -52,15 +53,15 @@ public class AdminController {
         this.adminBillingService = adminBillingService;
     }
 
-    @GetMapping("/system-dashboard")
-    @Operation(summary = "Dashboard global MiCuota", description = "Resume sesiones, cursos, ingresos, tendencias y leads del sistema completo.")
+    @GetMapping("/overview")
+    @Operation(summary = "Resumen de la plataforma", description = "Cuentas, profesionales, conexiones de Mercado Pago, cobros y comision por moneda. Excluye la cuenta de plataforma.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Dashboard generado"),
         @ApiResponse(responseCode = "400", description = "Token invalido o permisos insuficientes", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     })
-    public AdminSystemDashboardView systemDashboard(@RequestHeader("X-Auth-Token") String token) {
+    public AdminOverviewView overview(@RequestHeader("X-Auth-Token") String token) {
         requirePlatformAdmin(token);
-        return adminAnalyticsService.buildSystemDashboard();
+        return adminAnalyticsService.buildOverview();
     }
 
     @PostMapping("/tenants")
@@ -91,11 +92,17 @@ public class AdminController {
         return adminBillingService.updateBilling(tenantId, request);
     }
 
-    @PostMapping("/maintenance/purge-non-demo-tenants")
-    @Operation(summary = "Purgar tenants no demo", description = "Elimina tenants distintos de demo-academia y sus datos dependientes. Requiere ADMIN.")
-    public AdminTenantCleanupResult purgeNonDemoTenants(@RequestHeader("X-Auth-Token") String token) {
+    @PostMapping("/maintenance/reset")
+    @Operation(
+        summary = "Limpiar datos",
+        description = "Borra todas las cuentas salvo keepTenantSlugs (la de plataforma se conserva siempre) y, con deleteAllPayments, tambien todos los cobros. Irreversible. Requiere ADMIN."
+    )
+    public AdminResetResult reset(
+        @RequestHeader("X-Auth-Token") String token,
+        @RequestBody AdminResetRequest request
+    ) {
         requirePlatformAdmin(token);
-        return adminAnalyticsService.purgeTenantsExcept("demo-academia");
+        return adminAnalyticsService.resetData(request);
     }
 
     private void requirePlatformAdmin(String token) {

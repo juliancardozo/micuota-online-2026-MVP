@@ -395,7 +395,10 @@ Notas:
 
 - `POST /api/auth/register-tenant`: restringido; el alta de tenants la hace plataforma.
 - `POST /api/admin/tenants`: crea tenant + usuario `TENANT_ADMIN` inicial. Requiere `ADMIN`.
-- `POST /api/admin/maintenance/purge-non-demo-tenants`: elimina tenants no demo para limpieza MVP. Requiere `ADMIN`.
+- `POST /api/auth/admin-login`: login del unico administrador de la plataforma (`admin.html`).
+- `GET /api/admin/overview`: resumen de cuentas, conexiones de Mercado Pago, cobros y comision por moneda. Requiere `ADMIN`.
+- `GET /api/admin/tenants` y `PUT /api/admin/tenants/{id}/billing`: cuentas y comisiones. Requiere `ADMIN`.
+- `POST /api/admin/maintenance/reset`: borra todas las cuentas salvo `keepTenantSlugs` (y, con `deleteAllPayments`, todos los cobros). Requiere `ADMIN`.
 - `POST /api/auth/login`: login por `tenantSlug + email + password`.
 - `POST /api/backoffice/users` (header `X-Auth-Token`): crea perfil `TEACHER` o `STUDENT`.
 - `GET /api/backoffice/users?role=TEACHER|STUDENT` (header `X-Auth-Token`): lista perfiles del tenant.
