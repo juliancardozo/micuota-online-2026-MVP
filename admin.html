@@ -14,8 +14,39 @@
     />
     <link rel="stylesheet" href="ui.css" />
     <script src="/micuota-config.js"></script>
+    <style>
+      .admin-login { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 16px; background: var(--bg, #f6f1e7); }
+      .admin-login[hidden] { display: none; }
+      .admin-login form { width: min(420px, 100%); display: grid; gap: 14px; }
+      .fee-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+      .fee-table th, .fee-table td { padding: 10px 8px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: middle; }
+      .fee-table th { color: var(--muted); font-weight: 600; }
+      .fee-table input { width: 84px; }
+      .fee-table-wrap { overflow-x: auto; }
+    </style>
   </head>
   <body class="shell-ui admin-ui">
+    <section class="admin-login" id="admin-login" hidden>
+      <form class="surface-card" id="admin-login-form" novalidate>
+        <div>
+          <span class="overline">Admin MiCuota</span>
+          <h2>Entrar al panel</h2>
+          <p class="helper-text">Acceso solo para el administrador de la plataforma.</p>
+        </div>
+        <div class="field">
+          <label for="admin-email">Email</label>
+          <input id="admin-email" name="email" type="email" autocomplete="username" required />
+        </div>
+        <div class="field">
+          <label for="admin-password">Contraseña</label>
+          <input id="admin-password" name="password" type="password" autocomplete="current-password" required />
+        </div>
+        <p class="note" id="admin-login-note" role="alert"></p>
+        <div class="form-actions">
+          <button type="submit" id="admin-login-submit">Entrar</button>
+        </div>
+      </form>
+    </section>
     <div class="app-shell">
       <aside class="sidebar">
         <a class="brand" href="/landing.html">
@@ -50,6 +81,10 @@
             <a class="nav-link" href="#tenants">
               <strong>Tenants</strong>
               <span>Top cuentas por ingresos</span>
+            </a>
+            <a class="nav-link" href="#comisiones">
+              <strong>Comisiones</strong>
+              <span>Tasas y lo cobrado</span>
             </a>
             <a class="nav-link" href="#provisioning">
               <strong>Provisioning</strong>
@@ -157,6 +192,39 @@
           </div>
         </section>
 
+        <section class="shell-section" id="comisiones">
+          <div class="section-head">
+            <div class="section-head-copy">
+              <h2>Comisiones</h2>
+              <p class="section-copy">
+                MiCuota cobra su comision como marketplace_fee de Mercado Pago, solo en pagos unicos de profesionales
+                conectados por OAuth. Los cambios aplican a los cobros nuevos.
+              </p>
+            </div>
+          </div>
+          <div class="section-grid">
+            <article class="surface-card span-12">
+              <div class="fee-table-wrap">
+                <table class="fee-table">
+                  <thead>
+                    <tr>
+                      <th>Tenant</th>
+                      <th>Profesionales (OAuth / total)</th>
+                      <th>Comision %</th>
+                      <th>Recupero %</th>
+                      <th>Cobros con comision</th>
+                      <th>Comision cobrada</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="fee-rows"></tbody>
+                </table>
+              </div>
+              <p class="note" id="fee-note"></p>
+            </article>
+          </div>
+        </section>
+
         <section class="shell-section" id="provisioning">
           <div class="section-head">
             <div class="section-head-copy">
@@ -242,7 +310,7 @@
     <script>
       const API_BASE = window.MicuotaConfig?.apiBase || window.__MICUOTA_API_BASE__;
       const urlToken = new URLSearchParams(window.location.search).get("token");
-      const token = urlToken || localStorage.getItem("micuota.authToken");
+      let token = urlToken || localStorage.getItem("micuota.authToken");
       const tenantSlug = localStorage.getItem("micuota.tenantSlug") || "(sin slug)";
 
       if (urlToken) {
@@ -251,7 +319,8 @@
 
       const state = {
         profile: null,
-        dashboard: null
+        dashboard: null,
+        tenants: []
       };
 
       function setActiveNav() {
@@ -264,12 +333,30 @@
       function logout() {
         window.MicuotaSessionTelemetry?.logout();
         localStorage.removeItem("micuota.authToken");
-        window.location.href = `/landing.html?tenantSlug=${encodeURIComponent(localStorage.getItem("micuota.tenantSlug") || "")}`;
+        token = null;
+        showLogin();
+      }
+
+      function showLogin(message = "") {
+        document.getElementById("admin-login").hidden = false;
+        setNote(document.getElementById("admin-login-note"), message, Boolean(message));
+        document.getElementById("admin-email").focus();
       }
 
       async function apiGet(path) {
         return window.MicuotaApi.request(path, {
           headers: { "X-Auth-Token": token }
+        });
+      }
+
+      async function apiPut(path, payload = {}) {
+        return window.MicuotaApi.request(path, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Auth-Token": token
+          },
+          body: JSON.stringify(payload)
         });
       }
 
@@ -339,6 +426,29 @@
           : "<div class='empty-state'>Aun no hay tenants con revenue SUCCESS.</div>";
       }
 
+      function escapeHtml(value) {
+        return String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+      }
+
+      const bpsToPercent = (bps) => (Number(bps) / 100).toString();
+      const percentToBps = (value) => Math.round(Number(String(value).replace(",", ".")) * 100);
+
+      function renderFees() {
+        document.getElementById("fee-rows").innerHTML = state.tenants.length
+          ? state.tenants
+              .map((t) => `<tr data-tenant="${t.tenantId}">
+                  <td><strong>${escapeHtml(t.tenantName)}</strong><br /><small>${escapeHtml(t.tenantSlug)} · ${escapeHtml(t.planCode)}</small></td>
+                  <td>${t.professionalsConnectedViaOAuth} / ${t.professionals}</td>
+                  <td><input type="number" min="0" max="50" step="0.01" name="takeRate" value="${bpsToPercent(t.takeRateBps)}" aria-label="Comision % de ${escapeHtml(t.tenantName)}" /></td>
+                  <td><input type="number" min="0" max="25" step="0.01" name="dunningFee" value="${bpsToPercent(t.advancedDunningFeeBps)}" aria-label="Recupero % de ${escapeHtml(t.tenantName)}" />${t.recoveryAutomationEnabled ? "" : "<br /><small>inactivo</small>"}</td>
+                  <td>${t.paymentsWithCommission}</td>
+                  <td>${t.commissionCollected}</td>
+                  <td><button type="button" data-save-fee="${t.tenantId}">Guardar</button></td>
+                </tr>`)
+              .join("")
+          : "<tr><td colspan='7'><div class='empty-state'>No hay tenants.</div></td></tr>";
+      }
+
       function renderAccount() {
         document.getElementById("page-title").textContent = state.profile.fullName;
         document.getElementById("hero-title").textContent = `Vista global de MiCuota para ${state.profile.fullName}`;
@@ -368,7 +478,7 @@
 
       async function bootstrap() {
         if (!token) {
-          logout();
+          showLogin();
           return;
         }
 
@@ -377,20 +487,81 @@
         try {
           state.profile = await apiGet("/api/auth/me");
           if (state.profile.role !== "ADMIN") {
-            window.location.href = "/backoffice.html";
+            localStorage.removeItem("micuota.authToken");
+            token = null;
+            showLogin("Esta cuenta no es la del administrador de la plataforma.");
             return;
           }
-          state.dashboard = await apiGet("/api/admin/system-dashboard");
+          [state.dashboard, state.tenants] = await Promise.all([
+            apiGet("/api/admin/system-dashboard"),
+            apiGet("/api/admin/tenants")
+          ]);
+          document.getElementById("admin-login").hidden = true;
           renderAccount();
           renderSummary();
           renderTrends();
           renderLeads();
           renderTopTenants();
+          renderFees();
         } catch (error) {
-          logout();
+          localStorage.removeItem("micuota.authToken");
+          token = null;
+          showLogin(error.network ? error.message : "");
         }
       }
 
+      document.getElementById("admin-login-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const note = document.getElementById("admin-login-note");
+        const button = document.getElementById("admin-login-submit");
+        const payload = Object.fromEntries(new FormData(event.target).entries());
+        button.disabled = true;
+        setNote(note, "Entrando...", false);
+        try {
+          const session = await window.MicuotaApi.request("/api/auth/admin-login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          token = session.token;
+          localStorage.setItem("micuota.authToken", session.token);
+          localStorage.setItem("micuota.tenantSlug", session.tenantSlug);
+          event.target.reset();
+          setNote(note, "", false);
+          await bootstrap();
+        } catch (error) {
+          setNote(note, /credenciales/i.test(error.message) ? "Email o contraseña incorrectos." : error.message, true);
+        } finally {
+          button.disabled = false;
+        }
+      });
+      document.getElementById("fee-rows").addEventListener("click", async (event) => {
+        const button = event.target.closest("[data-save-fee]");
+        if (!button) return;
+        const note = document.getElementById("fee-note");
+        const row = button.closest("tr");
+        const tenant = state.tenants.find((t) => String(t.tenantId) === button.dataset.saveFee);
+        const takeRateBps = percentToBps(row.querySelector("[name=takeRate]").value);
+        const advancedDunningFeeBps = percentToBps(row.querySelector("[name=dunningFee]").value);
+        if (!Number.isFinite(takeRateBps) || !Number.isFinite(advancedDunningFeeBps)) {
+          setNote(note, "Revisa los porcentajes.", true);
+          return;
+        }
+        button.disabled = true;
+        try {
+          const updated = await apiPut(`/api/admin/tenants/${tenant.tenantId}/billing`, {
+            planCode: tenant.planCode,
+            takeRateBps,
+            advancedDunningFeeBps
+          });
+          state.tenants = state.tenants.map((t) => (t.tenantId === updated.tenantId ? updated : t));
+          renderFees();
+          setNote(note, `Comision de ${updated.tenantName} actualizada.`, false);
+        } catch (error) {
+          setNote(note, error.message, true);
+          button.disabled = false;
+        }
+      });
       window.addEventListener("hashchange", setActiveNav);
       document.getElementById("logout-button").addEventListener("click", logout);
       document.getElementById("logout-button-secondary").addEventListener("click", logout);

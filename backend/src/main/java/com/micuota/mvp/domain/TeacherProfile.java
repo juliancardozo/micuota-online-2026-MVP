@@ -9,6 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "teacher_profiles")
@@ -42,6 +43,19 @@ public class TeacherProfile {
 
     @Column(name = "transfer_bank_name")
     private String transferBankName;
+
+    // Conexion por OAuth de la aplicacion marketplace de MiCuota: solo asi se puede cobrar comision (marketplace_fee).
+    @Column(name = "mp_oauth_connected", nullable = false)
+    private boolean mpOauthConnected;
+
+    @Column(name = "mp_refresh_token")
+    private String mpRefreshToken;
+
+    @Column(name = "mp_user_id", length = 64)
+    private String mpUserId;
+
+    @Column(name = "mp_token_expires_at")
+    private OffsetDateTime mpTokenExpiresAt;
 
     public Long getId() {
         return id;
@@ -109,5 +123,37 @@ public class TeacherProfile {
 
     public void setTransferBankName(String transferBankName) {
         this.transferBankName = transferBankName;
+    }
+
+    public boolean isMpOauthConnected() {
+        return mpOauthConnected;
+    }
+
+    public void setMpOauthConnected(boolean mpOauthConnected) {
+        this.mpOauthConnected = mpOauthConnected;
+    }
+
+    public String getMpRefreshToken() {
+        return mpRefreshToken;
+    }
+
+    public void setMpRefreshToken(String mpRefreshToken) {
+        this.mpRefreshToken = mpRefreshToken;
+    }
+
+    public String getMpUserId() {
+        return mpUserId;
+    }
+
+    public void setMpUserId(String mpUserId) {
+        this.mpUserId = mpUserId;
+    }
+
+    public OffsetDateTime getMpTokenExpiresAt() {
+        return mpTokenExpiresAt;
+    }
+
+    public void setMpTokenExpiresAt(OffsetDateTime mpTokenExpiresAt) {
+        this.mpTokenExpiresAt = mpTokenExpiresAt;
     }
 }

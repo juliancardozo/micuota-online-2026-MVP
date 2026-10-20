@@ -26,7 +26,6 @@ public class SeedDataConfig {
     @ConditionalOnProperty(name = "app.demo-seed.enabled", havingValue = "true")
     CommandLineRunner seedUsers(
         @Value("${app.demo-seed.password:demo}") String demoPassword,
-        @Value("${app.demo-seed.platform-admin-password:ADMIN1234}") String platformAdminPassword,
         UserRepository userRepository,
         TeacherProfileRepository teacherProfileRepository,
         TenantRepository tenantRepository,
@@ -51,30 +50,17 @@ public class SeedDataConfig {
                     return tenantRepository.save(t);
                 });
 
-            User adminUser = userRepository.findByTenantIdAndEmail(tenant.getId(), "admin@micuota.online")
+            // admin@micuota.online es el administrador de la plataforma (PlatformAdminSeeder); el demo usa otro email.
+            User adminUser = userRepository.findByTenantIdAndEmail(tenant.getId(), "demo-admin@micuota.online")
                 .orElseGet(() -> {
                     User user = new User();
-                    user.setEmail("admin@micuota.online");
+                    user.setEmail("demo-admin@micuota.online");
                     user.setPasswordHash(demoPasswordHash);
                     user.setFullName("Admin Demo");
                     user.setRole(UserRole.TENANT_ADMIN);
                     user.setTenant(tenant);
                     return userRepository.save(user);
                 });
-
-            User platformAdmin = userRepository.findByTenantIdAndEmail(tenant.getId(), "platform-admin@micuota.online")
-                .orElseGet(() -> {
-                    User user = new User();
-                    user.setEmail("platform-admin@micuota.online");
-                    user.setFullName("Platform Admin");
-                    user.setPasswordHash(passwordEncoder.encode(platformAdminPassword));
-                    user.setRole(UserRole.ADMIN);
-                    user.setTenant(tenant);
-                    return userRepository.save(user);
-                });
-            platformAdmin.setPasswordHash(passwordEncoder.encode(platformAdminPassword));
-            platformAdmin.setRole(UserRole.ADMIN);
-            userRepository.save(platformAdmin);
 
             teacherProfileRepository.findByUserId(adminUser.getId())
                 .orElseGet(() -> {

@@ -491,13 +491,21 @@ public class PaymentService {
             }
         }
 
+        BigDecimal processingFee = feeFromBps(request.amount(), normalizeBps(teacherUser.getTenant(), true));
+        BigDecimal advancedFee = teacherUser.getTenant().getRecoveryAutomationEnabled() != null && teacherUser.getTenant().getRecoveryAutomationEnabled()
+            ? feeFromBps(request.amount(), normalizeBps(teacherUser.getTenant(), false))
+            : BigDecimal.ZERO;
+        // Mercado Pago solo acepta marketplace_fee con el token OAuth de la aplicacion marketplace de MiCuota.
+        BigDecimal marketplaceFee = teacher.isMpOauthConnected() ? processingFee.add(advancedFee) : null;
+
         TeacherProviderCredentials credentials = new TeacherProviderCredentials(
             teacher.getMpAccessToken(),
             teacher.getMpPublicKey(),
             teacher.getPrometeoApiKey(),
             teacher.getWooCommerceApiKey(),
             teacher.getTransferAlias(),
-            teacher.getTransferBankName()
+            teacher.getTransferBankName(),
+            marketplaceFee
         );
         ProviderSelection selection = resolveCheckout(flowType, request, credentials, tenantId, teacher.getId());
 
@@ -508,14 +516,13 @@ public class PaymentService {
         operation.setStudentUserId(request.studentUserId());
         operation.setCourseId(request.courseId());
         operation.setAmount(request.amount());
-        BigDecimal processingFee = feeFromBps(request.amount(), normalizeBps(teacherUser.getTenant(), true));
-        BigDecimal advancedFee = teacherUser.getTenant().getRecoveryAutomationEnabled() != null && teacherUser.getTenant().getRecoveryAutomationEnabled()
-            ? feeFromBps(request.amount(), normalizeBps(teacherUser.getTenant(), false))
-            : BigDecimal.ZERO;
         BigDecimal netAmount = request.amount().subtract(processingFee).subtract(advancedFee).max(BigDecimal.ZERO).setScale(2, RoundingMode.HALF_UP);
         operation.setProcessingFeeAmount(processingFee);
         operation.setAdvancedFeatureFeeAmount(advancedFee);
         operation.setNetAmountForTeacher(netAmount);
+        // Las suscripciones (preapproval) no admiten marketplace_fee: solo los pagos unicos llevan la comision.
+        boolean feeCharged = selection.provider() == PaymentProviderType.MERCADOPAGO && flowType != PaymentFlowType.SUBSCRIPTION;
+        operation.setMarketplaceFeeAmount(feeCharged ? marketplaceFee : null);
         operation.setCurrency(request.currency());
         operation.setDescription(request.description());
         operation.setCheckoutUrl(selection.result().checkoutUrl());

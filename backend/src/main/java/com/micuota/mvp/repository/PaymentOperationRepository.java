@@ -26,6 +26,15 @@ public interface PaymentOperationRepository extends JpaRepository<PaymentOperati
     Optional<PaymentOperation> findByExternalReference(String externalReference);
     Optional<PaymentOperation> findFirstByRawResponseContainingOrderByCreatedAtDesc(String rawResponseFragment);
 
+    // [tenantId, suma de marketplace_fee, cantidad de cobros] de los cobros con comision en el estado dado.
+    @Query("""
+        select tp.user.tenant.id, coalesce(sum(op.marketplaceFeeAmount), 0), count(op)
+        from PaymentOperation op, TeacherProfile tp
+        where op.teacherId = tp.id and op.status = :status and op.marketplaceFeeAmount is not null
+        group by tp.user.tenant.id
+        """)
+    List<Object[]> sumMarketplaceFeesByTenant(@Param("status") OperationStatus status);
+
     // Bloqueo de fila (SELECT ... FOR UPDATE) para serializar webhooks concurrentes sobre la misma operacion.
     // Debe ser la primera lectura de la fila dentro de la transaccion para que el estado leido sea el ya commiteado.
     @Lock(LockModeType.PESSIMISTIC_WRITE)

@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.micuota.mvp.domain.PaymentFlowType;
 import com.micuota.mvp.domain.PaymentProviderType;
+import java.math.BigDecimal;
 import java.util.Locale;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
@@ -44,14 +45,15 @@ public class MercadoPagoGateway implements PaymentProviderGateway {
             return createPreapproval(token, request, callbackBaseUrl, externalReference);
         }
 
-        return createPreference(token, request, callbackBaseUrl, externalReference);
+        return createPreference(token, request, callbackBaseUrl, externalReference, credentials.mercadoPagoMarketplaceFee());
     }
 
     private ProviderCheckoutResult createPreference(
         String token,
         CreatePaymentRequest request,
         String callbackBaseUrl,
-        String externalReference
+        String externalReference,
+        BigDecimal marketplaceFee
     ) {
         ObjectNode payload = objectMapper.createObjectNode();
         ArrayNode items = payload.putArray("items");
@@ -72,6 +74,9 @@ public class MercadoPagoGateway implements PaymentProviderGateway {
         payload.put("auto_return", "approved");
         payload.put("external_reference", externalReference);
         payload.put("notification_url", callbackBaseUrl + "/api/callbacks/mercadopago?externalReference=" + externalReference);
+        if (marketplaceFee != null && marketplaceFee.signum() > 0) {
+            payload.put("marketplace_fee", marketplaceFee);
+        }
 
         MercadoPagoService.MercadoPagoApiResponse response = mercadoPagoService.createPreference(token, payload);
         String preferenceId = response.body().path("id").asText("");

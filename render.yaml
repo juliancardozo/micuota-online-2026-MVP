@@ -47,6 +47,13 @@ services:
         sync: false
       - key: MERCADOPAGO_WEBHOOK_SECRET
         sync: false
+      # Aplicacion marketplace de MiCuota en Mercado Pago (OAuth de profesores + comision por cobro).
+      - key: MERCADOPAGO_CLIENT_ID
+        sync: false
+      - key: MERCADOPAGO_CLIENT_SECRET
+        sync: false
+      - key: APP_PLATFORM_ADMIN_PASSWORD
+        sync: false
       - key: APP_PROMETEO_ENABLED
         value: true
       - key: APP_PROMETEO_SANDBOX

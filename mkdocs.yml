@@ -52,6 +52,7 @@ nav:
       - Plataforma: core/platform-overview.md
       - Pagos: core/payments.md
       - Suscripciones: core/subscriptions.md
+      - Marketplace y comisiones: core/marketplace.md
       - Ledger y timeline: core/ledger.md
       - Conciliacion: core/reconciliation.md
       - Notificaciones: core/notifications.md

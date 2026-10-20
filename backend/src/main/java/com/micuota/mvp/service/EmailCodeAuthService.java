@@ -2,6 +2,7 @@ package com.micuota.mvp.service;
 
 import com.micuota.mvp.domain.EmailLoginCode;
 import com.micuota.mvp.domain.User;
+import com.micuota.mvp.domain.UserRole;
 import com.micuota.mvp.repository.EmailLoginCodeRepository;
 import com.micuota.mvp.repository.UserRepository;
 import java.nio.charset.StandardCharsets;
@@ -118,7 +119,12 @@ public class EmailCodeAuthService {
         }
 
         // Codigo correcto. Si falta un dato (nombre o cuenta), no se consume para que el mismo codigo sirva al reenviar.
-        List<User> users = userRepository.findAllByEmailOrderByIdAsc(email);
+        // El administrador de la plataforma no entra por codigo: solo con contraseña desde admin.html.
+        List<User> allUsers = userRepository.findAllByEmailOrderByIdAsc(email);
+        List<User> users = allUsers.stream().filter(u -> u.getRole() != UserRole.ADMIN).toList();
+        if (users.isEmpty() && !allUsers.isEmpty()) {
+            throw new IllegalArgumentException("Esta cuenta entra con contraseña.");
+        }
         User target = null;
         if (users.size() == 1) {
             target = users.get(0);

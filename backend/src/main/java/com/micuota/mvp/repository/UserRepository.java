@@ -15,4 +15,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findByTenantIdOrderByFullNameAsc(Long tenantId);
     List<User> findByTenantIdAndRoleOrderByFullNameAsc(Long tenantId, UserRole role);
     long countByTenantIdAndRole(Long tenantId, UserRole role);
+    @EntityGraph(attributePaths = "tenant")
+    List<User> findAllByRole(UserRole role);
 }

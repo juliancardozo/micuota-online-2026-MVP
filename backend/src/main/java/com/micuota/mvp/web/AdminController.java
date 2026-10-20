@@ -3,11 +3,14 @@ package com.micuota.mvp.web;
 import com.micuota.mvp.domain.UserRole;
 import com.micuota.mvp.service.AdminCreateTenantRequest;
 import com.micuota.mvp.service.AdminAnalyticsService;
+import com.micuota.mvp.service.AdminBillingService;
+import com.micuota.mvp.service.AdminTenantBillingView;
 import com.micuota.mvp.service.AdminSystemDashboardView;
 import com.micuota.mvp.service.AdminTenantCleanupResult;
 import com.micuota.mvp.service.AdminTenantProvisioningResult;
 import com.micuota.mvp.service.AuthSessionService;
 import com.micuota.mvp.service.TenantAuthService;
+import com.micuota.mvp.service.UpdateTenantBillingSettingsRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -16,8 +19,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -32,15 +38,18 @@ public class AdminController {
     private final AuthSessionService authSessionService;
     private final AdminAnalyticsService adminAnalyticsService;
     private final TenantAuthService tenantAuthService;
+    private final AdminBillingService adminBillingService;
 
     public AdminController(
         AuthSessionService authSessionService,
         AdminAnalyticsService adminAnalyticsService,
-        TenantAuthService tenantAuthService
+        TenantAuthService tenantAuthService,
+        AdminBillingService adminBillingService
     ) {
         this.authSessionService = authSessionService;
         this.adminAnalyticsService = adminAnalyticsService;
         this.tenantAuthService = tenantAuthService;
+        this.adminBillingService = adminBillingService;
     }
 
     @GetMapping("/system-dashboard")
@@ -62,6 +71,24 @@ public class AdminController {
     ) {
         requirePlatformAdmin(token);
         return tenantAuthService.createTenantFromPlatform(request);
+    }
+
+    @GetMapping("/tenants")
+    @Operation(summary = "Comisiones por tenant", description = "Lista tenants con sus tasas de comision y lo cobrado via marketplace_fee. Requiere ADMIN.")
+    public List<AdminTenantBillingView> listTenants(@RequestHeader("X-Auth-Token") String token) {
+        requirePlatformAdmin(token);
+        return adminBillingService.listTenants();
+    }
+
+    @PutMapping("/tenants/{tenantId}/billing")
+    @Operation(summary = "Editar comision del tenant", description = "Cambia plan y tasas (en puntos basicos) que se aplican a los cobros nuevos. Requiere ADMIN.")
+    public AdminTenantBillingView updateTenantBilling(
+        @RequestHeader("X-Auth-Token") String token,
+        @PathVariable Long tenantId,
+        @Valid @RequestBody UpdateTenantBillingSettingsRequest request
+    ) {
+        requirePlatformAdmin(token);
+        return adminBillingService.updateBilling(tenantId, request);
     }
 
     @PostMapping("/maintenance/purge-non-demo-tenants")
