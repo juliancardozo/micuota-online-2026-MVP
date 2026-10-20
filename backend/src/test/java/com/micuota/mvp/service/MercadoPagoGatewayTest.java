@@ -44,7 +44,7 @@ class MercadoPagoGatewayTest {
         ProviderCheckoutResult result = gateway.createCheckout(
             PaymentFlowType.ONE_TIME,
             new CreatePaymentRequest(1L, PaymentProviderType.MERCADOPAGO, "Clase de guitarra", new BigDecimal("1200.00"), "uyu", "alumno@example.com", 2L, 3L),
-            new TeacherProviderCredentials("teacher-token", "teacher-public-key", null, null, null, null),
+            new TeacherProviderCredentials("teacher-token", "teacher-public-key", null, null, null, null, null),
             "https://micuota.online"
         );
 
@@ -60,6 +60,27 @@ class MercadoPagoGatewayTest {
         assertThat(payload.getValue().path("payer").path("email").asText()).isEqualTo("alumno@example.com");
         assertThat(payload.getValue().path("notification_url").asText()).contains("https://micuota.online/api/callbacks/mercadopago?externalReference=MC-");
         assertThat(payload.getValue().path("back_urls").path("success").asText()).contains("/api/callbacks/success/by-reference");
+        assertThat(payload.getValue().has("marketplace_fee")).isFalse();
+    }
+
+    @Test
+    void createCheckoutAddsMarketplaceFeeForOAuthConnectedTeachers() throws Exception {
+        JsonNode response = objectMapper.readTree("""
+            {"id":"pref-fee","init_point":"https://www.mercadopago.com/checkout/v1/redirect?pref_id=fee"}
+            """);
+        when(mercadoPagoService.createPreference(eq("oauth-token"), any(JsonNode.class)))
+            .thenReturn(new MercadoPagoService.MercadoPagoApiResponse(response.toString(), response));
+
+        gateway.createCheckout(
+            PaymentFlowType.ONE_TIME,
+            new CreatePaymentRequest(1L, PaymentProviderType.MERCADOPAGO, "Clase", new BigDecimal("1000.00"), "UYU", null, null, null),
+            new TeacherProviderCredentials("oauth-token", null, null, null, null, null, new BigDecimal("35.00")),
+            "https://micuota.online"
+        );
+
+        ArgumentCaptor<JsonNode> payload = ArgumentCaptor.forClass(JsonNode.class);
+        verify(mercadoPagoService).createPreference(eq("oauth-token"), payload.capture());
+        assertThat(payload.getValue().path("marketplace_fee").decimalValue()).isEqualByComparingTo("35.00");
     }
 
     @Test
@@ -73,7 +94,7 @@ class MercadoPagoGatewayTest {
         ProviderCheckoutResult result = gateway.createCheckout(
             PaymentFlowType.SUBSCRIPTION,
             new CreatePaymentRequest(1L, PaymentProviderType.MERCADOPAGO, "Mensualidad", new BigDecimal("900.00"), "UYU", "alumno@example.com", 2L, 3L),
-            new TeacherProviderCredentials("teacher-token", "teacher-public-key", null, null, null, null),
+            new TeacherProviderCredentials("teacher-token", "teacher-public-key", null, null, null, null, null),
             "https://micuota.online"
         );
 

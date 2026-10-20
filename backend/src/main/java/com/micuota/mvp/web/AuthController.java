@@ -3,6 +3,8 @@ package com.micuota.mvp.web;
 import com.micuota.mvp.domain.User;
 import com.micuota.mvp.domain.UserRole;
 import com.micuota.mvp.repository.UserRepository;
+import com.micuota.mvp.service.AdminLoginRequest;
+import com.micuota.mvp.service.AdminLoginThrottle;
 import com.micuota.mvp.service.AuthSessionService;
 import com.micuota.mvp.service.AuthResponse;
 import com.micuota.mvp.service.EmailCodeAuthService;
@@ -40,19 +42,22 @@ public class AuthController {
     private final SessionActivityService sessionActivityService;
     private final UserRepository userRepository;
     private final EmailCodeAuthService emailCodeAuthService;
+    private final AdminLoginThrottle adminLoginThrottle;
 
     public AuthController(
         TenantAuthService tenantAuthService,
         AuthSessionService authSessionService,
         SessionActivityService sessionActivityService,
         UserRepository userRepository,
-        EmailCodeAuthService emailCodeAuthService
+        EmailCodeAuthService emailCodeAuthService,
+        AdminLoginThrottle adminLoginThrottle
     ) {
         this.tenantAuthService = tenantAuthService;
         this.authSessionService = authSessionService;
         this.sessionActivityService = sessionActivityService;
         this.userRepository = userRepository;
         this.emailCodeAuthService = emailCodeAuthService;
+        this.adminLoginThrottle = adminLoginThrottle;
     }
 
     @PostMapping("/email-code")
@@ -77,6 +82,17 @@ public class AuthController {
     )
     public EmailCodeVerifyResponse verifyEmailCode(@Valid @RequestBody EmailCodeVerifyRequest request) {
         return emailCodeAuthService.verify(request);
+    }
+
+    // Para limitar intentos se usa la ultima IP de X-Forwarded-For (la agrega el proxy de Render):
+    // la primera la puede inventar el cliente y saltarse el limite.
+    private static String proxyObservedIp(HttpServletRequest request) {
+        String forwarded = request.getHeader("X-Forwarded-For");
+        if (forwarded == null || forwarded.isBlank()) {
+            return String.valueOf(request.getRemoteAddr());
+        }
+        String[] hops = forwarded.split(",");
+        return hops[hops.length - 1].trim();
     }
 
     private static String clientIp(HttpServletRequest request) {
@@ -112,6 +128,24 @@ public class AuthController {
     })
     public AuthResponse login(@Valid @RequestBody LoginRequest request) {
         return tenantAuthService.login(request);
+    }
+
+    @PostMapping("/admin-login")
+    @Operation(
+        summary = "Login del administrador de la plataforma",
+        description = "Autentica al unico usuario ADMIN por email + password. Limitado a 5 intentos fallidos por IP cada 15 minutos."
+    )
+    public AuthResponse adminLogin(@Valid @RequestBody AdminLoginRequest request, HttpServletRequest httpRequest) {
+        String key = proxyObservedIp(httpRequest);
+        adminLoginThrottle.checkAllowed(key);
+        try {
+            AuthResponse response = tenantAuthService.adminLogin(request);
+            adminLoginThrottle.reset(key);
+            return response;
+        } catch (IllegalArgumentException exception) {
+            adminLoginThrottle.recordFailure(key);
+            throw exception;
+        }
     }
 
     @GetMapping("/me")

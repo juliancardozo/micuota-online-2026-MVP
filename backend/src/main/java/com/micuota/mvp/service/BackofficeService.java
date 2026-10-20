@@ -35,6 +35,7 @@ public class BackofficeService {
     private final CourseEnrollmentRepository courseEnrollmentRepository;
     private final PaymentOperationRepository paymentOperationRepository;
     private final PaymentKpiService paymentKpiService;
+    private final MercadoPagoOAuthService mercadoPagoOAuthService;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     public BackofficeService(
@@ -44,7 +45,8 @@ public class BackofficeService {
         TenantRepository tenantRepository,
         CourseEnrollmentRepository courseEnrollmentRepository,
         PaymentOperationRepository paymentOperationRepository,
-        PaymentKpiService paymentKpiService
+        PaymentKpiService paymentKpiService,
+        MercadoPagoOAuthService mercadoPagoOAuthService
     ) {
         this.userRepository = userRepository;
         this.teacherProfileRepository = teacherProfileRepository;
@@ -53,6 +55,7 @@ public class BackofficeService {
         this.courseEnrollmentRepository = courseEnrollmentRepository;
         this.paymentOperationRepository = paymentOperationRepository;
         this.paymentKpiService = paymentKpiService;
+        this.mercadoPagoOAuthService = mercadoPagoOAuthService;
     }
 
     @Transactional
@@ -303,12 +306,7 @@ public class BackofficeService {
         TeacherProfile profile = teacherProfileRepository.findByUserId(userId)
             .orElseThrow(() -> new IllegalArgumentException("El usuario no tiene perfil profesional configurado"));
 
-        return new PaymentSettingsView(
-            profile.getTransferAlias(),
-            profile.getTransferBankName(),
-            hasText(profile.getMpAccessToken()),
-            profile.getMpPublicKey()
-        );
+        return toPaymentSettingsView(profile, user.getTenant());
     }
 
     @Transactional
@@ -325,17 +323,39 @@ public class BackofficeService {
         profile.setTransferAlias(blankToNull(request.transferAlias()));
         profile.setTransferBankName(blankToNull(request.transferBankName()));
         if (request.mercadoPagoAccessToken() != null) {
-            profile.setMpAccessToken(blankToNull(request.mercadoPagoAccessToken()));
+            String manualToken = blankToNull(request.mercadoPagoAccessToken());
+            // Con el marketplace activo solo se conecta por OAuth: un token pegado cobraria sin la comision de MiCuota.
+            if (manualToken != null && mercadoPagoOAuthService.isEnabled()) {
+                throw new IllegalArgumentException("Conecta tu Mercado Pago con el boton Conectar con Mercado Pago");
+            }
+            MercadoPagoOAuthService.clearConnection(profile);
+            profile.setMpAccessToken(manualToken);
+            profile.setMpPublicKey(blankToNull(request.mercadoPagoPublicKey()));
         }
-        profile.setMpPublicKey(blankToNull(request.mercadoPagoPublicKey()));
         TeacherProfile saved = teacherProfileRepository.save(profile);
 
+        return toPaymentSettingsView(saved, user.getTenant());
+    }
+
+    private PaymentSettingsView toPaymentSettingsView(TeacherProfile profile, Tenant tenant) {
+        String connection = !hasText(profile.getMpAccessToken()) ? "NONE" : profile.isMpOauthConnected() ? "OAUTH" : "MANUAL";
+        int feeBps = valueOrDefault(tenant.getTakeRateBps(), 350);
+        if (Boolean.TRUE.equals(tenant.getRecoveryAutomationEnabled())) {
+            feeBps += valueOrDefault(tenant.getAdvancedDunningFeeBps(), 120);
+        }
         return new PaymentSettingsView(
-            saved.getTransferAlias(),
-            saved.getTransferBankName(),
-            hasText(saved.getMpAccessToken()),
-            saved.getMpPublicKey()
+            profile.getTransferAlias(),
+            profile.getTransferBankName(),
+            hasText(profile.getMpAccessToken()),
+            profile.getMpPublicKey(),
+            connection,
+            mercadoPagoOAuthService.isEnabled(),
+            feeBps
         );
+    }
+
+    private static int valueOrDefault(Integer value, int fallback) {
+        return value == null || value < 0 ? fallback : value;
     }
 
     private String blankToNull(String value) {

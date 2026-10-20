@@ -656,23 +656,37 @@
   }
 
   /* ---------------- Mercado Pago ---------------- */
+  function feePercent(bps) {
+    return `${(Number(bps || 0) / 100).toLocaleString("es-UY", { maximumFractionDigits: 2 })}%`;
+  }
+
   function renderMercadoPago() {
+    const settings = state.settings || {};
     const connected = mpConnected();
-    const oauthUrl = window.MicuotaConfig && window.MicuotaConfig.mercadoPagoOAuthUrl;
+    const oauthAvailable = Boolean(settings.mercadoPagoOAuthAvailable);
+    const viaOAuth = settings.mercadoPagoConnection === "OAUTH";
+    const feeNotice = `<div class="notice" style="margin-top:14px">${icons.lock}<p class="small">Cada pago va directo a tu cuenta de Mercado Pago. MiCuota cobra <strong>${feePercent(settings.platformFeeBps)} de cada pago</strong>: Mercado Pago lo descuenta solo, no tenés que transferirnos nada.</p></div>`;
     const country = store.get("micuota.mpCountry", "uy");
     const domain = { uy: "mercadopago.com.uy", ar: "mercadopago.com.ar" }[country] || "mercadopago.com.uy";
     let html = `<a class="back" href="#inicio">${icons.arrowLeft} Inicio</a>
-      <div class="view-head"><h1>Conectá tu Mercado Pago</h1><p>Así cada pago va directo a tu cuenta. MiCuota nunca toca tu plata.</p></div>`;
-    if (connected) {
+      <div class="view-head"><h1>Conectá tu Mercado Pago</h1><p>Así cada pago va directo a tu cuenta.</p></div>`;
+    if (connected && (viaOAuth || !oauthAvailable)) {
       html += `<div class="notice notice-ok" style="margin-bottom:16px">${icons.checkCircle}<p><strong>Tu Mercado Pago está conectado.</strong> Ya podés cobrar.</p></div>
-        <a class="btn btn-primary btn-lg btn-block" href="#nuevo" style="margin-bottom:24px">Crear un cobro</a>
-        <details class="card"><summary style="cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:center">Cambiar la clave de Mercado Pago</summary><div style="margin-top:14px">${tokenForm()}</div></details>`;
+        <a class="btn btn-primary btn-lg btn-block" href="#nuevo" style="margin-bottom:24px">Crear un cobro</a>`;
+      if (viaOAuth) {
+        html += `${feeNotice}<button type="button" class="btn btn-ghost btn-block" style="margin-top:16px" data-action="mp-disconnect">Desconectar Mercado Pago</button>`;
+        return setView(html, "Mercado Pago");
+      }
+      html += `<details class="card"><summary style="cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:center">Cambiar la clave de Mercado Pago</summary><div style="margin-top:14px">${tokenForm()}</div></details>`;
       setView(html, "Mercado Pago");
       bindTokenForm();
       return;
     }
-    if (oauthUrl) {
-      html += `<div class="card center"><p>Te llevamos a Mercado Pago, entrás con tu usuario de siempre y tocás <strong>Autorizar</strong>.</p><a class="btn btn-mp btn-lg btn-block" href="${esc(oauthUrl)}">Conectar con Mercado Pago</a></div>`;
+    if (oauthAvailable) {
+      if (connected) {
+        html += `<div class="notice" style="margin-bottom:16px">${icons.alert}<p><strong>Actualizá tu conexión.</strong> Ahora te conectás con un clic, sin copiar claves. Tus cobros anteriores siguen igual.</p></div>`;
+      }
+      html += `<div class="card center"><p>Te llevamos a Mercado Pago, entrás con tu usuario de siempre y tocás <strong>Autorizar</strong>.</p><button type="button" class="btn btn-mp btn-lg btn-block" data-action="mp-oauth">Conectar con Mercado Pago</button></div>${feeNotice}`;
       return setView(html, "Mercado Pago");
     }
     html += `<div class="card">
@@ -859,6 +873,23 @@
         break;
       case "hide-onboarding": store.set(`micuota.onboardingHidden.${slugKey()}`, "1"); renderHome(); break;
       case "mp-country": store.set("micuota.mpCountry", el.dataset.country); renderMercadoPago(); break;
+      case "mp-oauth":
+        busy(el, true, "Abriendo Mercado Pago…");
+        try {
+          const { url } = await api("/api/mercadopago/oauth/authorize");
+          location.href = url;
+        } catch (error) { toast(humanError(error), true); busy(el, false); }
+        break;
+      case "mp-disconnect":
+        if (!window.confirm("Si desconectás Mercado Pago no vas a poder crear cobros hasta volver a conectarlo. ¿Seguimos?")) break;
+        busy(el, true, "Desconectando…");
+        try {
+          await api("/api/mercadopago/oauth/disconnect", { method: "POST" });
+          state.settings = await api("/api/backoffice/payment-settings");
+          toast("Mercado Pago desconectado");
+          renderMercadoPago();
+        } catch (error) { toast(humanError(error), true); busy(el, false); }
+        break;
       case "logout": logout(); break;
       default: break;
     }
@@ -880,6 +911,14 @@
     try {
       const ok = await loadAll();
       if (ok) route();
+      // Vuelta del OAuth de Mercado Pago (?mp=conectado|cancelado|error).
+      const mpResult = new URLSearchParams(location.search).get("mp");
+      if (ok && mpResult) {
+        history.replaceState(null, "", location.pathname + location.hash);
+        if (mpResult === "conectado") toast("¡Mercado Pago conectado!");
+        else if (mpResult === "cancelado") toast("No se conectó Mercado Pago: cancelaste la autorización.", true);
+        else toast("No pudimos conectar Mercado Pago. Probá de nuevo.", true);
+      }
     } catch (error) {
       if (MC.isSessionError(error) || (error.fromSession && (error.status === 400 || error.status === 401))) {
         session.clear();

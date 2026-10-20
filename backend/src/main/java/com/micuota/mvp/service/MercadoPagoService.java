@@ -32,6 +32,28 @@ public class MercadoPagoService {
         return post(accessToken, "/preapproval", payload, "preapproval de Mercado Pago");
     }
 
+    // OAuth de la aplicacion marketplace: se autentica con client_id/client_secret en el cuerpo, sin Bearer.
+    public MercadoPagoApiResponse oauthToken(JsonNode payload) {
+        try {
+            String raw = webClient.post()
+                .uri("/oauth/token")
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .bodyValue(payload)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+            return parse(raw);
+        } catch (WebClientResponseException exception) {
+            throw new IllegalStateException(
+                "Mercado Pago devolvio status " + exception.getStatusCode().value() + " en OAuth: " + exception.getResponseBodyAsString(),
+                exception
+            );
+        } catch (RuntimeException exception) {
+            throw new IllegalStateException("No se pudo completar el OAuth de Mercado Pago", exception);
+        }
+    }
+
     public MercadoPagoApiResponse getPayment(String accessToken, String paymentId) {
         return get(accessToken, "/v1/payments/{id}", paymentId, "pago");
     }

@@ -1,6 +1,7 @@
 package com.micuota.mvp.repository;
 
 import com.micuota.mvp.domain.TeacherProfile;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -8,4 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface TeacherProfileRepository extends JpaRepository<TeacherProfile, Long> {
     Optional<TeacherProfile> findByUserId(Long userId);
     List<TeacherProfile> findByUserTenantId(Long tenantId);
+    List<TeacherProfile> findByMpOauthConnectedTrueAndMpTokenExpiresAtBefore(OffsetDateTime limit);
+    long countByUserTenantId(Long tenantId);
+    long countByUserTenantIdAndMpOauthConnectedTrue(Long tenantId);
 }

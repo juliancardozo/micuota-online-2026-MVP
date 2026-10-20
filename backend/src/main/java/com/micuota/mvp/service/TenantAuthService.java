@@ -162,7 +162,9 @@ public class TenantAuthService {
         Tenant tenant = tenantRepository.findBySlug(normalizeSlug(request.tenantSlug()))
             .orElseThrow(() -> new IllegalArgumentException("Tenant no encontrado"));
 
+        // El administrador de la plataforma entra solo por /api/auth/admin-login.
         User user = userRepository.findByTenantIdAndEmail(tenant.getId(), request.email().toLowerCase(Locale.ROOT))
+            .filter(candidate -> candidate.getRole() != UserRole.ADMIN)
             .orElseThrow(() -> new IllegalArgumentException("Credenciales invalidas"));
 
         boolean valid;
@@ -178,6 +180,22 @@ public class TenantAuthService {
 
         String token = authSessionService.createSession(tenant.getId(), user.getId(), user.getRole());
         return new AuthResponse(token, tenant.getId(), tenant.getSlug(), user.getId(), user.getRole(), resolveDashboardUrl(user.getRole(), token));
+    }
+
+    public AuthResponse adminLogin(AdminLoginRequest request) {
+        String email = request.email().trim().toLowerCase(Locale.ROOT);
+        User admin = userRepository.findAllByRole(UserRole.ADMIN).stream()
+            .filter(user -> user.getEmail().equalsIgnoreCase(email))
+            .findFirst()
+            .orElse(null);
+        boolean valid = admin != null
+            && admin.getPasswordHash() != null
+            && admin.getPasswordHash().startsWith("$2")
+            && passwordEncoder.matches(request.password(), admin.getPasswordHash());
+        if (!valid) {
+            throw new IllegalArgumentException("Credenciales invalidas");
+        }
+        return signIn(admin);
     }
 
     private String resolveDashboardUrl(UserRole role, String token) {

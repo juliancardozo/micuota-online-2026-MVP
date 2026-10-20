@@ -23,10 +23,7 @@
   window.__MICUOTA_API_BASE__ = apiBase;
   window.MicuotaConfig = {
     apiBase,
-    hasApiBase: Boolean(apiBase),
-    // Cuando exista OAuth de Mercado Pago en el backend, completar esta URL y la app
-    // muestra el boton "Conectar con Mercado Pago" en lugar de pegar el Access Token.
-    mercadoPagoOAuthUrl: window.__MICUOTA_MP_OAUTH_URL__ || ""
+    hasApiBase: Boolean(apiBase)
   };
 
   async function parseBody(response) {

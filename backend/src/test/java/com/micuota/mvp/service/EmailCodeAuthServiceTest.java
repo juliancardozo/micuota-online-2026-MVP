@@ -168,4 +168,54 @@ class EmailCodeAuthServiceTest {
         assertThat(chosen.session().tenantSlug()).isEqualTo("escuela-fede");
         assertThat(chosen.session().role()).isEqualTo(UserRole.TENANT_ADMIN);
     }
+
+    private User platformAdmin(String email, String password) {
+        var tenant = new com.micuota.mvp.domain.Tenant();
+        tenant.setName("Plataforma " + email);
+        tenant.setSlug("plataforma-" + Math.abs(email.hashCode()));
+        tenant.setCreatedAt(java.time.OffsetDateTime.now());
+        tenant.setPlanCode("BASE");
+        tenant.setTakeRateBps(350);
+        tenant.setAdvancedDunningFeeBps(120);
+        tenant.setRecoveryAutomationEnabled(false);
+        tenant.setAdvancedAnalyticsEnabled(false);
+        tenant.setIntegrationsEnabled(false);
+        tenant = tenantRepository.save(tenant);
+        User admin = new User();
+        admin.setTenant(tenant);
+        admin.setEmail(email);
+        admin.setFullName("Admin Plataforma");
+        admin.setRole(UserRole.ADMIN);
+        admin.setPasswordHash(new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder().encode(password));
+        return userRepository.save(admin);
+    }
+
+    @Test
+    void platformAdminCannotSignInWithEmailCodeNorCreateAnAccount() {
+        String email = "root.codigo@example.com";
+        platformAdmin(email, "clave-segura-1");
+        long tenantsBefore = tenantRepository.count();
+
+        assertThatThrownBy(() -> service.verify(verifyRequest(email, requestAndCaptureCode(email), "Intruso")))
+            .hasMessageContaining("contraseña");
+        assertThat(tenantRepository.count()).isEqualTo(tenantsBefore);
+    }
+
+    @Autowired
+    private TenantAuthService tenantAuthService;
+
+    @Test
+    void platformAdminSignsInOnlyThroughAdminLogin() {
+        String email = "root.login@example.com";
+        User admin = platformAdmin(email, "clave-segura-2");
+
+        AuthResponse session = tenantAuthService.adminLogin(new AdminLoginRequest("Root.Login@example.com", "clave-segura-2"));
+        assertThat(session.role()).isEqualTo(UserRole.ADMIN);
+
+        assertThatThrownBy(() -> tenantAuthService.adminLogin(new AdminLoginRequest(email, "otra-clave")))
+            .hasMessageContaining("Credenciales invalidas");
+        // El login comun por tenant no sirve para el administrador.
+        assertThatThrownBy(() -> tenantAuthService.login(new LoginRequest(admin.getTenant().getSlug(), email, "clave-segura-2")))
+            .hasMessageContaining("Credenciales invalidas");
+    }
 }
