@@ -100,8 +100,8 @@ public class AdminBillingService {
             tenant.getTakeRateBps() == null ? 350 : tenant.getTakeRateBps(),
             tenant.getAdvancedDunningFeeBps() == null ? 120 : tenant.getAdvancedDunningFeeBps(),
             Boolean.TRUE.equals(tenant.getRecoveryAutomationEnabled()),
-            teacherProfileRepository.countByUserTenantId(tenant.getId()),
-            teacherProfileRepository.countByUserTenantIdAndMpOauthConnectedTrue(tenant.getId()),
+            profiles.size(),
+            profiles.stream().filter(TeacherProfile::isMpOauthConnected).count(),
             fee == null ? 0 : ((Number) fee[2]).longValue(),
             fee == null ? BigDecimal.ZERO : new BigDecimal(fee[1].toString())
         );

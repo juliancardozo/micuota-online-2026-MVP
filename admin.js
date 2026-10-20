@@ -152,7 +152,8 @@
     const q = state.filter.trim().toLowerCase();
     const list = state.tenants.filter((t) => !q || [t.tenantName, t.tenantSlug, t.contactName, t.contactEmail].some((v) => (v || "").toLowerCase().includes(q)));
     let html = `<div class="view-head row-between"><div><h1>Cuentas y comisiones</h1><p>${state.tenants.length} ${state.tenants.length === 1 ? "cuenta" : "cuentas"}. La comisión se cobra solo en pagos únicos de profesionales conectados a Mercado Pago; los cambios aplican a los cobros nuevos.</p></div>
-        <button class="btn btn-sm" type="button" data-action="reload-accounts">${icons.refresh} Actualizar</button></div>
+        <div class="row"><a class="btn btn-sm btn-primary" href="#cuentas/nueva">${icons.plus} Nueva academia</a>
+        <button class="btn btn-sm" type="button" data-action="reload-accounts">${icons.refresh} Actualizar</button></div></div>
       <div class="field search"><label class="sr-only" for="acc-search">Buscar cuenta</label><input class="input" id="acc-search" type="search" placeholder="Buscar por nombre, email o código" value="${esc(state.filter)}" /></div>`;
     if (!list.length) {
       html += `<div class="card empty"><p class="muted">${state.tenants.length ? "No hay cuentas que coincidan." : "Todavía no hay cuentas."}</p></div>`;
@@ -179,6 +180,41 @@
       state.filter = search.value;
       const pos = search.selectionStart;
       renderAccounts().then(() => { const s = document.getElementById("acc-search"); s.focus(); s.setSelectionRange(pos, pos); });
+    });
+  }
+
+  /* ---------------- Nueva academia ---------------- */
+  function renderNewAcademy() {
+    setView(`<a class="back" href="#cuentas">${icons.arrowLeft} Cuentas</a>
+      <div class="view-head"><h1>Nueva academia</h1><p>Para escuelas o institutos con varios profes. Quien la administra entra al backoffice con su email (sin contraseña) y desde ahí suma a los profes. Los profes que trabajan solos se crean la cuenta solos en micuota.online/empezar.</p></div>
+      <form class="card" id="academy-form" novalidate>
+        <div class="field"><label for="a-name">Nombre de la academia</label><input class="input" id="a-name" name="tenantName" autocomplete="off" placeholder="Ej: Escuela de Música Norte" /></div>
+        <div class="field"><label for="a-admin">Quién la administra</label><input class="input" id="a-admin" name="adminFullName" autocomplete="off" placeholder="Ej: Ana Pérez" /></div>
+        <div class="field"><label for="a-email">Su email</label><input class="input" id="a-email" name="adminEmail" type="email" inputmode="email" autocomplete="off" placeholder="ana@escuela.com" /><p class="hint">Le mandamos un email de bienvenida con cómo entrar.</p></div>
+        <p class="field-error" id="a-error" role="alert" hidden></p>
+        <button class="btn btn-primary btn-lg btn-block" type="submit" id="a-submit">Crear academia y mandar invitación</button>
+      </form>`, "Nueva academia");
+    document.getElementById("a-name").focus();
+    document.getElementById("academy-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const err = document.getElementById("a-error");
+      err.hidden = true;
+      const body = { tenantName: form.tenantName.value.trim(), adminFullName: form.adminFullName.value.trim(), adminEmail: form.adminEmail.value.trim().toLowerCase() };
+      if (!body.tenantName || !body.adminFullName) { err.textContent = "Completá el nombre de la academia y de quién la administra."; err.hidden = false; return; }
+      if (!/^\S+@\S+\.\S+$/.test(body.adminEmail)) { err.textContent = "Revisá el email."; err.hidden = false; return; }
+      const btn = document.getElementById("a-submit");
+      busy(btn, true, "Creando…");
+      try {
+        const created = await api("/api/admin/tenants", { method: "POST", body });
+        state.tenants = null; state.overview = null;
+        toast(`Academia creada. Le mandamos la invitación a ${created.tenantAdminEmail}`);
+        location.hash = "#cuentas";
+      } catch (error) {
+        err.textContent = /slug del tenant ya existe/i.test(error.message || "") ? "Ya existe una academia con ese nombre. Probá con otro." : humanError(error);
+        err.hidden = false;
+        busy(btn, false);
+      }
     });
   }
 
@@ -259,7 +295,8 @@
   /* ---------------- Ruteo y acciones ---------------- */
   function route() {
     if (!state.me) return;
-    const name = (location.hash || "#resumen").slice(1).split("/")[0];
+    const [name, sub] = (location.hash || "#resumen").slice(1).split("/");
+    if (name === "cuentas" && sub === "nueva") { renderNewAcademy(); markNav("cuentas"); return; }
     const routes = { resumen: renderSummary, cuentas: renderAccounts, mantenimiento: renderMaintenance };
     const target = routes[name] ? name : "resumen";
     routes[target]();

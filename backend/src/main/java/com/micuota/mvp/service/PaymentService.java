@@ -137,8 +137,9 @@ public class PaymentService {
         if (teacherProfileIds.size() == 1) {
             return paymentOperationRepository.findTop20ByTeacherIdOrderByCreatedAtDesc(teacherProfileIds.get(0));
         }
+        // Vista de academia: todos los profes juntos, por eso el tope es mas alto que el de un solo profe.
         return paymentOperationRepository.findByTeacherIdInOrderByCreatedAtDesc(teacherProfileIds).stream()
-            .limit(50)
+            .limit(300)
             .toList();
     }
 
