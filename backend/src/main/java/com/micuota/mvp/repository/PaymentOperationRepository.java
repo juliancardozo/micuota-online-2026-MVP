@@ -31,6 +31,7 @@ public interface PaymentOperationRepository extends JpaRepository<PaymentOperati
         select tp.user.tenant.id, coalesce(sum(op.marketplaceFeeAmount), 0), count(op)
         from PaymentOperation op, TeacherProfile tp
         where op.teacherId = tp.id and op.status = :status and op.marketplaceFeeAmount is not null
+            and (op.paidMethod is null or op.paidMethod = com.micuota.mvp.domain.PaidMethod.MERCADOPAGO)
         group by tp.user.tenant.id
         """)
     List<Object[]> sumMarketplaceFeesByTenant(@Param("status") OperationStatus status);

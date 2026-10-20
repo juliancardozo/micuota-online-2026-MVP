@@ -19,6 +19,7 @@ import com.micuota.mvp.service.PaymentKpiFrameworkView;
 import com.micuota.mvp.service.PaymentKpiService;
 import com.micuota.mvp.service.UpdatePaymentSettingsRequest;
 import com.micuota.mvp.service.EnrollmentView;
+import com.micuota.mvp.service.MarkPaymentPaidRequest;
 import com.micuota.mvp.service.PaymentService;
 import com.micuota.mvp.service.ProfessorDashboardView;
 import com.micuota.mvp.service.SaveStudentBankAccountRequest;
@@ -154,6 +155,29 @@ public class BackofficeController {
         AuthSessionService.SessionContext session = authSessionService.requireSession(token);
         requireTenantAdminOrTeacher(session);
         return paymentService.lastOperationsForBackoffice(session.tenantId(), session.userId(), session.role(), teacherUserId);
+    }
+
+    @PostMapping("/payments/{operationId}/mark-paid")
+    @Operation(summary = "Marcar como pagado", description = "Registra un pago recibido por transferencia, giro, efectivo u otro medio fuera de Mercado Pago.")
+    public PaymentOperation markPaid(
+        @RequestHeader("X-Auth-Token") String token,
+        @PathVariable Long operationId,
+        @Valid @RequestBody MarkPaymentPaidRequest request
+    ) {
+        AuthSessionService.SessionContext session = authSessionService.requireSession(token);
+        requireTenantAdminOrTeacher(session);
+        return paymentService.markPaidFromBackoffice(session.tenantId(), session.userId(), session.role(), operationId, request);
+    }
+
+    @PostMapping("/payments/{operationId}/mark-unpaid")
+    @Operation(summary = "Deshacer pago marcado", description = "Vuelve a dejar sin pagar un cobro marcado a mano por error.")
+    public PaymentOperation markUnpaid(
+        @RequestHeader("X-Auth-Token") String token,
+        @PathVariable Long operationId
+    ) {
+        AuthSessionService.SessionContext session = authSessionService.requireSession(token);
+        requireTenantAdminOrTeacher(session);
+        return paymentService.markUnpaidFromBackoffice(session.tenantId(), session.userId(), session.role(), operationId);
     }
 
     @GetMapping("/payments/by-course")

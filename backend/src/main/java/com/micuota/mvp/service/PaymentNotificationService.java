@@ -23,6 +23,9 @@ public class PaymentNotificationService {
     @Value("${app.mail.ops-alert:}")
     private String opsAlertEmail;
 
+    @Value("${app.frontend-base-url:${app.base-url:http://localhost:8080}}")
+    private String frontendBaseUrl;
+
     public PaymentNotificationService(JavaMailSender mailSender) {
         this.mailSender = mailSender;
     }
@@ -88,7 +91,8 @@ public class PaymentNotificationService {
 
     private String buildHtmlTemplate(String teacherName, PaymentOperation operation) {
         String displayTeacher = (teacherName == null || teacherName.isBlank()) ? "Tu profesional" : teacherName;
-        String encodedCheckout = URLEncoder.encode(operation.getCheckoutUrl(), StandardCharsets.UTF_8);
+        // La pagina de pago de MiCuota muestra todas las formas de pago (Mercado Pago, transferencia, etc.).
+        String encodedCheckout = URLEncoder.encode(publicLink(operation), StandardCharsets.UTF_8);
         String qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=" + encodedCheckout;
 
         return """
@@ -103,17 +107,17 @@ public class PaymentNotificationService {
                 <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="max-width:640px;margin:0 auto;background:#ffffff;border-radius:16px;border:1px solid #dbe7ff;overflow:hidden;">
                   <tr>
                     <td style="padding:24px;background:linear-gradient(135deg,#0f3d6e,#0b7ec2);color:#ffffff;">
-                      <h1 style="margin:0;font-size:24px;line-height:1.2;">Tienes un nuevo pago para completar</h1>
-                      <p style="margin:8px 0 0;opacity:.92;">%s te compartio un cobro por MiCuota.</p>
+                      <h1 style="margin:0;font-size:24px;line-height:1.2;">Tenés un pago para hacer</h1>
+                      <p style="margin:8px 0 0;opacity:.92;">%s te mandó un cobro por MiCuota.</p>
                     </td>
                   </tr>
                   <tr>
                     <td style="padding:24px;">
                       <p style="margin:0 0 12px;">Concepto: <strong>%s</strong></p>
                       <p style="margin:0 0 20px;">Monto: <strong>%s %s</strong></p>
-                      <p style="margin:0 0 14px;">Puedes pagar con el boton o escanear el QR:</p>
+                      <p style="margin:0 0 14px;">Entrá al link o escaneá el QR para ver cómo pagar:</p>
                       <p style="margin:0 0 16px;">
-                        <a href="%s" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#0f3d6e;color:#ffffff;text-decoration:none;font-weight:700;">Ir al link de pago</a>
+                        <a href="%s" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#0f3d6e;color:#ffffff;text-decoration:none;font-weight:700;">Ver cómo pagar</a>
                       </p>
                       <p style="margin:0 0 8px;"><img src="%s" alt="QR de pago" width="220" height="220" style="display:block;border-radius:12px;border:1px solid #dbe7ff;" /></p>
                       <p style="margin:18px 0 0;font-size:12px;color:#6b7280;">Operacion #%d · Estado inicial: %s</p>
@@ -127,7 +131,7 @@ public class PaymentNotificationService {
             escapeHtml(operation.getDescription()),
             operation.getCurrency(),
             operation.getAmount(),
-            operation.getCheckoutUrl(),
+            publicLink(operation),
             qrUrl,
             operation.getId(),
             operation.getStatus()
@@ -146,6 +150,10 @@ public class PaymentNotificationService {
             .replace("'", "&#39;");
     }
 
+    private String publicLink(PaymentOperation operation) {
+        return frontendBaseUrl + "/pago.html?operationId=" + operation.getId();
+    }
+
     private String buildReminderTemplate(String teacherName, PaymentOperation operation, String body) {
         String displayTeacher = (teacherName == null || teacherName.isBlank()) ? "Tu profesional" : teacherName;
         return """
@@ -156,7 +164,7 @@ public class PaymentNotificationService {
                   <tr>
                     <td style="padding:20px 24px;background:linear-gradient(135deg,#c04e11,#ef9a2b);color:#fff;">
                       <h1 style="margin:0;font-size:22px;line-height:1.2;">Recordatorio de cobro pendiente</h1>
-                      <p style="margin:8px 0 0;opacity:.95;">%s te envio una actualizacion de tu pago en MiCuota.</p>
+                      <p style="margin:8px 0 0;opacity:.95;">%s te recuerda un pago pendiente en MiCuota.</p>
                     </td>
                   </tr>
                   <tr>
@@ -165,7 +173,7 @@ public class PaymentNotificationService {
                       <p style="margin:0 0 8px;">Monto: <strong>%s %s</strong></p>
                       <p style="margin:0 0 18px;color:#5f4f3c;line-height:1.55;">%s</p>
                       <p style="margin:0;">
-                        <a href="%s" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#c04e11;color:#fff;text-decoration:none;font-weight:700;">Retomar pago</a>
+                        <a href="%s" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#c04e11;color:#fff;text-decoration:none;font-weight:700;">Ver cómo pagar</a>
                       </p>
                     </td>
                   </tr>
@@ -178,7 +186,7 @@ public class PaymentNotificationService {
             operation.getCurrency(),
             operation.getAmount(),
             escapeHtml(body),
-            operation.getCheckoutUrl()
+            publicLink(operation)
         );
     }
 

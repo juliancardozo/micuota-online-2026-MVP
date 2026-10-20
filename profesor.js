@@ -69,9 +69,15 @@
 
   const studentById = (id) => state.students.find((s) => String(s.id) === String(id));
   const paymentById = (id) => state.payments.find((p) => String(p.id) === String(id));
-  function personName(p) { const s = p && p.studentUserId ? studentById(p.studentUserId) : null; return s ? s.fullName : "Sin alumno asignado"; }
+  function personName(p) { const s = p && p.studentUserId ? studentById(p.studentUserId) : null; return s ? s.fullName : "Sin cliente asignado"; }
   function personPhone(p) { return p && p.studentUserId ? state.phones[p.studentUserId] || "" : ""; }
   const mpConnected = () => Boolean(state.settings && state.settings.mercadoPagoConfigured);
+  // Transferencia, giro o efectivo: el cliente ve los datos en la pagina de pago y vos marcas el cobro como pagado.
+  const manualConfigured = () => Boolean(state.settings && (state.settings.transferAccountNumber || state.settings.transferAlias || state.settings.otherPaymentInstructions));
+  const canCharge = () => mpConnected() || manualConfigured();
+  const PAID_METHODS = [["TRANSFER", "Transferencia"], ["CASH", "Efectivo"], ["GIRO", "Giro"], ["OTHER", "Otro"]];
+  const methodLabel = (m) => ({ MERCADOPAGO: "Mercado Pago", TRANSFER: "transferencia", CASH: "efectivo", GIRO: "giro", OTHER: "otro medio" }[m] || "");
+  const paidByHand = (p) => p && p.status === "SUCCESS" && p.paidMethod && p.paidMethod !== "MERCADOPAGO";
 
   /* ---------------- Mensajes de WhatsApp ---------------- */
   function messageFor(p, kind) {
@@ -105,7 +111,7 @@
     document.getElementById("sidebar-user").textContent = name ? `${name} · ${state.me.email}` : "";
   }
   function markNav(name) {
-    const map = { cobro: "cobros", listo: "nuevo", persona: "personas", mercadopago: "cuenta" };
+    const map = { cobro: "cobros", listo: "nuevo", persona: "personas", mercadopago: "cuenta", medios: "cuenta" };
     const active = map[name] || name;
     document.querySelectorAll("[data-nav]").forEach((a) => {
       if (a.dataset.nav === active) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
@@ -129,6 +135,7 @@
       listo: () => renderCreated(parts[1]),
       personas: renderPeople,
       persona: () => (parts[1] === "nueva" ? renderNewPerson() : renderPerson(parts[1])),
+      medios: renderMethods,
       mercadopago: renderMercadoPago,
       cuenta: renderAccount
     };
@@ -148,7 +155,7 @@
   function paymentRow(p, { actions = true } = {}) {
     const st = statusOf(p);
     const person = personName(p);
-    const when = st.key === "paid" ? `Pagó ${relativeDays(p.updatedAt || p.createdAt)}` : st.key === "late" ? `Venció ${relativeDays(p.dueAt)}` : `Creado ${relativeDays(p.createdAt)}`;
+    const when = st.key === "paid" ? `Pagó ${relativeDays(p.paidAt || p.updatedAt || p.createdAt)}${paidByHand(p) ? ` · ${methodLabel(p.paidMethod)}` : ""}` : st.key === "late" ? `Venció ${relativeDays(p.dueAt)}` : `Creado ${relativeDays(p.createdAt)}`;
     return `<li class="row-item">
       <a class="row-link" href="#cobro/${p.id}">
         <span class="avatar" aria-hidden="true">${esc(initials(person))}</span>
@@ -164,8 +171,8 @@
   }
 
   function mpBanner() {
-    if (mpConnected()) return "";
-    return `<div class="banner-mp" role="note">${icons.alert.replace("<svg", '<svg width="28" height="28" style="flex:none;color:var(--warn)"')}<p class="grow"><strong>Falta conectar Mercado Pago.</strong> Sin eso no podemos crear links de pago. Son 2 minutos.</p><a class="btn btn-primary" href="#mercadopago">Conectar ahora</a></div>`;
+    if (canCharge()) return "";
+    return `<div class="banner-mp" role="note">${icons.alert.replace("<svg", '<svg width="28" height="28" style="flex:none;color:var(--warn)"')}<p class="grow"><strong>Falta decir cómo te pagan.</strong> Mercado Pago, transferencia, giro o efectivo: elegí uno y ya podés cobrar.</p><a class="btn btn-primary" href="#medios">Elegir ahora</a></div>`;
   }
 
   /* ---------------- Inicio ---------------- */
@@ -173,9 +180,9 @@
     const anyShared = Object.keys(state.shared).length > 0 || state.payments.some((p) => p.status === "SUCCESS");
     return [
       { done: true, title: "Creaste tu cuenta", copy: "¡Bienvenida/o a MiCuota!" },
-      { done: mpConnected(), title: "Conectá tu Mercado Pago", copy: "Ahí te llega la plata, directo.", href: "#mercadopago", cta: "Conectar Mercado Pago" },
+      { done: canCharge(), title: "Elegí cómo te pagan", copy: "Mercado Pago, transferencia, giro o efectivo.", href: "#medios", cta: "Elegir cómo me pagan" },
       { done: state.payments.length > 0, title: "Creá tu primer cobro", copy: "A quién, por qué y cuánto. Nada más.", href: "#nuevo", cta: "Crear mi primer cobro" },
-      { done: anyShared, title: "Mandalo por WhatsApp", copy: "Tu alumno paga desde el celular en un toque.", href: state.payments[0] ? `#listo/${state.payments[0].id}` : "#nuevo", cta: "Mandar por WhatsApp" }
+      { done: anyShared, title: "Mandalo por WhatsApp", copy: "Tu cliente ve cómo pagarte desde el celular.", href: state.payments[0] ? `#listo/${state.payments[0].id}` : "#nuevo", cta: "Mandar por WhatsApp" }
     ];
   }
 
@@ -255,7 +262,7 @@
     const extraPaid = sumByCurrency(paidThisMonth).slice(1).map(([c, v]) => money(v, c)).join(" + ");
     const [owCur, owVal] = sumByCurrency(owed)[0];
     return `<div class="stats" role="group" aria-label="Resumen">
-      <div class="stat stat-main"><p class="label">Cobraste en ${esc(monthName(now))}</p><p class="value">${esc(money(mainVal, mainCur))}</p><p class="sub">${paidThisMonth.length} ${paidThisMonth.length === 1 ? "pago" : "pagos"}${extraPaid ? ` · y ${esc(extraPaid)}` : ""} · directo a tu Mercado Pago</p></div>
+      <div class="stat stat-main"><p class="label">Cobraste en ${esc(monthName(now))}</p><p class="value">${esc(money(mainVal, mainCur))}</p><p class="sub">${paidThisMonth.length} ${paidThisMonth.length === 1 ? "pago" : "pagos"}${extraPaid ? ` · y ${esc(extraPaid)}` : ""}</p></div>
       <a class="stat stat-owed ${owed.length ? "" : "is-zero"}" href="#cobros" data-action="filter" data-filter="owes" style="text-decoration:none;color:inherit"><p class="label">Te deben</p><p class="value">${esc(money(owVal, owCur))}</p><p class="sub muted">${owed.length ? `${people} ${people === 1 ? "persona" : "personas"} · ver quiénes` : "Nadie, ¡todo al día!"}</p></a>
     </div>`;
   }
@@ -272,10 +279,10 @@
       return true;
     }).sort((a, b) => (state.filter === "owes" ? rank(a) - rank(b) : 0) || new Date(b.createdAt) - new Date(a.createdAt));
 
-    let html = `<div class="view-head row-between"><div><h1>Cobros</h1><p>Se marcan como pagados solos cuando Mercado Pago confirma.</p></div>
+    let html = `<div class="view-head row-between"><div><h1>Cobros</h1><p>Los de Mercado Pago se marcan solos; si te pagan de otra forma, lo marcás vos.</p></div>
       <button class="btn btn-sm" type="button" data-action="refresh">${icons.refresh} Actualizar</button></div>`;
     if (!state.payments.length) {
-      html += mpBanner() + emptyState("list", "Acá van a aparecer tus cobros", "Creá uno y mandalo por WhatsApp. Cuando te paguen, se marca solo.", "#nuevo", "Crear un cobro");
+      html += mpBanner() + emptyState("list", "Acá van a aparecer tus cobros", "Creá uno y mandalo por WhatsApp. Acá ves quién te pagó y quién no.", "#nuevo", "Crear un cobro");
       return setView(html, "Cobros");
     }
     html += `<div class="toolbar">
@@ -307,8 +314,10 @@
     const person = personName(p);
     const link = payLink(p.id);
     const statusCopy = {
-      paid: `Mercado Pago confirmó el pago ${relativeDays(p.updatedAt || p.createdAt)}. La plata ya está en tu cuenta de Mercado Pago.`,
-      pending: `Todavía no pagó. Vence ${relativeDays(p.dueAt)}.`,
+      paid: paidByHand(p)
+        ? `Lo marcaste como pagado ${relativeDays(p.paidAt || p.updatedAt)}, por ${methodLabel(p.paidMethod)}.${p.paidNote ? ` Nota: ${p.paidNote}` : ""}`
+        : `Mercado Pago confirmó el pago ${relativeDays(p.paidAt || p.updatedAt || p.createdAt)}. La plata ya está en tu cuenta de Mercado Pago.`,
+      pending: `Todavía no pagó. Vence ${relativeDays(p.dueAt)}.${p.provider === "MANUAL" ? " Cuando te pague, tocá «Ya me pagó»." : ""}`,
       late: `Venció ${relativeDays(p.dueAt)}. Mandale un recordatorio amable.`,
       processing: "Pagó con un medio que tarda en acreditarse (por ejemplo, efectivo). Se marca solo cuando Mercado Pago confirme.",
       failed: "Intentó pagar pero Mercado Pago lo rechazó. Puede volver a intentar con el mismo link."
@@ -321,22 +330,33 @@
         <p class="muted" style="margin:0">${p.studentUserId ? `<a href="#persona/${p.studentUserId}">${esc(person)}</a>` : esc(person)} · ${esc(flowLabel(p.flowType))}</p>
         <p style="margin:14px 0 0">${esc(statusCopy)}</p>
         <div class="detail-actions">
-          ${st.owes ? waButton(p, { cls: "btn btn-wa btn-lg btn-block", label: reminderKind(p) === "reminder" ? `Recordarle a ${firstName(person) || "tu alumno"} por WhatsApp` : `Mandárselo por WhatsApp` }) : ""}
+          ${st.owes ? waButton(p, { cls: "btn btn-wa btn-lg btn-block", label: reminderKind(p) === "reminder" ? `Recordarle a ${firstName(person) || "tu cliente"} por WhatsApp` : `Mandárselo por WhatsApp` }) : ""}
+          ${st.owes ? `<button type="button" class="btn btn-primary btn-lg btn-block" data-action="paid-open">${icons.check} Ya me pagó</button>
+            <form id="paid-form" class="card card-flat" hidden novalidate style="text-align:left">
+              <fieldset class="choice-group choice-grid-2" style="margin-bottom:12px"><legend>¿Cómo te pagó?</legend>
+                ${PAID_METHODS.map(([k, l], i) => `<label class="choice"><input type="radio" name="method" value="${k}" ${i === 0 ? "checked" : ""} /><span class="choice-box center"><strong>${l}</strong></span></label>`).join("")}
+              </fieldset>
+              <div class="field"><label for="paid-note">Nota <span class="muted">(opcional)</span></label><input class="input" id="paid-note" maxlength="300" autocomplete="off" placeholder="Ej: número de transferencia" /></div>
+              <button class="btn btn-primary btn-block" type="submit" id="paid-submit">Marcar como pagado</button>
+              <p class="hint" style="margin-top:8px">Si te pagó por Mercado Pago no hace falta: se marca solo.</p>
+            </form>` : ""}
           <div class="detail-actions-2">
             <button type="button" class="btn" data-action="copy" data-id="${p.id}">${icons.copy} Copiar link</button>
             <button type="button" class="btn" data-action="qr" data-id="${p.id}">${icons.qr} Mostrar QR</button>
           </div>
-          <a class="btn btn-ghost" href="${esc(link)}" target="_blank" rel="noopener">${icons.eye} Ver lo que ve tu alumno</a>
+          <a class="btn btn-ghost" href="${esc(link)}" target="_blank" rel="noopener">${icons.eye} Ver lo que ve tu cliente</a>
+          ${paidByHand(p) ? `<button type="button" class="btn btn-ghost" data-action="paid-undo" data-id="${p.id}">Deshacer: no me pagó</button>` : ""}
         </div>
       </div>
       <div class="card">
         <h2 class="card-title">Detalle</h2>
         <dl class="facts">
-          <dt>Alumno</dt><dd>${esc(person)}</dd>
+          <dt>Cliente</dt><dd>${esc(person)}</dd>
           <dt>Tipo</dt><dd>${esc(flowLabel(p.flowType))}</dd>
+          ${st.key === "paid" && p.paidMethod ? `<dt>Pagó con</dt><dd>${esc(methodLabel(p.paidMethod).replace(/^./, (c) => c.toUpperCase()))}</dd>` : ""}
           <dt>Creado</dt><dd>${esc(shortDate(p.createdAt))}</dd>
           ${p.dueAt && st.owes ? `<dt>Vence</dt><dd>${esc(shortDate(p.dueAt))}</dd>` : ""}
-          ${p.netAmountForTeacher != null && st.key === "paid" ? `<dt>Te queda</dt><dd>${esc(money(p.netAmountForTeacher, p.currency))}<br><span class="small muted" style="font-weight:400">después de la comisión de MiCuota</span></dd>` : ""}
+          ${p.netAmountForTeacher != null && st.key === "paid" && !paidByHand(p) && Number(p.netAmountForTeacher) !== Number(p.amount) ? `<dt>Te queda</dt><dd>${esc(money(p.netAmountForTeacher, p.currency))}<br><span class="small muted" style="font-weight:400">después de la comisión de MiCuota</span></dd>` : ""}
           <dt>Número</dt><dd>#${p.id}</dd>
         </dl>
       </div>
@@ -346,6 +366,30 @@
       </div>`;
     setView(html, `${person} · ${p.description}`);
     loadTimeline(p.id);
+    const paidForm = document.getElementById("paid-form");
+    if (paidForm) paidForm.addEventListener("submit", (e) => { e.preventDefault(); markPaid(p, paidForm); });
+  }
+
+  function replacePayment(updated) {
+    state.payments = state.payments.map((x) => (String(x.id) === String(updated.id) ? updated : x));
+  }
+
+  async function markPaid(p, form) {
+    const method = (form.querySelector('input[name="method"]:checked') || {}).value || "OTHER";
+    const btn = document.getElementById("paid-submit");
+    busy(btn, true, "Guardando…");
+    try {
+      const updated = await api(`/api/backoffice/payments/${encodeURIComponent(p.id)}/mark-paid`, {
+        method: "POST",
+        body: { method, note: document.getElementById("paid-note").value.trim() || null }
+      });
+      replacePayment(updated);
+      toast(`Listo: ${firstName(personName(updated)) || "el cobro"} quedó como pagado`);
+      renderPayment(updated.id);
+    } catch (error) {
+      toast(humanError(error), true);
+      busy(btn, false);
+    }
   }
 
   async function loadTimeline(id) {
@@ -369,6 +413,11 @@
       case "PAYMENT_LINK_SENT": return ["Se envió el link por email", ""];
       case "WEBHOOK_RECEIVED": return ["Mercado Pago avisó un movimiento", ""];
       case "PAYMENT_STATUS_CHANGED":
+        if (/"undo":true/.test(e.rawPayload || "")) return ["Deshiciste el pago marcado", "bad"];
+        if (/"manual":true/.test(e.rawPayload || "")) {
+          const m = (/"method":"(\w+)"/.exec(e.rawPayload) || [])[1];
+          return [`Lo marcaste como pagado${m ? ` (${methodLabel(m)})` : ""}`, "ok"];
+        }
         if (e.statusTo === "SUCCESS") return ["Mercado Pago confirmó el pago", "ok"];
         if (e.statusTo === "FAILURE") return ["Mercado Pago rechazó un intento de pago", "bad"];
         if (e.statusTo === "PENDING") return ["El pago quedó en proceso", ""];
@@ -384,16 +433,16 @@
 
   /* ---------------- Nuevo cobro ---------------- */
   function renderNew(presetPersonId) {
-    if (!mpConnected()) {
+    if (!canCharge()) {
       return setView(`<div class="view-head"><h1>Nuevo cobro</h1><p>Un paso antes de empezar.</p></div>
         <div class="card empty"><div class="empty-icon">${icons.wallet}</div>
-        <h2>Primero conectá Mercado Pago</h2>
-        <p class="muted">Así la plata de cada cobro va directo a tu cuenta. Te guiamos paso a paso, son 2 minutos.</p>
-        <a class="btn btn-primary btn-lg" href="#mercadopago">Conectar Mercado Pago</a></div>`, "Nuevo cobro");
+        <h2>Primero elegí cómo te pagan</h2>
+        <p class="muted">Mercado Pago, transferencia, giro o efectivo. Es una sola vez y tarda un minuto.</p>
+        <a class="btn btn-primary btn-lg" href="#medios">Elegir cómo me pagan</a></div>`, "Nuevo cobro");
     }
     const last = store.getJson("micuota.lastCharge", {});
     const month = monthName(new Date());
-    const suggestions = [`Cuota de ${month}`, "Clase", "Sesión", "Matrícula"];
+    const suggestions = [`Cuota de ${month}`, "Sesión", "Consulta", "Servicio"];
     const hasPeople = state.students.length > 0;
     const preset = presetPersonId && studentById(presetPersonId) ? String(presetPersonId) : "";
     const peopleOptions = state.students.map((s) => `<label class="choice person-opt"><input type="radio" name="person" value="${s.id}" ${preset === String(s.id) ? "checked" : ""} /><span class="choice-box"><span class="avatar" aria-hidden="true">${esc(initials(s.fullName))}</span><span><strong>${esc(s.fullName)}</strong><span>${esc(s.email)}</span></span></span></label>`).join("");
@@ -403,8 +452,8 @@
       <form id="new-form" novalidate>
         <section class="form-section" aria-labelledby="q1">
           <h2 id="q1"><span class="n">1</span>¿A quién le cobrás?</h2>
-          ${hasPeople ? `<fieldset class="choice-group" style="margin:0"><legend class="sr-only">Elegí un alumno</legend>
-            ${state.students.length > 6 ? `<input class="input" type="search" id="person-filter" placeholder="Buscar alumno" aria-label="Buscar alumno" style="margin-bottom:8px" />` : ""}
+          ${hasPeople ? `<fieldset class="choice-group" style="margin:0"><legend class="sr-only">Elegí un cliente</legend>
+            ${state.students.length > 6 ? `<input class="input" type="search" id="person-filter" placeholder="Buscar cliente" aria-label="Buscar cliente" style="margin-bottom:8px" />` : ""}
             <div class="people-select" id="people-select">${peopleOptions}
               <label class="choice person-opt"><input type="radio" name="person" value="new" /><span class="choice-box"><span class="avatar" aria-hidden="true">${icons.plus}</span><span><strong>Alguien nuevo</strong><span>Lo agregamos a tu lista</span></span></span></label>
             </div></fieldset>` : `<input type="hidden" name="person" value="new" />`}
@@ -431,15 +480,15 @@
                 ${["UYU", "USD", "ARS"].map((c) => `<option value="${c}" ${(last.currency || "UYU") === c ? "selected" : ""}>${c}</option>`).join("")}
               </select>
             </div>
-            <p class="hint" id="amount-hint">Lo que paga tu alumno. Sin puntos, por ejemplo 1500.</p>
+            <p class="hint" id="amount-hint">Lo que paga tu cliente. Sin puntos, por ejemplo 1500.</p>
           </div>
         </section>
 
         <section class="form-section" aria-labelledby="q3">
           <h2 id="q3"><span class="n">3</span>¿Cada cuánto?</h2>
           <fieldset class="choice-group choice-grid-2" style="margin:0"><legend class="sr-only">Frecuencia</legend>
-            <label class="choice"><input type="radio" name="flow" value="ONE_TIME" ${last.flow !== "SUBSCRIPTION" ? "checked" : ""} /><span class="choice-box"><strong>Una sola vez</strong><span>Paga y listo</span></span></label>
-            <label class="choice"><input type="radio" name="flow" value="SUBSCRIPTION" ${last.flow === "SUBSCRIPTION" ? "checked" : ""} /><span class="choice-box"><strong>Todos los meses</strong><span>Autoriza una vez y se cobra solo</span></span></label>
+            <label class="choice"><input type="radio" name="flow" value="ONE_TIME" ${last.flow !== "SUBSCRIPTION" || !mpConnected() ? "checked" : ""} /><span class="choice-box"><strong>Una sola vez</strong><span>Paga y listo</span></span></label>
+            <label class="choice"><input type="radio" name="flow" value="SUBSCRIPTION" ${last.flow === "SUBSCRIPTION" && mpConnected() ? "checked" : ""} ${mpConnected() ? "" : "disabled"} /><span class="choice-box" ${mpConnected() ? "" : 'style="opacity:.55"'}><strong>Todos los meses</strong><span>${mpConnected() ? "Autoriza una vez y se cobra solo" : "Necesita Mercado Pago conectado"}</span></span></label>
           </fieldset>
         </section>
 
@@ -495,8 +544,8 @@
     const npEmail = document.getElementById("np-email");
     const npPhone = document.getElementById("np-phone");
     if (personChoice === "new") {
-      if (!npName.value.trim()) return fail("Escribí el nombre de tu alumno.", npName);
-      if (!/^\S+@\S+\.\S+$/.test(npEmail.value.trim())) return fail("Revisá el email de tu alumno.", npEmail);
+      if (!npName.value.trim()) return fail("Escribí el nombre de tu cliente.", npName);
+      if (!/^\S+@\S+\.\S+$/.test(npEmail.value.trim())) return fail("Revisá el email de tu cliente.", npEmail);
     }
     const concept = document.getElementById("concept");
     if (!concept.value.trim()) return fail("Escribí el concepto, por ejemplo “Cuota de " + monthName() + "”.", concept);
@@ -522,7 +571,8 @@
       const path = flow === "SUBSCRIPTION" ? "/api/backoffice/payments/subscriptions" : "/api/backoffice/payments/one-time";
       const op = await api(path, {
         method: "POST",
-        body: { provider: "MERCADOPAGO", description: concept.value.trim(), amount, currency, payerEmail: student.email, studentUserId: student.id }
+        // Con Mercado Pago conectado el link cobra por ahi (y muestra las otras formas); si no, es un cobro manual.
+        body: { provider: mpConnected() ? "MERCADOPAGO" : "MANUAL", description: concept.value.trim(), amount, currency, payerEmail: student.email, studentUserId: student.id }
       });
       store.setJson("micuota.lastCharge", { description: concept.value.trim(), amount, currency, flow });
       state.payments.unshift(op);
@@ -558,7 +608,9 @@
         </div>
         ${navigator.share ? `<button type="button" class="btn btn-ghost btn-block" style="margin-top:8px" data-action="native-share" data-id="${p.id}">${icons.share} Compartir por otra app</button>` : ""}
       </div>
-      <div class="notice notice-info" style="margin-top:14px">${icons.bell}<p>No tenés que hacer nada más: <strong>cuando pague, se marca solo</strong> y lo ves en Inicio.</p></div>
+      <div class="notice notice-info" style="margin-top:14px">${icons.bell}<p>${p.provider === "MANUAL"
+        ? "Cuando te pague, entrá al cobro y tocá <strong>«Ya me pagó»</strong>. Mientras tanto le recordamos por email."
+        : "Si paga con Mercado Pago, <strong>se marca solo</strong>. Si te paga de otra forma, entrá al cobro y tocá «Ya me pagó»."}</p></div>
       <div class="detail-actions-2" style="margin-top:16px">
         <a class="btn" href="#nuevo">${icons.plus} Otro cobro</a>
         <a class="btn" href="#inicio">${icons.home} Ir al inicio</a>
@@ -566,7 +618,7 @@
     setView(html, "Cobro creado");
   }
 
-  /* ---------------- Alumnos ---------------- */
+  /* ---------------- Clientes ---------------- */
   function personSummary(s) {
     const mine = state.payments.filter((p) => String(p.studentUserId) === String(s.id));
     const owed = mine.filter((p) => statusOf(p).owes);
@@ -578,24 +630,24 @@
   }
 
   function renderPeople() {
-    let html = `<div class="view-head row-between"><div><h1>Alumnos</h1><p>Las personas a las que les cobrás.</p></div><a class="btn btn-sm" href="#persona/nueva">${icons.plus} Agregar</a></div>`;
+    let html = `<div class="view-head row-between"><div><h1>Clientes</h1><p>Las personas a las que les cobrás.</p></div><a class="btn btn-sm" href="#persona/nueva">${icons.plus} Agregar</a></div>`;
     if (!state.students.length) {
-      html += emptyState("people", "Todavía no agregaste alumnos", "Podés agregarlos acá o directamente cuando creás un cobro.", "#persona/nueva", "Agregar alumno");
-      return setView(html, "Alumnos");
+      html += emptyState("people", "Todavía no agregaste clientes", "Podés agregarlos acá o directamente cuando creás un cobro.", "#persona/nueva", "Agregar cliente");
+      return setView(html, "Clientes");
     }
     const sorted = state.students.slice().sort((a, b) => personSummary(b).owed.length - personSummary(a).owed.length || a.fullName.localeCompare(b.fullName, "es"));
     html += `<ul class="rows">${sorted.map((s) => {
       const sum = personSummary(s);
       return `<li class="row-item"><a class="row-link" href="#persona/${s.id}"><span class="avatar" aria-hidden="true">${esc(initials(s.fullName))}</span><span class="row-text"><p class="row-name">${esc(s.fullName)}</p><p class="row-sub">${esc(state.phones[s.id] || s.email)}</p></span><span class="row-right"><span class="pill ${sum.pill}">${esc(sum.label)}</span></span></a></li>`;
     }).join("")}</ul>`;
-    setView(html, "Alumnos");
+    setView(html, "Clientes");
   }
 
   function renderPerson(id) {
     const s = studentById(id);
-    if (!s) return setView(`<a class="back" href="#personas">${icons.arrowLeft} Alumnos</a>` + emptyState("alert", "No encontramos a esa persona", "", "#personas", "Ver alumnos"), "Alumno");
+    if (!s) return setView(`<a class="back" href="#personas">${icons.arrowLeft} Clientes</a>` + emptyState("alert", "No encontramos a esa persona", "", "#personas", "Ver clientes"), "Cliente");
     const sum = personSummary(s);
-    const html = `<a class="back" href="#personas">${icons.arrowLeft} Alumnos</a>
+    const html = `<a class="back" href="#personas">${icons.arrowLeft} Clientes</a>
       <div class="card detail-hero">
         <span class="avatar avatar-lg" style="margin:0 auto" aria-hidden="true">${esc(initials(s.fullName))}</span>
         <h1 style="font-size:1.6rem;margin:12px 0 4px">${esc(s.fullName)}</h1>
@@ -622,16 +674,16 @@
   }
 
   function renderNewPerson() {
-    const html = `<a class="back" href="#personas">${icons.arrowLeft} Alumnos</a>
-      <div class="view-head"><h1>Agregar alumno</h1><p>Solo lo necesario para cobrarle.</p></div>
+    const html = `<a class="back" href="#personas">${icons.arrowLeft} Clientes</a>
+      <div class="view-head"><h1>Agregar cliente</h1><p>Solo lo necesario para cobrarle.</p></div>
       <form class="card" id="person-form" novalidate>
         <div class="field"><label for="pf-name">Nombre</label><input class="input" id="pf-name" autocomplete="off" required /></div>
         <div class="field"><label for="pf-email">Email</label><input class="input" id="pf-email" type="email" inputmode="email" autocomplete="off" required /><p class="hint">Mercado Pago lo usa para mandarle el comprobante.</p></div>
         <div class="field"><label for="pf-phone">WhatsApp <span class="muted">(opcional)</span></label><input class="input" id="pf-phone" type="tel" inputmode="tel" autocomplete="off" placeholder="099 123 456" /></div>
         <p class="field-error" id="pf-error" role="alert" hidden></p>
-        <button class="btn btn-primary btn-lg btn-block" type="submit" id="pf-submit">Guardar alumno</button>
+        <button class="btn btn-primary btn-lg btn-block" type="submit" id="pf-submit">Guardar cliente</button>
       </form>`;
-    setView(html, "Agregar alumno");
+    setView(html, "Agregar cliente");
     document.getElementById("person-form").addEventListener("submit", async (e) => {
       e.preventDefault();
       const name = document.getElementById("pf-name");
@@ -652,6 +704,59 @@
       } catch (error) {
         err.textContent = humanError(error); err.hidden = false;
       } finally { busy(btn, false); }
+    });
+  }
+
+  /* ---------------- Cómo te pagan ---------------- */
+  async function renderMethods() {
+    if (!state.settings) {
+      setView(`<div class="card empty"><span class="spinner" aria-hidden="true"></span><p class="muted">Cargando…</p></div>`, "Cómo te pagan");
+      try { state.settings = await api("/api/backoffice/payment-settings"); } catch (error) {
+        return setView(`<div class="card empty"><div class="empty-icon">${icons.alert}</div><h1 style="font-size:1.5rem">No pudimos cargar tus formas de pago</h1><p class="muted">${esc(humanError(error))}</p><button class="btn btn-primary btn-lg" type="button" data-action="methods-retry">Intentar de nuevo</button></div>`, "Cómo te pagan");
+      }
+      if (parseHash().name !== "medios") return;
+    }
+    const s = state.settings;
+    const mpUpToDate = mpConnected() && (s.mercadoPagoConnection === "OAUTH" || !s.mercadoPagoOAuthAvailable);
+    const mpPill = mpUpToDate ? `<span class="pill pill-ok">Conectado</span>` : mpConnected() ? `<span class="pill pill-warn">Actualizá la conexión</span>` : `<span class="pill pill-info">Sin conectar</span>`;
+    const html = `<a class="back" href="#inicio">${icons.arrowLeft} Inicio</a>
+      <div class="view-head"><h1>Cómo te pagan</h1><p>Elegí una o varias. Tus clientes ven todas en la página de pago.</p></div>
+      <div class="card">
+        <div class="row-between"><h2 class="card-title" style="margin:0">Mercado Pago</h2>${mpPill}</div>
+        <p class="muted" style="margin:8px 0 12px">Tarjeta, débito o saldo de Mercado Pago. <strong>El pago se marca solo</strong> y la plata va directo a tu cuenta. Permite cobros mensuales automáticos.</p>
+        <a class="btn ${mpConnected() ? "" : "btn-mp"} btn-block" href="#mercadopago">${mpConnected() ? "Ver la conexión" : "Conectar Mercado Pago"}</a>
+        ${s.platformFeeBps ? `<p class="hint" style="margin-top:10px">MiCuota cobra ${feePercent(s.platformFeeBps)} de cada pago por Mercado Pago. Los otros medios no tienen comisión.</p>` : ""}
+      </div>
+      <form class="card" id="methods-form" novalidate>
+        <h2 class="card-title">Transferencia o depósito</h2>
+        <div class="field"><label for="m-bank">Banco</label><input class="input" id="m-bank" value="${esc(s.transferBankName || "")}" autocomplete="off" placeholder="Ej: BROU" /></div>
+        <div class="field"><label for="m-account">Número de cuenta</label><input class="input" id="m-account" value="${esc(s.transferAccountNumber || "")}" autocomplete="off" inputmode="text" /></div>
+        <div class="field"><label for="m-holder">Titular</label><input class="input" id="m-holder" value="${esc(s.transferAccountHolder || "")}" autocomplete="off" placeholder="Como figura en el banco" /></div>
+        <div class="field"><label for="m-alias">Alias <span class="muted">(opcional)</span></label><input class="input" id="m-alias" value="${esc(s.transferAlias || "")}" autocomplete="off" /></div>
+        <h2 class="card-title" style="margin-top:20px">Efectivo, giro u otras formas</h2>
+        <div class="field"><label for="m-other">Cómo te pueden pagar</label>
+          <textarea class="textarea input" id="m-other" rows="3" maxlength="500" placeholder="Ej: Efectivo en la consulta. Giro por Abitab o RedPagos a nombre de Ana Pérez, CI 1.234.567-8.">${esc(s.otherPaymentInstructions || "")}</textarea>
+          <p class="hint">Escribilo como se lo dirías a un cliente.</p></div>
+        <div class="notice" style="margin-bottom:14px">${icons.bell}<p class="small">Estos pagos no avisan solos: cuando te paguen, entrás al cobro y tocás <strong>«Ya me pagó»</strong>.</p></div>
+        <button class="btn btn-primary btn-lg btn-block" type="submit" id="methods-submit">Guardar</button>
+      </form>
+      ${canCharge() ? `<a class="btn btn-ghost btn-block" href="#nuevo" style="margin-top:8px">${icons.plus} Crear un cobro</a>` : ""}`;
+    setView(html, "Cómo te pagan");
+    document.getElementById("methods-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById("methods-submit");
+      const val = (id) => document.getElementById(id).value.trim();
+      busy(btn, true, "Guardando…");
+      try {
+        // Texto vacio borra el dato; los campos de Mercado Pago no se mandan y no se tocan.
+        state.settings = await api("/api/backoffice/payment-settings", {
+          method: "POST",
+          body: { transferBankName: val("m-bank"), transferAccountNumber: val("m-account"), transferAccountHolder: val("m-holder"), transferAlias: val("m-alias"), otherPaymentInstructions: val("m-other") }
+        });
+        toast("Guardado");
+        if (canCharge() && !state.payments.length) { location.hash = "#nuevo"; return; }
+        renderMethods();
+      } catch (error) { toast(humanError(error), true); } finally { busy(btn, false); }
     });
   }
 
@@ -691,7 +796,7 @@
     const feeNotice = `<div class="notice" style="margin-top:14px">${icons.lock}<p class="small">Cada pago va directo a tu cuenta de Mercado Pago. MiCuota cobra <strong>${feePercent(settings.platformFeeBps)} de cada pago</strong>: Mercado Pago lo descuenta solo, no tenés que transferirnos nada.</p></div>`;
     const country = store.get("micuota.mpCountry", "uy");
     const domain = { uy: "mercadopago.com.uy", ar: "mercadopago.com.ar" }[country] || "mercadopago.com.uy";
-    let html = `<a class="back" href="#inicio">${icons.arrowLeft} Inicio</a>
+    let html = `<a class="back" href="#medios">${icons.arrowLeft} Cómo te pagan</a>
       <div class="view-head"><h1>Conectá tu Mercado Pago</h1><p>Así cada pago va directo a tu cuenta.</p></div>`;
     if (connected && (viaOAuth || !oauthAvailable)) {
       html += `<div class="notice notice-ok" style="margin-bottom:16px">${icons.checkCircle}<p><strong>Tu Mercado Pago está conectado.</strong> Ya podés cobrar.</p></div>
@@ -776,8 +881,6 @@
         state.settings = await api("/api/backoffice/payment-settings", {
           method: "POST",
           body: {
-            transferAlias: cur.transferAlias || null,
-            transferBankName: cur.transferBankName || null,
             mercadoPagoAccessToken: token,
             mercadoPagoPublicKey: document.getElementById("mp-public").value.trim() || null
           }
@@ -802,21 +905,13 @@
     const theme = store.get("micuota.theme", "auto");
     const big = store.get("micuota.bigText") === "1";
     const html = `<div class="view-head"><h1>Mi cuenta</h1><p>${esc(state.me.fullName)} · ${esc(state.me.email)}</p></div>
-      <div class="card">
-        <h2 class="card-title">Mercado Pago</h2>
-        ${mpConnected() ? `<p><span class="pill pill-ok">Conectado</span></p><p class="muted small">Los pagos van directo a tu cuenta.</p><a class="btn btn-sm" href="#mercadopago">Cambiar clave</a>` : `<p><span class="pill pill-warn">Sin conectar</span></p><a class="btn btn-primary" href="#mercadopago">Conectar Mercado Pago</a>`}
-      </div>
-      <form class="card" id="alias-form">
-        <h2 class="card-title">Transferencia bancaria <span class="muted small" style="font-weight:400">(opcional)</span></h2>
-        <p class="muted small">Si lo completás, en la página de pago aparece como alternativa. Ojo: las transferencias no se marcan solas como pagadas.</p>
-        <div class="field"><label for="t-alias">Alias o número de cuenta</label><input class="input" id="t-alias" value="${esc(s.transferAlias || "")}" autocomplete="off" /></div>
-        <div class="field"><label for="t-bank">Banco</label><input class="input" id="t-bank" value="${esc(s.transferBankName || "")}" autocomplete="off" /></div>
-        <button class="btn" type="submit" id="alias-submit">Guardar</button>
-      </form>
+      <a class="card row-between" href="#medios" style="text-decoration:none;color:inherit">
+        <span><strong class="card-title" style="display:block;margin:0">Cómo te pagan</strong>
+        <span class="muted small">${esc([mpConnected() ? "Mercado Pago" : "", s.transferAccountNumber || s.transferAlias ? "Transferencia" : "", s.otherPaymentInstructions ? "Efectivo u otras" : ""].filter(Boolean).join(" · ") || "Todavía sin elegir")}</span></span>
+        ${icons.arrowRight}</a>
       <div class="card">
         <h2 class="card-title">Para entrar desde otro celular</h2>
-        <p class="muted small">Vas a necesitar tu email, tu contraseña y este código de cuenta:</p>
-        <p class="row"><strong style="font-size:1.25rem">${esc(session.slug() || "—")}</strong><button type="button" class="btn btn-sm" data-action="copy-text" data-text="${esc(session.slug())}">${icons.copy} Copiar</button></p>
+        <p class="muted small" style="margin:0">Entrás con tu email (${esc(state.me.email)}): te mandamos un código, sin contraseña.</p>
       </div>
       <div class="card">
         <h2 class="card-title">Pantalla</h2>
@@ -836,19 +931,6 @@
       document.documentElement.classList.toggle("big-text", e.target.checked);
       store.set("micuota.bigText", e.target.checked ? "1" : "0");
     });
-    document.getElementById("alias-form").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const btn = document.getElementById("alias-submit");
-      busy(btn, true, "Guardando…");
-      try {
-        const cur = state.settings || {};
-        state.settings = await api("/api/backoffice/payment-settings", {
-          method: "POST",
-          body: { transferAlias: document.getElementById("t-alias").value.trim() || null, transferBankName: document.getElementById("t-bank").value.trim() || null, mercadoPagoPublicKey: cur.mercadoPagoPublicKey || null }
-        });
-        toast("Guardado");
-      } catch (error) { toast(humanError(error), true); } finally { busy(btn, false); }
-    });
   }
 
   /* ---------------- QR ---------------- */
@@ -857,7 +939,7 @@
     const link = payLink(p.id);
     document.getElementById("qr-box").innerHTML = qrSvg(link, `Código QR para pagar ${p.description}`) || `<p class="muted">No se pudo generar el QR.</p>`;
     document.getElementById("qr-link").textContent = link;
-    document.getElementById("qr-copy").textContent = `${p.description} · ${money(p.amount, p.currency)}. Tu alumno lo escanea con la cámara del celular y paga.`;
+    document.getElementById("qr-copy").textContent = `${p.description} · ${money(p.amount, p.currency)}. Tu cliente lo escanea con la cámara del celular y paga.`;
     if (typeof qrDialog.showModal === "function") qrDialog.showModal(); else qrDialog.setAttribute("open", "");
     markShared(p.id);
   }
@@ -899,6 +981,22 @@
       case "hide-onboarding": store.set(`micuota.onboardingHidden.${slugKey()}`, "1"); renderHome(); break;
       case "mp-country": store.set("micuota.mpCountry", el.dataset.country); renderMercadoPago({ refresh: false }); break;
       case "mp-retry": renderMercadoPago(); break;
+      case "methods-retry": renderMethods(); break;
+      case "paid-open": {
+        const form = document.getElementById("paid-form");
+        if (form) { form.hidden = false; el.hidden = true; form.querySelector("input").focus(); }
+        break;
+      }
+      case "paid-undo":
+        if (!p || !window.confirm("¿Lo volvemos a dejar como sin pagar?")) break;
+        busy(el, true, "Deshaciendo…");
+        try {
+          const updated = await api(`/api/backoffice/payments/${encodeURIComponent(p.id)}/mark-unpaid`, { method: "POST" });
+          replacePayment(updated);
+          toast("Listo, quedó como sin pagar");
+          renderPayment(updated.id);
+        } catch (error) { toast(humanError(error), true); busy(el, false); }
+        break;
       case "mp-oauth":
         busy(el, true, "Abriendo Mercado Pago…");
         try {

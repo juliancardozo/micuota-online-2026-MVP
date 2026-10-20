@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.micuota.mvp.domain.OperationStatus;
+import com.micuota.mvp.domain.PaidMethod;
 import com.micuota.mvp.domain.Course;
 import com.micuota.mvp.domain.PaymentFlowType;
 import com.micuota.mvp.domain.PaymentOperation;
@@ -51,6 +52,9 @@ public class PaymentService {
 
     @Value("${app.base-url}")
     private String appBaseUrl;
+
+    @Value("${app.frontend-base-url:${app.base-url}}")
+    private String frontendBaseUrl;
 
     @Value("${app.payments.default-provider:PROMETEO}")
     private String defaultProviderName;
@@ -111,9 +115,15 @@ public class PaymentService {
             operation.getFlowType(),
             operation.getProvider(),
             operation.getStatus(),
-            operation.getCheckoutUrl(),
+            // Para un cobro manual no hay boton de pago externo: el link es esta misma pagina.
+            operation.getProvider() == PaymentProviderType.MANUAL ? null : operation.getCheckoutUrl(),
             teacherProfile.getTransferAlias(),
-            teacherProfile.getTransferBankName()
+            teacherProfile.getTransferBankName(),
+            teacherProfile.getTransferAccountNumber(),
+            teacherProfile.getTransferAccountHolder(),
+            teacherProfile.getOtherPaymentInstructions(),
+            operation.getPaidMethod(),
+            operation.getPaidAt()
         );
     }
 
@@ -517,6 +527,11 @@ public class PaymentService {
         operation.setStudentUserId(request.studentUserId());
         operation.setCourseId(request.courseId());
         operation.setAmount(request.amount());
+        // Los cobros manuales (transferencia, giro, efectivo) no pasan por Mercado Pago: no llevan comision.
+        if (selection.provider() == PaymentProviderType.MANUAL) {
+            processingFee = BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+            advancedFee = BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+        }
         BigDecimal netAmount = request.amount().subtract(processingFee).subtract(advancedFee).max(BigDecimal.ZERO).setScale(2, RoundingMode.HALF_UP);
         operation.setProcessingFeeAmount(processingFee);
         operation.setAdvancedFeatureFeeAmount(advancedFee);
@@ -542,6 +557,10 @@ public class PaymentService {
         operation.setLastReconciledAt(null);
 
         PaymentOperation saved = paymentOperationRepository.save(operation);
+        if (selection.provider() == PaymentProviderType.MANUAL) {
+            saved.setCheckoutUrl(publicPaymentUrl(saved.getId()));
+            saved = paymentOperationRepository.save(saved);
+        }
         paymentEventService.recordPaymentCreated(saved, selection.rawResponse());
         String normalizedPayerEmail = request.payerEmail() == null ? null : request.payerEmail().trim().toLowerCase(Locale.ROOT);
         paymentNotificationService.sendPaymentCreatedEmail(normalizedPayerEmail, teacher.getDisplayName(), saved);
@@ -838,6 +857,58 @@ public class PaymentService {
             .divide(BigDecimal.valueOf(10000), 2, RoundingMode.HALF_UP);
     }
 
+    public String publicPaymentUrl(Long operationId) {
+        return frontendBaseUrl + "/pago.html?operationId=" + operationId;
+    }
+
+    /** El profesional registra que le pagaron por fuera de Mercado Pago (transferencia, giro, efectivo). */
+    @Transactional
+    public PaymentOperation markPaidFromBackoffice(Long tenantId, Long userId, UserRole role, Long operationId, MarkPaymentPaidRequest request) {
+        if (request.method() == PaidMethod.MERCADOPAGO) {
+            throw new IllegalArgumentException("Los pagos por Mercado Pago se marcan solos");
+        }
+        PaymentOperation operation = requireBackofficeOperation(tenantId, userId, role, operationId);
+        if (operation.getStatus() == OperationStatus.SUCCESS) {
+            throw new IllegalArgumentException("Este cobro ya figura como pagado");
+        }
+        OperationStatus previous = operation.getStatus();
+        applyStatusUpdate(operation, OperationStatus.SUCCESS, null);
+        String note = request.note() == null || request.note().isBlank() ? null : request.note().trim();
+        operation.setPaidMethod(request.method());
+        operation.setPaidAt(operation.getUpdatedAt());
+        operation.setPaidNote(note);
+        PaymentOperation saved = paymentOperationRepository.save(operation);
+        paymentEventService.recordStatusChanged(saved, previous, OperationStatus.SUCCESS,
+            "{\"manual\":true,\"method\":\"" + request.method().name() + "\"" + (note == null ? "" : ",\"note\":\"" + escapeJson(note) + "\"") + "}");
+        return saved;
+    }
+
+    /** Deshace un "ya me pago" marcado a mano (por ejemplo, si se marco el cobro equivocado). */
+    @Transactional
+    public PaymentOperation markUnpaidFromBackoffice(Long tenantId, Long userId, UserRole role, Long operationId) {
+        PaymentOperation operation = requireBackofficeOperation(tenantId, userId, role, operationId);
+        if (operation.getStatus() != OperationStatus.SUCCESS || operation.getPaidMethod() == null
+            || operation.getPaidMethod() == PaidMethod.MERCADOPAGO) {
+            throw new IllegalArgumentException("Solo se puede deshacer un pago marcado a mano");
+        }
+        applyStatusUpdate(operation, OperationStatus.CREATED, null);
+        operation.setPaidMethod(null);
+        operation.setPaidAt(null);
+        operation.setPaidNote(null);
+        PaymentOperation saved = paymentOperationRepository.save(operation);
+        paymentEventService.recordStatusChanged(saved, OperationStatus.SUCCESS, OperationStatus.CREATED, "{\"manual\":true,\"undo\":true}");
+        return saved;
+    }
+
+    private PaymentOperation requireBackofficeOperation(Long tenantId, Long userId, UserRole role, Long operationId) {
+        PaymentOperation operation = paymentOperationRepository.findById(operationId)
+            .orElseThrow(() -> new IllegalArgumentException("Operacion no encontrada"));
+        if (!resolveTeacherProfileIdsForBackoffice(tenantId, userId, role, null).contains(operation.getTeacherId())) {
+            throw new IllegalArgumentException("Operacion no encontrada");
+        }
+        return operation;
+    }
+
     private void applyStatusUpdate(PaymentOperation operation, OperationStatus status, String failureReason) {
         OffsetDateTime now = OffsetDateTime.now();
         operation.setStatus(status);
@@ -847,6 +918,10 @@ public class PaymentService {
             operation.setFailureReason(null);
             operation.setNextRetryAt(null);
             operation.setReconciliationStatus("MATCHED");
+            if (operation.getPaidMethod() == null && operation.getProvider() == PaymentProviderType.MERCADOPAGO) {
+                operation.setPaidMethod(PaidMethod.MERCADOPAGO);
+                operation.setPaidAt(now);
+            }
             return;
         }
 

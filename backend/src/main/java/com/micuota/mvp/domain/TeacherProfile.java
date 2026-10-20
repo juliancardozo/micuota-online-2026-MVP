@@ -44,6 +44,16 @@ public class TeacherProfile {
     @Column(name = "transfer_bank_name")
     private String transferBankName;
 
+    @Column(name = "transfer_account_number", length = 64)
+    private String transferAccountNumber;
+
+    @Column(name = "transfer_account_holder", length = 120)
+    private String transferAccountHolder;
+
+    // Texto libre para efectivo, giro u otras formas de pago (por ejemplo "Giro por Abitab a nombre de ...").
+    @Column(name = "other_payment_instructions", length = 500)
+    private String otherPaymentInstructions;
+
     // Conexion por OAuth de la aplicacion marketplace de MiCuota: solo asi se puede cobrar comision (marketplace_fee).
     @Column(name = "mp_oauth_connected", nullable = false)
     private boolean mpOauthConnected;
@@ -155,5 +165,29 @@ public class TeacherProfile {
 
     public void setMpTokenExpiresAt(OffsetDateTime mpTokenExpiresAt) {
         this.mpTokenExpiresAt = mpTokenExpiresAt;
+    }
+
+    public String getTransferAccountNumber() {
+        return transferAccountNumber;
+    }
+
+    public void setTransferAccountNumber(String transferAccountNumber) {
+        this.transferAccountNumber = transferAccountNumber;
+    }
+
+    public String getTransferAccountHolder() {
+        return transferAccountHolder;
+    }
+
+    public void setTransferAccountHolder(String transferAccountHolder) {
+        this.transferAccountHolder = transferAccountHolder;
+    }
+
+    public String getOtherPaymentInstructions() {
+        return otherPaymentInstructions;
+    }
+
+    public void setOtherPaymentInstructions(String otherPaymentInstructions) {
+        this.otherPaymentInstructions = otherPaymentInstructions;
     }
 }

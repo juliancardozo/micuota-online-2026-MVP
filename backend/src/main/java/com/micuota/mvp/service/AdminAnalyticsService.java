@@ -2,6 +2,7 @@ package com.micuota.mvp.service;
 
 import com.micuota.mvp.config.PlatformAdminSeeder;
 import com.micuota.mvp.domain.OperationStatus;
+import com.micuota.mvp.domain.PaidMethod;
 import com.micuota.mvp.domain.PaymentOperation;
 import com.micuota.mvp.domain.TeacherProfile;
 import com.micuota.mvp.domain.Tenant;
@@ -94,6 +95,8 @@ public class AdminAnalyticsService {
             users.stream().filter(user -> user.getRole() == UserRole.STUDENT).count(),
             payments.size(),
             payments.stream().filter(payment -> payment.getStatus() == OperationStatus.SUCCESS).count(),
+            payments.stream().filter(payment -> payment.getStatus() == OperationStatus.SUCCESS
+                && payment.getPaidMethod() != null && payment.getPaidMethod() != PaidMethod.MERCADOPAGO).count(),
             payments.stream().filter(payment -> payment.getStatus() == OperationStatus.CREATED || payment.getStatus() == OperationStatus.PENDING).count(),
             leadRepository.count(),
             buildCurrencyTotals(payments),
@@ -111,7 +114,11 @@ public class AdminAnalyticsService {
                 entry.getKey(),
                 entry.getValue().size(),
                 sum(entry.getValue().stream().map(PaymentOperation::getAmount).toList()),
-                sum(entry.getValue().stream().map(PaymentOperation::getMarketplaceFeeAmount).toList())
+                // Si se cobro por fuera de Mercado Pago, la comision no llego a cobrarse.
+                sum(entry.getValue().stream()
+                    .filter(payment -> payment.getPaidMethod() == null || payment.getPaidMethod() == PaidMethod.MERCADOPAGO)
+                    .map(PaymentOperation::getMarketplaceFeeAmount)
+                    .toList())
             ))
             .toList();
     }

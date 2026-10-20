@@ -5,71 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>MiCuota</title>
     <meta name="robots" content="noindex,nofollow" />
-    <meta name="theme-color" content="#0b6b4d" />
     <link rel="icon" type="image/png" href="/assets/micuota-mate-mark.png" />
-    <link rel="apple-touch-icon" href="/assets/micuota-mate-mark.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600..800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/mc.css" />
-    <link rel="stylesheet" href="/app.css" />
-    <style>
-      /* Backoffice de la academia: misma base que la app del profesor, un poco mas ancho. */
-      .academy .view { max-width: 860px; }
-      .teacher-tag { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-sm); color: var(--text-muted); }
-      .choice.is-disabled .choice-box { opacity: .55; }
-      .copy-box { white-space: pre-wrap; font-size: var(--fs-sm); }
-    </style>
-    <script>
-      try {
-        var t = localStorage.getItem("micuota.theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
-        if (localStorage.getItem("micuota.bigText") === "1") document.documentElement.classList.add("big-text");
-      } catch (e) {}
-    </script>
     <script src="/micuota-config.js"></script>
     <script src="/app.js"></script>
   </head>
-  <body class="academy has-tabbar">
-    <a class="skip-link" href="#view">Ir al contenido</a>
-
-    <div class="app-shell">
-      <aside class="sidebar" aria-label="Menú principal">
-        <a class="brand" href="#inicio"><img src="/assets/micuota-mate-mark.png" alt="" width="36" height="36" />MiCuota</a>
-        <a class="btn btn-primary btn-block sidebar-cta" href="#nuevo" data-nav="nuevo"><span data-icon="plus"></span>Nuevo cobro</a>
-        <nav class="side-nav">
-          <a href="#inicio" data-nav="inicio"><span data-icon="home"></span>Inicio</a>
-          <a href="#cobros" data-nav="cobros"><span data-icon="list"></span>Cobros</a>
-          <a href="#alumnos" data-nav="alumnos"><span data-icon="people"></span>Alumnos</a>
-          <a href="#equipo" data-nav="equipo"><span data-icon="user"></span>Equipo</a>
-          <a href="#cuenta" data-nav="cuenta"><span data-icon="lock"></span>Mi cuenta</a>
-        </nav>
-        <p class="sidebar-foot small muted" id="sidebar-user"></p>
-      </aside>
-
-      <div class="app-main">
-        <header class="topbar">
-          <a class="brand" href="#inicio"><img src="/assets/micuota-mate-mark.png" alt="" width="32" height="32" />MiCuota</a>
-          <a class="avatar topbar-avatar" href="#cuenta" id="topbar-avatar" aria-label="Mi cuenta">·</a>
-        </header>
-        <main id="view" class="view" tabindex="-1" aria-live="polite">
-          <div class="view-loading" aria-busy="true">
-            <div class="skeleton" style="width:55%;height:2rem"></div>
-            <div class="skeleton" style="width:100%;height:140px;margin-top:20px;border-radius:20px"></div>
-            <div class="skeleton" style="width:100%;height:220px;margin-top:16px;border-radius:20px"></div>
-            <p class="muted center">Cargando tu academia…</p>
-          </div>
-        </main>
+  <body>
+    <!-- El panel de academias se retiro: MiCuota es una sola app para cualquier profesional. -->
+    <main class="container narrow" style="padding-top:12vh">
+      <div class="card center">
+        <img src="/assets/micuota-mate-mark.png" alt="" width="56" height="56" />
+        <h1 style="font-size:1.6rem;margin-top:12px">Esta sección ya no está disponible</h1>
+        <p class="muted">Escribinos a <a href="mailto:hola@micuota.online">hola@micuota.online</a> y te ayudamos a pasar tu cuenta a la app de MiCuota.</p>
+        <button class="btn btn-primary btn-lg btn-block" type="button" id="logout">Salir</button>
       </div>
-    </div>
-
-    <nav class="tabbar" aria-label="Menú principal">
-      <a href="#inicio" data-nav="inicio"><span data-icon="home"></span>Inicio</a>
-      <a href="#cobros" data-nav="cobros"><span data-icon="list"></span>Cobros</a>
-      <a href="#nuevo" data-nav="nuevo" class="tab-cta"><span class="tab-cta-circle" data-icon="plus"></span>Cobrar</a>
-      <a href="#alumnos" data-nav="alumnos"><span data-icon="people"></span>Alumnos</a>
-      <a href="#equipo" data-nav="equipo"><span data-icon="user"></span>Equipo</a>
-    </nav>
-
-    <script src="/backoffice.js"></script>
+    </main>
+    <script>
+      document.getElementById("logout").addEventListener("click", function () {
+        window.MC.session.clear();
+        location.href = "/cuenta.html#entrar";
+      });
+    </script>
   </body>
 </html>
