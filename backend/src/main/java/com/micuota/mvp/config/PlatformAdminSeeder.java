@@ -22,13 +22,14 @@ import org.springframework.transaction.annotation.Transactional;
  * Deja un unico administrador de la plataforma (rol ADMIN) con el email y la contraseña configurados.
  * La contraseña viene solo de la variable APP_PLATFORM_ADMIN_PASSWORD: sin ella no se toca nada.
  * Cualquier otro ADMIN pierde el rol y queda con una contraseña aleatoria.
+ * El administrador vive en su propio tenant de plataforma, que no cuenta en las metricas ni se borra al limpiar.
  */
 @Component
 @Order(Ordered.LOWEST_PRECEDENCE)
 public class PlatformAdminSeeder implements CommandLineRunner {
 
     private static final Logger log = LoggerFactory.getLogger(PlatformAdminSeeder.class);
-    private static final String PLATFORM_TENANT_SLUG = "demo-academia";
+    public static final String PLATFORM_TENANT_SLUG = "micuota";
 
     private final UserRepository userRepository;
     private final TenantRepository tenantRepository;
@@ -63,6 +64,10 @@ public class PlatformAdminSeeder implements CommandLineRunner {
                 .filter(user -> PLATFORM_TENANT_SLUG.equals(user.getTenant().getSlug()))
                 .findFirst())
             .orElseGet(this::newAdmin);
+        Tenant platformTenant = platformTenant();
+        if (admin.getTenant() == null || !platformTenant.getId().equals(admin.getTenant().getId())) {
+            admin.setTenant(platformTenant);
+        }
         admin.setRole(UserRole.ADMIN);
         if (admin.getPasswordHash() == null || !admin.getPasswordHash().startsWith("$2")
             || !passwordEncoder.matches(password, admin.getPasswordHash())) {
@@ -82,9 +87,16 @@ public class PlatformAdminSeeder implements CommandLineRunner {
     }
 
     private User newAdmin() {
-        Tenant tenant = tenantRepository.findBySlug(PLATFORM_TENANT_SLUG).orElseGet(() -> {
+        User user = new User();
+        user.setEmail(email);
+        user.setFullName("Administrador MiCuota");
+        return user;
+    }
+
+    private Tenant platformTenant() {
+        return tenantRepository.findBySlug(PLATFORM_TENANT_SLUG).orElseGet(() -> {
             Tenant t = new Tenant();
-            t.setName("Demo Academia");
+            t.setName("MiCuota (plataforma)");
             t.setSlug(PLATFORM_TENANT_SLUG);
             t.setCreatedAt(OffsetDateTime.now());
             t.setPlanCode("BASE");
@@ -95,10 +107,5 @@ public class PlatformAdminSeeder implements CommandLineRunner {
             t.setIntegrationsEnabled(false);
             return tenantRepository.save(t);
         });
-        User user = new User();
-        user.setEmail(email);
-        user.setFullName("Administrador MiCuota");
-        user.setTenant(tenant);
-        return user;
     }
 }

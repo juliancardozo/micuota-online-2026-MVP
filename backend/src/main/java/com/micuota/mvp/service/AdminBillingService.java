@@ -1,10 +1,15 @@
 package com.micuota.mvp.service;
 
+import com.micuota.mvp.config.PlatformAdminSeeder;
 import com.micuota.mvp.domain.OperationStatus;
+import com.micuota.mvp.domain.TeacherProfile;
 import com.micuota.mvp.domain.Tenant;
+import com.micuota.mvp.domain.User;
+import com.micuota.mvp.domain.UserRole;
 import com.micuota.mvp.repository.PaymentOperationRepository;
 import com.micuota.mvp.repository.TeacherProfileRepository;
 import com.micuota.mvp.repository.TenantRepository;
+import com.micuota.mvp.repository.UserRepository;
 import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -20,15 +25,18 @@ public class AdminBillingService {
     private final TenantRepository tenantRepository;
     private final TeacherProfileRepository teacherProfileRepository;
     private final PaymentOperationRepository paymentOperationRepository;
+    private final UserRepository userRepository;
 
     public AdminBillingService(
         TenantRepository tenantRepository,
         TeacherProfileRepository teacherProfileRepository,
-        PaymentOperationRepository paymentOperationRepository
+        PaymentOperationRepository paymentOperationRepository,
+        UserRepository userRepository
     ) {
         this.tenantRepository = tenantRepository;
         this.teacherProfileRepository = teacherProfileRepository;
         this.paymentOperationRepository = paymentOperationRepository;
+        this.userRepository = userRepository;
     }
 
     @Transactional(readOnly = true)
@@ -38,7 +46,8 @@ public class AdminBillingService {
             fees.put((Long) row[0], row);
         }
         return tenantRepository.findAll().stream()
-            .sorted(Comparator.comparing(Tenant::getName, String.CASE_INSENSITIVE_ORDER))
+            .filter(tenant -> !PlatformAdminSeeder.PLATFORM_TENANT_SLUG.equals(tenant.getSlug()))
+            .sorted(Comparator.comparing(Tenant::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder())))
             .map(tenant -> toView(tenant, fees.get(tenant.getId())))
             .toList();
     }
@@ -72,10 +81,21 @@ public class AdminBillingService {
     }
 
     private AdminTenantBillingView toView(Tenant tenant, Object[] fee) {
+        User contact = userRepository.findByTenantIdOrderByFullNameAsc(tenant.getId()).stream()
+            .filter(user -> user.getRole() == UserRole.TEACHER || user.getRole() == UserRole.TENANT_ADMIN)
+            .min(Comparator.comparing((User user) -> user.getRole() == UserRole.TEACHER ? 0 : 1).thenComparing(User::getId))
+            .orElse(null);
+        List<TeacherProfile> profiles = teacherProfileRepository.findByUserTenantId(tenant.getId()).stream()
+            .filter(profile -> profile.getUser().getRole() == UserRole.TEACHER)
+            .toList();
         return new AdminTenantBillingView(
             tenant.getId(),
             tenant.getName(),
             tenant.getSlug(),
+            tenant.getCreatedAt(),
+            contact == null ? null : contact.getFullName(),
+            contact == null ? null : contact.getEmail(),
+            AdminAnalyticsService.mercadoPagoConnection(profiles),
             tenant.getPlanCode() == null ? "BASE" : tenant.getPlanCode(),
             tenant.getTakeRateBps() == null ? 350 : tenant.getTakeRateBps(),
             tenant.getAdvancedDunningFeeBps() == null ? 120 : tenant.getAdvancedDunningFeeBps(),
