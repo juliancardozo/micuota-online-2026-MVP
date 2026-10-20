@@ -90,21 +90,7 @@ public class MailConfig {
 
         private void sendWithResend(MimeMessage message) {
             try {
-                Map<String, Object> body = new LinkedHashMap<>();
-                body.put("from", addresses(message.getFrom()).get(0));
-                body.put("to", addresses(message.getRecipients(Message.RecipientType.TO)));
-                List<String> cc = addresses(message.getRecipients(Message.RecipientType.CC));
-                if (!cc.isEmpty()) {
-                    body.put("cc", cc);
-                }
-                body.put("subject", message.getSubject());
-                String html = findBody(message, "text/html");
-                if (html != null) {
-                    body.put("html", html);
-                } else {
-                    body.put("text", findBody(message, "text/plain"));
-                }
-
+                Map<String, Object> body = toResendPayload(message);
                 HttpRequest request = HttpRequest.newBuilder(RESEND_EMAILS)
                     .timeout(Duration.ofSeconds(15))
                     .header("Authorization", "Bearer " + resendApiKey)
@@ -123,6 +109,26 @@ public class MailConfig {
             } catch (Exception ex) {
                 throw new MailSendException("No se pudo enviar con Resend: " + ex.getMessage(), ex);
             }
+        }
+
+        static Map<String, Object> toResendPayload(MimeMessage message) throws Exception {
+            // Como hace JavaMailSenderImpl antes de SMTP: fija el Content-Type real (text/html) de cada parte.
+            message.saveChanges();
+            Map<String, Object> body = new LinkedHashMap<>();
+            body.put("from", addresses(message.getFrom()).get(0));
+            body.put("to", addresses(message.getRecipients(Message.RecipientType.TO)));
+            List<String> cc = addresses(message.getRecipients(Message.RecipientType.CC));
+            if (!cc.isEmpty()) {
+                body.put("cc", cc);
+            }
+            body.put("subject", message.getSubject());
+            String html = findBody(message, "text/html");
+            if (html != null) {
+                body.put("html", html);
+            } else {
+                body.put("text", findBody(message, "text/plain"));
+            }
+            return body;
         }
 
         private static List<String> addresses(Address[] addresses) {
