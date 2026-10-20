@@ -660,8 +660,31 @@
     return `${(Number(bps || 0) / 100).toLocaleString("es-UY", { maximumFractionDigits: 2 })}%`;
   }
 
-  function renderMercadoPago() {
-    const settings = state.settings || {};
+  // Al abrir la vista se vuelve a pedir la configuracion: la cargada al entrar puede ser vieja (por ejemplo,
+  // de antes de que se activara el OAuth) y mostraria el formulario de token manual, que el backend rechaza.
+  function refreshMercadoPagoSettings() {
+    const before = state.settings;
+    api("/api/backoffice/payment-settings", { slowAfter: 60000 })
+      .then((settings) => {
+        state.settings = settings;
+        const changed = !before
+          || before.mercadoPagoOAuthAvailable !== settings.mercadoPagoOAuthAvailable
+          || before.mercadoPagoConnection !== settings.mercadoPagoConnection
+          || before.platformFeeBps !== settings.platformFeeBps;
+        if (changed && parseHash().name === "mercadopago") renderMercadoPago({ refresh: false });
+      })
+      .catch((error) => {
+        if (state.settings || parseHash().name !== "mercadopago") return;
+        setView(`<div class="card empty"><div class="empty-icon">${icons.alert}</div><h1 style="font-size:1.5rem">No pudimos cargar tu conexión con Mercado Pago</h1><p class="muted">${esc(humanError(error))}</p><button class="btn btn-primary btn-lg" type="button" data-action="mp-retry">Intentar de nuevo</button></div>`, "Mercado Pago");
+      });
+  }
+
+  function renderMercadoPago({ refresh = true } = {}) {
+    if (refresh) refreshMercadoPagoSettings();
+    if (!state.settings) {
+      return setView(`<div class="card empty"><span class="spinner" aria-hidden="true"></span><p class="muted">Cargando tu conexión con Mercado Pago…</p></div>`, "Mercado Pago");
+    }
+    const settings = state.settings;
     const connected = mpConnected();
     const oauthAvailable = Boolean(settings.mercadoPagoOAuthAvailable);
     const viaOAuth = settings.mercadoPagoConnection === "OAUTH";
@@ -766,6 +789,8 @@
           err.textContent = "No se pudo guardar la clave. Probá de nuevo."; err.hidden = false;
         }
       } catch (error) {
+        // Con el OAuth activo el backend ya no acepta tokens pegados: mostramos el boton de conectar.
+        if (/Conectar con Mercado Pago/i.test(error.message || "")) { state.settings = null; renderMercadoPago(); return; }
         err.textContent = humanError(error); err.hidden = false;
       } finally { busy(btn, false); }
     });
@@ -872,7 +897,8 @@
         toast("Listo, está actualizado");
         break;
       case "hide-onboarding": store.set(`micuota.onboardingHidden.${slugKey()}`, "1"); renderHome(); break;
-      case "mp-country": store.set("micuota.mpCountry", el.dataset.country); renderMercadoPago(); break;
+      case "mp-country": store.set("micuota.mpCountry", el.dataset.country); renderMercadoPago({ refresh: false }); break;
+      case "mp-retry": renderMercadoPago(); break;
       case "mp-oauth":
         busy(el, true, "Abriendo Mercado Pago…");
         try {
@@ -887,7 +913,7 @@
           await api("/api/mercadopago/oauth/disconnect", { method: "POST" });
           state.settings = await api("/api/backoffice/payment-settings");
           toast("Mercado Pago desconectado");
-          renderMercadoPago();
+          renderMercadoPago({ refresh: false });
         } catch (error) { toast(humanError(error), true); busy(el, false); }
         break;
       case "logout": logout(); break;
