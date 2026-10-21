@@ -48,10 +48,11 @@ class BankTransferPaymentServiceTest {
 
     private BankTransferPaymentService service;
     private PaymentOperation operation;
+    private PrometeoProperties properties;
 
     @BeforeEach
     void setUp() throws Exception {
-        PrometeoProperties properties = new PrometeoProperties();
+        properties = new PrometeoProperties();
         properties.setSandbox(true);
         properties.setCountry("UY");
         properties.setSandboxDestinationInstitution("012");
@@ -170,6 +171,31 @@ class BankTransferPaymentServiceTest {
             .hasMessageContaining("No se debitó nada");
         verify(paymentService, never()).markPaidByBankTransfer(any(), any());
         verify(client).logout("sess-1");
+    }
+
+    @Test
+    void sandboxCanSimulateTheBrokenConfirmButNeverOutsideTheSandboxHost() throws Exception {
+        when(client.login(anyMap())).thenReturn(node("{\"status\":\"logged_in\",\"key\":\"sess-1\"}"));
+        when(client.preprocessTransfer(eq("sess-1"), anyMap())).thenReturn(node("""
+            {"status":"success","result":{"approved":true,"message":"Ana Pérez","request_id":"req-7","authorization_devices":[]}}"""));
+        when(client.confirmTransfer(eq("sess-1"), anyMap())).thenReturn(node("{\"status\":\"error\",\"message\":\"Respuesta inesperada del banco\"}"));
+        properties.setSandboxSimulateConfirm(true);
+
+        // Host de produccion: aunque la variable este prendida, no se simula nada.
+        properties.setBankingBaseUrl("https://banking.prometeoapi.net");
+        BankStep accounts = service.login(1L, request(null, Map.of("username", "12345", "password", "gfdsa")));
+        service.transfer(1L, new BankStepRequest(accounts.session(), null, null, null, null, "a1", null, null, null));
+        assertThatThrownBy(() -> service.confirm(1L, new BankStepRequest(accounts.session(), null, null, null, null, null, "", "", null)))
+            .hasMessageContaining("No se debitó nada");
+        verify(paymentService, never()).markPaidByBankTransfer(any(), any());
+
+        properties.setBankingBaseUrl("https://banking.sandbox.prometeoapi.com");
+        BankStep again = service.login(1L, request(null, Map.of("username", "12345", "password", "gfdsa")));
+        service.transfer(1L, new BankStepRequest(again.session(), null, null, null, null, "a1", null, null, null));
+        BankStep done = service.confirm(1L, new BankStepRequest(again.session(), null, null, null, null, null, "", "", null));
+        assertThat(done.step()).isEqualTo("DONE");
+        assertThat(done.message()).contains("simulado");
+        verify(paymentService).markPaidByBankTransfer(1L, "SIMULADO-SANDBOX-req-7");
     }
 
     @Test
