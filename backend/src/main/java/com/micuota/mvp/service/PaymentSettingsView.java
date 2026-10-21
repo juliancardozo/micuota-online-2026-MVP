@@ -14,6 +14,8 @@ public record PaymentSettingsView(
     String mercadoPagoPublicKey,
     String mercadoPagoConnection,
     boolean mercadoPagoOAuthAvailable,
-    int platformFeeBps
+    int platformFeeBps,
+    // Si esta activo, con banco, cuenta y titular completos el cliente puede pagar desde su banco (Prometeo).
+    boolean bankPaymentsAvailable
 ) {
 }

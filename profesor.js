@@ -36,11 +36,13 @@
       return false;
     }
     state.me = me;
-    const [payments, students, settings] = await Promise.all([
+    const [payments, students, settings, recurring] = await Promise.all([
       api("/api/backoffice/payments"),
       api("/api/backoffice/users?role=STUDENT").catch(() => []),
-      api("/api/backoffice/payment-settings").catch(() => null)
+      api("/api/backoffice/payment-settings").catch(() => null),
+      api("/api/backoffice/recurring-charges").catch(() => [])
     ]);
+    state.recurring = recurring || [];
     state.payments = (payments || []).slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     state.students = (students || []).slice().sort((a, b) => a.fullName.localeCompare(b.fullName, "es"));
     state.settings = settings;
@@ -78,6 +80,9 @@
   const PAID_METHODS = [["TRANSFER", "Transferencia"], ["CASH", "Efectivo"], ["GIRO", "Giro"], ["OTHER", "Otro"]];
   const methodLabel = (m) => ({ MERCADOPAGO: "Mercado Pago", TRANSFER: "transferencia", CASH: "efectivo", GIRO: "giro", OTHER: "otro medio" }[m] || "");
   const paidByHand = (p) => p && p.status === "SUCCESS" && p.paidMethod && p.paidMethod !== "MERCADOPAGO";
+  // Cobros mensuales sin Mercado Pago: MiCuota genera el cobro de cada mes a partir de esta plantilla.
+  const recurringOf = (p) => (p && p.recurringChargeId ? (state.recurring || []).find((r) => String(r.id) === String(p.recurringChargeId)) : null);
+  const kindLabel = (p) => (p && p.recurringChargeId ? "Cuota mensual" : flowLabel(p.flowType));
 
   /* ---------------- Mensajes de WhatsApp ---------------- */
   function messageFor(p, kind) {
@@ -327,7 +332,7 @@
         <span class="pill ${st.pill}">${esc(st.label)}</span>
         <span class="amount">${esc(money(p.amount, p.currency))}</span>
         <h1 style="font-size:1.4rem;margin:6px 0 2px">${esc(p.description)}</h1>
-        <p class="muted" style="margin:0">${p.studentUserId ? `<a href="#persona/${p.studentUserId}">${esc(person)}</a>` : esc(person)} · ${esc(flowLabel(p.flowType))}</p>
+        <p class="muted" style="margin:0">${p.studentUserId ? `<a href="#persona/${p.studentUserId}">${esc(person)}</a>` : esc(person)} · ${esc(kindLabel(p))}</p>
         <p style="margin:14px 0 0">${esc(statusCopy)}</p>
         <div class="detail-actions">
           ${st.owes ? waButton(p, { cls: "btn btn-wa btn-lg btn-block", label: reminderKind(p) === "reminder" ? `Recordarle a ${firstName(person) || "tu cliente"} por WhatsApp` : `Mandárselo por WhatsApp` }) : ""}
@@ -352,7 +357,8 @@
         <h2 class="card-title">Detalle</h2>
         <dl class="facts">
           <dt>Cliente</dt><dd>${esc(person)}</dd>
-          <dt>Tipo</dt><dd>${esc(flowLabel(p.flowType))}</dd>
+          <dt>Tipo</dt><dd>${esc(kindLabel(p))}</dd>
+          ${recurringOf(p) ? `<dt>Se repite</dt><dd>Todos los meses, el día ${recurringOf(p).dayOfMonth}</dd>` : ""}
           ${st.key === "paid" && p.paidMethod ? `<dt>Pagó con</dt><dd>${esc(methodLabel(p.paidMethod).replace(/^./, (c) => c.toUpperCase()))}</dd>` : ""}
           <dt>Creado</dt><dd>${esc(shortDate(p.createdAt))}</dd>
           ${p.dueAt && st.owes ? `<dt>Vence</dt><dd>${esc(shortDate(p.dueAt))}</dd>` : ""}
@@ -360,6 +366,7 @@
           <dt>Número</dt><dd>#${p.id}</dd>
         </dl>
       </div>
+      ${recurringOf(p) ? `<button type="button" class="btn btn-ghost btn-block" data-action="recurring-stop" data-recurring="${recurringOf(p).id}" style="margin-bottom:12px">Dejar de cobrar todos los meses</button>` : ""}
       <div class="card">
         <h2 class="card-title">Historial</h2>
         <div id="timeline"><div class="skeleton" style="height:1.2em;width:70%"></div><div class="skeleton" style="height:1.2em;width:50%;margin-top:10px"></div></div>
@@ -414,6 +421,7 @@
       case "WEBHOOK_RECEIVED": return ["Mercado Pago avisó un movimiento", ""];
       case "PAYMENT_STATUS_CHANGED":
         if (/"undo":true/.test(e.rawPayload || "")) return ["Deshiciste el pago marcado", "bad"];
+        if (/"bank":true/.test(e.rawPayload || "")) return ["Te pagó por transferencia desde su banco (confirmado)", "ok"];
         if (/"manual":true/.test(e.rawPayload || "")) {
           const m = (/"method":"(\w+)"/.exec(e.rawPayload) || [])[1];
           return [`Lo marcaste como pagado${m ? ` (${methodLabel(m)})` : ""}`, "ok"];
@@ -487,8 +495,8 @@
         <section class="form-section" aria-labelledby="q3">
           <h2 id="q3"><span class="n">3</span>¿Cada cuánto?</h2>
           <fieldset class="choice-group choice-grid-2" style="margin:0"><legend class="sr-only">Frecuencia</legend>
-            <label class="choice"><input type="radio" name="flow" value="ONE_TIME" ${last.flow !== "SUBSCRIPTION" || !mpConnected() ? "checked" : ""} /><span class="choice-box"><strong>Una sola vez</strong><span>Paga y listo</span></span></label>
-            <label class="choice"><input type="radio" name="flow" value="SUBSCRIPTION" ${last.flow === "SUBSCRIPTION" && mpConnected() ? "checked" : ""} ${mpConnected() ? "" : "disabled"} /><span class="choice-box" ${mpConnected() ? "" : 'style="opacity:.55"'}><strong>Todos los meses</strong><span>${mpConnected() ? "Autoriza una vez y se cobra solo" : "Necesita Mercado Pago conectado"}</span></span></label>
+            <label class="choice"><input type="radio" name="flow" value="ONE_TIME" ${last.flow !== "SUBSCRIPTION" ? "checked" : ""} /><span class="choice-box"><strong>Una sola vez</strong><span>Paga y listo</span></span></label>
+            <label class="choice"><input type="radio" name="flow" value="SUBSCRIPTION" ${last.flow === "SUBSCRIPTION" ? "checked" : ""} /><span class="choice-box"><strong>Todos los meses</strong><span>${mpConnected() ? "Autoriza una vez y se cobra solo" : "Cada mes le mandamos el cobro nuevo"}</span></span></label>
           </fieldset>
         </section>
 
@@ -577,6 +585,7 @@
       store.setJson("micuota.lastCharge", { description: concept.value.trim(), amount, currency, flow });
       state.payments.unshift(op);
       state.lastCreated = op.id;
+      if (op.recurringChargeId) state.recurring = await api("/api/backoffice/recurring-charges").catch(() => state.recurring);
       location.hash = `#listo/${op.id}`;
     } catch (error) {
       fail(humanError(error));
@@ -608,7 +617,9 @@
         </div>
         ${navigator.share ? `<button type="button" class="btn btn-ghost btn-block" style="margin-top:8px" data-action="native-share" data-id="${p.id}">${icons.share} Compartir por otra app</button>` : ""}
       </div>
-      <div class="notice notice-info" style="margin-top:14px">${icons.bell}<p>${p.provider === "MANUAL"
+      <div class="notice notice-info" style="margin-top:14px">${icons.bell}<p>${p.recurringChargeId
+        ? `Este es el cobro de este mes. <strong>Cada mes, el día ${(recurringOf(p) || {}).dayOfMonth || new Date().getDate()}</strong>, le mandamos el nuevo por email. Cuando te pague, tocá «Ya me pagó».`
+        : p.provider === "MANUAL"
         ? "Cuando te pague, entrá al cobro y tocá <strong>«Ya me pagó»</strong>. Mientras tanto le recordamos por email."
         : "Si paga con Mercado Pago, <strong>se marca solo</strong>. Si te paga de otra forma, entrá al cobro y tocá «Ya me pagó»."}</p></div>
       <div class="detail-actions-2" style="margin-top:16px">
@@ -729,9 +740,11 @@
       </div>
       <form class="card" id="methods-form" novalidate>
         <h2 class="card-title">Transferencia o depósito</h2>
-        <div class="field"><label for="m-bank">Banco</label><input class="input" id="m-bank" value="${esc(s.transferBankName || "")}" autocomplete="off" placeholder="Ej: BROU" /></div>
+        <div class="field"><label for="m-bank">Banco</label><input class="input" id="m-bank" list="uy-banks" value="${esc(s.transferBankName || "")}" autocomplete="off" placeholder="Ej: BROU" />
+          <datalist id="uy-banks">${["BROU", "Itaú", "Santander", "BBVA", "Scotiabank", "HSBC", "Heritage", "Bandes", "BHU", "Citibank", "Prex", "Mi Dinero"].map((b) => `<option value="${b}"></option>`).join("")}</datalist></div>
         <div class="field"><label for="m-account">Número de cuenta</label><input class="input" id="m-account" value="${esc(s.transferAccountNumber || "")}" autocomplete="off" inputmode="text" /></div>
         <div class="field"><label for="m-holder">Titular</label><input class="input" id="m-holder" value="${esc(s.transferAccountHolder || "")}" autocomplete="off" placeholder="Como figura en el banco" /></div>
+        ${s.bankPaymentsAvailable ? `<p class="hint" style="margin:-4px 0 12px">Con banco, cuenta y titular completos, tus clientes también pueden <strong>pagarte desde su banco</strong> en la página de pago, y se marca pagado solo.</p>` : ""}
         <div class="field"><label for="m-alias">Alias <span class="muted">(opcional)</span></label><input class="input" id="m-alias" value="${esc(s.transferAlias || "")}" autocomplete="off" /></div>
         <h2 class="card-title" style="margin-top:20px">Efectivo, giro u otras formas</h2>
         <div class="field"><label for="m-other">Cómo te pueden pagar</label>
@@ -987,6 +1000,16 @@
         if (form) { form.hidden = false; el.hidden = true; form.querySelector("input").focus(); }
         break;
       }
+      case "recurring-stop":
+        if (!window.confirm("¿Dejamos de mandarle este cobro todos los meses? Los cobros que ya se crearon quedan como están.")) break;
+        busy(el, true, "Guardando…");
+        try {
+          await api(`/api/backoffice/recurring-charges/${encodeURIComponent(el.dataset.recurring)}/stop`, { method: "POST" });
+          state.recurring = (state.recurring || []).filter((r) => String(r.id) !== String(el.dataset.recurring));
+          toast("Listo, no se repite más");
+          route();
+        } catch (error) { toast(humanError(error), true); busy(el, false); }
+        break;
       case "paid-undo":
         if (!p || !window.confirm("¿Lo volvemos a dejar como sin pagar?")) break;
         busy(el, true, "Deshaciendo…");

@@ -60,6 +60,8 @@ services:
         value: true
       - key: APP_PROMETEO_API_KEY
         sync: false
+      - key: APP_PROMETEO_BANK_PAYMENTS_ENABLED
+        value: false
       - key: APP_AUTH_SESSION_SECRET
         generateValue: true
       # Mails transaccionales via SMTP de Resend; MAIL_PASSWORD es la API key de Resend (re_...).

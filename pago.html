@@ -49,6 +49,10 @@
       .pay-option dd { margin: 0; font-weight: 700; overflow-wrap: anywhere; }
       .pay-option .copy-btn { min-height: 36px; padding: 4px 10px; }
       .pay-option p { margin: 0; white-space: pre-line; }
+      .bank-list { display: grid; gap: 8px; }
+      .bank-list .btn { justify-content: flex-start; }
+      .bank-step .field { margin-bottom: 12px; }
+      .sandbox-badge { display: inline-block; font-size: var(--fs-sm); font-weight: 700; color: var(--warn); background: var(--warn-soft); border-radius: 99px; padding: 2px 10px; margin-left: 6px; }
       .receipt { margin: 18px 0 0; padding: 16px; border-radius: var(--r-md); background: var(--surface-2); border: 1px dashed var(--border-strong); }
       .receipt dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 0; }
       .receipt dt { color: var(--text-muted); }
@@ -142,6 +146,11 @@
             <span>El pago lo procesa <strong>Mercado Pago</strong> y la plata va directo a <span class="payee-ref"></span>. MiCuota nunca ve los datos de tu tarjeta.</span>
           </p>
 
+          <section class="manual-pay has-divider no-print" id="bank-pay" hidden aria-labelledby="bank-title">
+            <h2 id="bank-title">Pagar desde tu banco</h2>
+            <div id="bank-body" class="bank-step" aria-live="polite"></div>
+          </section>
+
           <section class="manual-pay no-print" id="manual-pay" hidden aria-labelledby="manual-title">
             <h2 id="manual-title">Otras formas de pagar</h2>
             <div id="manual-options"></div>
@@ -157,7 +166,7 @@
 
     <script>
       (function () {
-        const { api, money, esc, initials, firstName, icons, copy, toast } = window.MC;
+        const { api, money, esc, initials, firstName, icons, copy, toast, humanError } = window.MC;
         const params = new URLSearchParams(location.search);
         const operationId = (params.get("operationId") || "").trim();
         // ?status= lo agrega el retorno desde Mercado Pago. Solo lo usamos como pista: la verdad la tiene la API.
@@ -224,6 +233,7 @@
           $("methods").hidden = !hasMercadoPago;
           $("trust").hidden = !hasMercadoPago;
           renderManual(d, payee, hasMercadoPago);
+          if (d.status !== "SUCCESS") loadBank(); else $("bank-pay").hidden = true;
 
           if (d.status === "SUCCESS") {
             const byHand = d.paidMethod && d.paidMethod !== "MERCADOPAGO";
@@ -287,6 +297,127 @@
             : `<div class="pay-option"><p>Coordiná con ${esc(payee)} cómo pagarle.</p></div>`;
           $("manual-note").textContent = `Cuando pagues, avisale a ${payee}: lo marca como pagado y te queda el comprobante en esta página.`;
         }
+
+        // ---------- Pago desde el banco del cliente (Prometeo, MiCuota hace de proxy) ----------
+        const bank = { options: null, provider: null, session: null, step: null, busy: false };
+
+        async function loadBank() {
+          if (bank.session) return; // hay un pago en curso: no lo pisamos
+          try {
+            bank.options = await api(`/api/public/payments/${encodeURIComponent(operationId)}/bank`, { auth: false, slowAfter: 60000 });
+          } catch (_e) { bank.options = null; }
+          if (!bank.options || !bank.options.available) { $("bank-pay").hidden = true; return; }
+          $("bank-pay").hidden = false;
+          bankIntro();
+        }
+
+        function bankBody(html) { $("bank-body").innerHTML = html; }
+        const sandboxBadge = () => (bank.options && bank.options.sandbox ? '<span class="sandbox-badge">modo prueba</span>' : "");
+        const cancelLink = '<button type="button" class="btn btn-ghost btn-block" data-bank="cancel" style="margin-top:8px">Cancelar</button>';
+        const bankUrl = (path) => `/api/public/payments/${encodeURIComponent(operationId)}/bank${path}`;
+        const bankError = (error) => (error && error.network ? humanError(error) : (error && error.message) || "Algo salió mal. Probá de nuevo.");
+
+        function bankIntro(message) {
+          bank.session = null; bank.provider = null;
+          bankBody(`${message ? `<p class="field-error" role="alert" style="margin-bottom:10px">${esc(message)}</p>` : ""}
+            <p class="muted small" style="margin:0 0 12px">Entrás a tu banco desde acá, elegís tu cuenta y transferís. <strong>Se confirma solo</strong>, sin mandar comprobante.${sandboxBadge()}</p>
+            <button type="button" class="btn btn-primary btn-lg btn-block" data-bank="choose">Elegir mi banco</button>`);
+        }
+
+        function bankChoose() {
+          bankBody(`<p class="muted small" style="margin:0 0 10px">¿Cuál es tu banco?${sandboxBadge()}</p>
+            <div class="bank-list">${bank.options.providers.map((p) => `<button type="button" class="btn btn-block" data-bank="provider" data-code="${esc(p.code)}">${esc(p.name)}</button>`).join("")}</div>
+            ${cancelLink}`);
+        }
+
+        async function bankCredentials(code) {
+          bank.provider = bank.options.providers.find((p) => p.code === code);
+          bankBody(`<p class="muted">Cargando…</p>`);
+          let fields;
+          try { fields = await api(bankUrl(`/providers/${encodeURIComponent(code)}/fields`), { auth: false }); }
+          catch (error) { return bankIntro(bankError(error)); }
+          bankBody(`<form id="bank-login" novalidate>
+              <p style="margin:0 0 10px"><strong>${esc(bank.provider.name)}</strong></p>
+              ${fields.map((f) => `<div class="field"><label for="bf-${esc(f.name)}">${esc(f.label)}${f.optional ? ' <span class="muted">(opcional)</span>' : ""}</label>
+                <input class="input" id="bf-${esc(f.name)}" name="${esc(f.name)}" type="${f.type === "password" ? "password" : "text"}" autocomplete="off" autocapitalize="none" spellcheck="false" ${f.optional ? "" : "required"} /></div>`).join("")}
+              <p class="hint" style="margin:0 0 12px">Tus datos van directo a tu banco a través de Prometeo. MiCuota no los guarda.</p>
+              <button class="btn btn-primary btn-lg btn-block" type="submit">Entrar a mi banco</button>
+            </form>${cancelLink}`);
+          const form = $("bank-login");
+          form.querySelector("input").focus();
+          form.addEventListener("submit", (e) => {
+            e.preventDefault();
+            const values = {};
+            form.querySelectorAll("input").forEach((input) => { values[input.name] = input.value; });
+            bankCall("/login", { provider: code, fields: values }, form.querySelector("button[type=submit]"), "Entrando a tu banco…");
+          });
+        }
+
+        async function bankCall(path, body, button, label) {
+          if (bank.busy) return;
+          bank.busy = true;
+          if (button) { button.disabled = true; button.textContent = label || "Un momento…"; }
+          try {
+            const step = await api(bankUrl(path), { method: "POST", auth: false, body: Object.assign({ session: bank.session }, body) });
+            bank.session = step.session;
+            showBankStep(step);
+          } catch (error) {
+            bank.session = null;
+            bankIntro(bankError(error));
+          } finally { bank.busy = false; }
+        }
+
+        function showBankStep(step) {
+          bank.step = step;
+          if (step.step === "CHALLENGE") {
+            bankBody(`<form id="bank-challenge" novalidate><p style="margin:0 0 10px">${esc(step.challenge)}</p>
+              <div class="field"><label for="bank-answer">Código</label><input class="input" id="bank-answer" autocomplete="one-time-code" inputmode="numeric" /></div>
+              <button class="btn btn-primary btn-lg btn-block" type="submit">Continuar</button></form>${cancelLink}`);
+            $("bank-answer").focus();
+            $("bank-challenge").addEventListener("submit", (e) => { e.preventDefault(); bankCall("/challenge", { answer: $("bank-answer").value }, e.target.querySelector("button")); });
+          } else if (step.step === "CLIENTS") {
+            bankBody(`<p class="muted small" style="margin:0 0 10px">¿Con qué cliente o empresa entrás?</p>
+              <div class="bank-list">${step.clients.map((c) => `<button type="button" class="btn btn-block" data-bank="client" data-id="${esc(c.id)}">${esc(c.name)}</button>`).join("")}</div>${cancelLink}`);
+          } else if (step.step === "ACCOUNTS") {
+            bankBody(`<p class="muted small" style="margin:0 0 10px">¿Desde qué cuenta pagás?</p>
+              <div class="bank-list">${step.accounts.map((a) => `<button type="button" class="btn btn-block" data-bank="account" data-id="${esc(a.id)}">${esc(a.name)} · ${esc(a.maskedNumber)} · ${esc(a.currency)}</button>`).join("")}</div>${cancelLink}`);
+          } else if (step.step === "AUTHORIZE") {
+            const device = (step.authorizationDevices || [])[0];
+            const prompt = !device ? "" : device.type === "cardCode"
+              ? `Tarjeta de coordenadas${device.data && device.data.length ? `: ${device.data.join(", ")}` : ""}`
+              : device.type === "pin" ? "Tu PIN" : "El código que te mandó tu banco";
+            bankBody(`<form id="bank-confirm" novalidate>
+              <p style="margin:0 0 12px">Vas a transferir <strong>${esc(money(data.amount, data.currency))}</strong> a <strong>${esc(step.destinationName || data.professionalName || "")}</strong>.</p>
+              ${device ? `<div class="field"><label for="bank-auth">${esc(prompt)}</label><input class="input" id="bank-auth" autocomplete="one-time-code" inputmode="numeric" /><p class="hint">Si son varios valores, separalos con comas.</p></div>` : ""}
+              <button class="btn btn-primary btn-lg btn-block" type="submit">Confirmar transferencia</button></form>${cancelLink}`);
+            $("bank-confirm").addEventListener("submit", (e) => {
+              e.preventDefault();
+              bankCall("/confirm", {
+                authorizationType: device ? device.type : "",
+                authorizationData: device ? $("bank-auth").value : "",
+                authorizationDeviceNumber: device && device.number ? device.number : ""
+              }, e.target.querySelector("button"), "Confirmando con tu banco…");
+            });
+          } else if (step.step === "DONE") {
+            bank.session = null;
+            toast("¡Transferencia confirmada!");
+            load({ manual: true, silent: true });
+          }
+        }
+
+        $("bank-body").addEventListener("click", (event) => {
+          const el = event.target.closest("[data-bank]");
+          if (!el || bank.busy) return;
+          const action = el.dataset.bank;
+          if (action === "choose") bankChoose();
+          else if (action === "provider") bankCredentials(el.dataset.code);
+          else if (action === "client") bankCall("/client", { clientId: el.dataset.id }, el, "Un momento…");
+          else if (action === "account") bankCall("/transfer", { accountId: el.dataset.id }, el, "Preparando la transferencia…");
+          else if (action === "cancel") {
+            if (bank.session) api(bankUrl("/cancel"), { method: "POST", auth: false, body: { session: bank.session } }).catch(() => {});
+            bankIntro();
+          }
+        });
 
         function startPolling() {
           if (pollTimer) return;

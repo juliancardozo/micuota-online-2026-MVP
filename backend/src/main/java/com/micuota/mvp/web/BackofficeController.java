@@ -21,6 +21,9 @@ import com.micuota.mvp.service.UpdatePaymentSettingsRequest;
 import com.micuota.mvp.service.EnrollmentView;
 import com.micuota.mvp.service.MarkPaymentPaidRequest;
 import com.micuota.mvp.service.PaymentService;
+import com.micuota.mvp.domain.PaymentProviderType;
+import com.micuota.mvp.service.RecurringChargeView;
+import com.micuota.mvp.service.RecurringChargeService;
 import com.micuota.mvp.service.ProfessorDashboardView;
 import com.micuota.mvp.service.SaveStudentBankAccountRequest;
 import com.micuota.mvp.service.StudentDashboardView;
@@ -56,6 +59,7 @@ public class BackofficeController {
     private final PaymentKpiService paymentKpiService;
     private final LaunchpadService launchpadService;
     private final StudentBankAccountService studentBankAccountService;
+    private final RecurringChargeService recurringChargeService;
 
     public BackofficeController(
         AuthSessionService authSessionService,
@@ -63,7 +67,8 @@ public class BackofficeController {
         PaymentService paymentService,
         PaymentKpiService paymentKpiService,
         LaunchpadService launchpadService,
-        StudentBankAccountService studentBankAccountService
+        StudentBankAccountService studentBankAccountService,
+        RecurringChargeService recurringChargeService
     ) {
         this.authSessionService = authSessionService;
         this.backofficeService = backofficeService;
@@ -71,6 +76,7 @@ public class BackofficeController {
         this.paymentKpiService = paymentKpiService;
         this.launchpadService = launchpadService;
         this.studentBankAccountService = studentBankAccountService;
+        this.recurringChargeService = recurringChargeService;
     }
 
     @PostMapping("/users")
@@ -143,7 +149,30 @@ public class BackofficeController {
     ) {
         AuthSessionService.SessionContext session = authSessionService.requireSession(token);
         requireTenantAdminOrTeacher(session);
+        // Sin Mercado Pago no hay suscripcion del procesador: MiCuota genera el cobro de cada mes.
+        if (request.provider() == PaymentProviderType.MANUAL) {
+            return recurringChargeService.createFromBackoffice(session.tenantId(), session.userId(), session.role(), request);
+        }
         return paymentService.createSubscriptionForBackoffice(session.tenantId(), session.userId(), session.role(), request);
+    }
+
+    @GetMapping("/recurring-charges")
+    @Operation(summary = "Cobros mensuales sin Mercado Pago", description = "Lista los cobros que MiCuota genera cada mes para transferencia, giro o efectivo.")
+    public List<RecurringChargeView> listRecurringCharges(@RequestHeader("X-Auth-Token") String token) {
+        AuthSessionService.SessionContext session = authSessionService.requireSession(token);
+        requireTenantAdminOrTeacher(session);
+        return recurringChargeService.listForBackoffice(session.tenantId(), session.userId(), session.role());
+    }
+
+    @PostMapping("/recurring-charges/{recurringChargeId}/stop")
+    @Operation(summary = "Dejar de cobrar todos los meses", description = "No genera mas cobros mensuales; los ya creados quedan como estan.")
+    public RecurringChargeView stopRecurringCharge(
+        @RequestHeader("X-Auth-Token") String token,
+        @PathVariable Long recurringChargeId
+    ) {
+        AuthSessionService.SessionContext session = authSessionService.requireSession(token);
+        requireTenantAdminOrTeacher(session);
+        return recurringChargeService.stopFromBackoffice(session.tenantId(), session.userId(), session.role(), recurringChargeId);
     }
 
     @GetMapping("/payments")
