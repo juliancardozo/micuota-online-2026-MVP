@@ -17,6 +17,9 @@ public class PrometeoProperties {
     private String country = "UY";
     // En sandbox los bancos destino se llaman "Bank A/B/C": se usa este codigo de institucion.
     private String sandboxDestinationInstitution = "012";
+    // Solo pruebas: el sandbox de Prometeo devuelve 500 al confirmar transferencias. Con esto, en sandbox
+    // ese error se toma como confirmacion simulada para poder probar el flujo completo. Nunca aplica fuera del sandbox.
+    private boolean sandboxSimulateConfirm = false;
     private int connectTimeoutMs = 5000;
     private int readTimeoutMs = 15000;
 
@@ -98,5 +101,18 @@ public class PrometeoProperties {
 
     public void setSandboxDestinationInstitution(String sandboxDestinationInstitution) {
         this.sandboxDestinationInstitution = sandboxDestinationInstitution;
+    }
+
+    public boolean isSandboxSimulateConfirm() {
+        return sandboxSimulateConfirm;
+    }
+
+    public void setSandboxSimulateConfirm(boolean sandboxSimulateConfirm) {
+        this.sandboxSimulateConfirm = sandboxSimulateConfirm;
+    }
+
+    /** La simulacion exige sandbox declarado y apuntar al host de sandbox de Prometeo. */
+    public boolean canSimulateConfirm() {
+        return sandboxSimulateConfirm && sandbox && bankingBaseUrl != null && bankingBaseUrl.contains("sandbox");
     }
 }

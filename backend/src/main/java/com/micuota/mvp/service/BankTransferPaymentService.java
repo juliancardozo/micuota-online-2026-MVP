@@ -34,13 +34,14 @@ import org.springframework.stereotype.Service;
  * el cobro queda pagado solo.
  *
  * Las credenciales bancarias solo pasan hacia Prometeo: no se guardan en la base ni se registran en logs.
- * Mientras dura el pago (como maximo 10 minutos) la sesion vive en memoria y se cierra al terminar.
+ * Mientras dura el pago (como maximo 5 minutos, lo que dura la sesion en Prometeo) vive en memoria y se cierra al terminar.
  */
 @Service
 public class BankTransferPaymentService {
 
     private static final Logger log = LoggerFactory.getLogger(BankTransferPaymentService.class);
-    private static final Duration SESSION_TTL = Duration.ofMinutes(10);
+    // Prometeo vence la clave de sesion a los 5 minutos: no tiene sentido mantenerla mas.
+    private static final Duration SESSION_TTL = Duration.ofMinutes(5);
     private static final Duration PROVIDERS_TTL = Duration.ofHours(1);
     private static final int MAX_LOGINS_PER_OPERATION = 5;
     private static final Duration LOGIN_WINDOW = Duration.ofMinutes(15);
@@ -258,6 +259,14 @@ public class BankTransferPaymentService {
         fields.put("authorization_data", blankToEmpty(request.authorizationData()));
         fields.put("authorization_device_number", blankToEmpty(request.authorizationDeviceNumber()));
         JsonNode result = client.confirmTransfer(session.prometeoKey, fields);
+        if (!"success".equals(result.path("status").asText()) && properties.canSimulateConfirm()
+            && result.path("message").asText("").startsWith("Respuesta inesperada")) {
+            log.warn("Sandbox: confirmacion de Prometeo simulada operationId={} (el sandbox devolvio error)", operationId);
+            paymentService.markPaidByBankTransfer(operationId, "SIMULADO-SANDBOX-" + session.requestId);
+            close(request.session(), session);
+            return new BankStep(request.session(), "DONE", "Pago simulado: el sandbox de Prometeo no confirma transferencias.", null,
+                List.of(), List.of(), List.of(), null);
+        }
         if (!"success".equals(result.path("status").asText())) {
             String message = result.path("message").asText("");
             log.warn("Prometeo no confirmo la transferencia operationId={} status={}", operationId, result.path("status").asText());
@@ -422,7 +431,7 @@ public class BankTransferPaymentService {
         BankSession session = token == null ? null : sessions.get(token);
         if (session == null || !session.operationId.equals(operationId)
             || session.createdAt.isBefore(Instant.now().minus(SESSION_TTL))) {
-            throw new IllegalArgumentException("Se venció el tiempo para pagar. Empezá de nuevo.");
+            throw new IllegalArgumentException("Se venció el tiempo con tu banco (5 minutos). Empezá de nuevo.");
         }
         return session;
     }

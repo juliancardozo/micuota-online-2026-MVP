@@ -74,7 +74,7 @@ del cobro. Al confirmarse, el cobro queda pagado solo (`paid_method = TRANSFER`,
 
 Endpoints públicos bajo `/api/public/payments/{id}/bank`: `GET` (disponibilidad y bancos), `GET /providers/{code}/fields`,
 `POST /login`, `/challenge`, `/client`, `/transfer`, `/confirm`, `/cancel`. La sesión con el banco vive en memoria
-como máximo 10 minutos y se cierra al terminar; hay hasta 5 intentos de login por cobro cada 15 minutos.
+como máximo 5 minutos (lo que dura la clave de sesión en Prometeo) y se cierra al terminar; hay hasta 5 intentos de login por cobro cada 15 minutos.
 
 Requisitos: el profesional cargó banco, número de cuenta y titular; el cobro es en UYU o USD y no es una suscripción
 de Mercado Pago.
@@ -84,6 +84,7 @@ de Mercado Pago.
 | `APP_PROMETEO_API_KEY` | API key de Prometeo |
 | `APP_PROMETEO_BANK_PAYMENTS_ENABLED` | `true` para mostrar "Pagar desde tu banco" (por defecto apagado) |
 | `APP_PROMETEO_SANDBOX` | `true` en sandbox: aparece el banco de prueba y el destino es `APP_PROMETEO_SANDBOX_DESTINATION_INSTITUTION` |
+| `APP_PROMETEO_SANDBOX_SIMULATE_CONFIRM` | Solo pruebas. El sandbox de Prometeo devuelve 500 en `/transfer/confirm`; con `true` (y solo en sandbox) ese error se toma como pago simulado y la nota del cobro dice `SIMULADO-SANDBOX` |
 | `APP_PROMETEO_BANKING_BASE_URL` | `https://banking.sandbox.prometeoapi.com` o el host de producción que indique Prometeo |
 
 En producción el banco destino se busca por nombre en la lista de destinos del banco del cliente.
