@@ -5,7 +5,13 @@ import com.micuota.mvp.service.AdminCreateTenantRequest;
 import com.micuota.mvp.service.AdminAnalyticsService;
 import com.micuota.mvp.service.AdminBillingService;
 import com.micuota.mvp.service.AdminTenantBillingView;
+import com.micuota.mvp.integration.prometeo.config.PrometeoProperties;
+import com.micuota.mvp.integration.prometeo.service.PrometeoBankingClient;
 import com.micuota.mvp.service.AdminOverviewView;
+import com.micuota.mvp.service.MercadoPagoOAuthService;
+import com.micuota.mvp.service.PlatformSettingsService;
+import com.micuota.mvp.service.PlatformSettingsView;
+import com.micuota.mvp.service.UpdatePlatformSettingsRequest;
 import com.micuota.mvp.service.AdminResetRequest;
 import com.micuota.mvp.service.AdminResetResult;
 import com.micuota.mvp.service.AdminTenantProvisioningResult;
@@ -40,17 +46,29 @@ public class AdminController {
     private final AdminAnalyticsService adminAnalyticsService;
     private final TenantAuthService tenantAuthService;
     private final AdminBillingService adminBillingService;
+    private final PlatformSettingsService platformSettingsService;
+    private final MercadoPagoOAuthService mercadoPagoOAuthService;
+    private final PrometeoBankingClient prometeoBankingClient;
+    private final PrometeoProperties prometeoProperties;
 
     public AdminController(
         AuthSessionService authSessionService,
         AdminAnalyticsService adminAnalyticsService,
         TenantAuthService tenantAuthService,
-        AdminBillingService adminBillingService
+        AdminBillingService adminBillingService,
+        PlatformSettingsService platformSettingsService,
+        MercadoPagoOAuthService mercadoPagoOAuthService,
+        PrometeoBankingClient prometeoBankingClient,
+        PrometeoProperties prometeoProperties
     ) {
         this.authSessionService = authSessionService;
         this.adminAnalyticsService = adminAnalyticsService;
         this.tenantAuthService = tenantAuthService;
         this.adminBillingService = adminBillingService;
+        this.platformSettingsService = platformSettingsService;
+        this.mercadoPagoOAuthService = mercadoPagoOAuthService;
+        this.prometeoBankingClient = prometeoBankingClient;
+        this.prometeoProperties = prometeoProperties;
     }
 
     @GetMapping("/overview")
@@ -90,6 +108,38 @@ public class AdminController {
     ) {
         requirePlatformAdmin(token);
         return adminBillingService.updateBilling(tenantId, request);
+    }
+
+    @GetMapping("/platform-settings")
+    @Operation(summary = "Modo y funciones", description = "Modo prueba/real y funciones que se prenden por etapas. Requiere ADMIN.")
+    public PlatformSettingsView platformSettings(@RequestHeader("X-Auth-Token") String token) {
+        requirePlatformAdmin(token);
+        return platformSettingsView();
+    }
+
+    @PutMapping("/platform-settings")
+    @Operation(summary = "Cambiar modo y funciones", description = "Pasar a modo real exige confirm=REAL. Requiere ADMIN.")
+    public PlatformSettingsView updatePlatformSettings(
+        @RequestHeader("X-Auth-Token") String token,
+        @RequestBody UpdatePlatformSettingsRequest request
+    ) {
+        requirePlatformAdmin(token);
+        if (Boolean.TRUE.equals(request.live()) && !platformSettingsService.isLive() && !"REAL".equals(request.confirm())) {
+            throw new IllegalArgumentException("Para pasar a modo real escribí REAL");
+        }
+        platformSettingsService.update(request.live(), request.bankPayments(), request.mercadoPagoOAuth());
+        return platformSettingsView();
+    }
+
+    private PlatformSettingsView platformSettingsView() {
+        return new PlatformSettingsView(
+            platformSettingsService.isLive(),
+            platformSettingsService.bankPaymentsOn(),
+            prometeoBankingClient.hasCredentials(),
+            prometeoProperties.isSandbox(),
+            platformSettingsService.mercadoPagoOAuthOn(),
+            mercadoPagoOAuthService.hasCredentials()
+        );
     }
 
     @PostMapping("/maintenance/reset")

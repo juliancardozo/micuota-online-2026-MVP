@@ -106,6 +106,10 @@
             </div>
           </div>
 
+          <div class="notice notice-warn no-print" id="test-banner" hidden style="margin-bottom:16px">
+            <p class="small" style="margin:0"><strong>Modo prueba.</strong> Este cobro no mueve plata real: usá datos de prueba.</p>
+          </div>
+
           <!-- Estado: pagado / en proceso / fallido -->
           <div id="status-block" class="status-hero" hidden>
             <div class="icon" aria-hidden="true" id="status-icon"></div>
@@ -434,6 +438,11 @@
             } catch (_e) { /* seguimos intentando */ }
           }, 5000);
         }
+
+        // Aviso de modo prueba: la plataforma todavia no procesa plata real.
+        api("/api/public/platform", { auth: false, slowAfter: 60000 })
+          .then((p) => { $("test-banner").hidden = !(p && p.testMode); })
+          .catch(() => {});
 
         async function load({ manual = false, silent = false } = {}) {
           if (!/^\d+$/.test(operationId)) {

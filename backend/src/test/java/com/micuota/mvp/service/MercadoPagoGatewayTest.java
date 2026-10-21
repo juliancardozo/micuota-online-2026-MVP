@@ -26,11 +26,14 @@ class MercadoPagoGatewayTest {
     @Mock
     private MercadoPagoService mercadoPagoService;
 
+    @Mock
+    private MercadoPagoAccountGuard accountGuard;
+
     private MercadoPagoGateway gateway;
 
     @BeforeEach
     void setUp() {
-        gateway = new MercadoPagoGateway(mercadoPagoService, objectMapper);
+        gateway = new MercadoPagoGateway(mercadoPagoService, objectMapper, accountGuard);
     }
 
     @Test

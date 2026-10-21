@@ -4,7 +4,7 @@
 
   const { api, session, humanError, toast, busy, esc, money, icons, shortDate, relativeDays } = window.MC;
   const view = document.getElementById("view");
-  const state = { me: null, overview: null, tenants: null, filter: "" };
+  const state = { me: null, overview: null, tenants: null, platform: null, filter: "" };
 
   document.querySelectorAll("[data-icon]").forEach((n) => { n.innerHTML = icons[n.dataset.icon] || ""; });
 
@@ -89,6 +89,12 @@
   /* ---------------- Datos ---------------- */
   async function loadOverview() { state.overview = await api("/api/admin/overview"); }
   async function loadTenants() { state.tenants = await api("/api/admin/tenants"); }
+  async function loadPlatform() { state.platform = await api("/api/admin/platform-settings"); }
+
+  function testModeNotice() {
+    if (!state.platform || state.platform.live) return "";
+    return `<div class="notice notice-warn" style="margin-bottom:16px">${icons.lock}<p><strong>Modo prueba.</strong> Ningún cobro mueve plata real: Mercado Pago solo acepta cuentas de prueba y el pago desde el banco va al sandbox. <a href="#mantenimiento">Cambiar</a></p></div>`;
+  }
 
   /* ---------------- Resumen ---------------- */
   async function renderSummary() {
@@ -96,6 +102,7 @@
       loadingView("Cargando el resumen…");
       try { await loadOverview(); } catch (error) { return errorView(error, "reload-summary"); }
     }
+    if (!state.platform) { try { await loadPlatform(); } catch (_e) { /* el aviso es opcional */ } }
     const o = state.overview;
     const totals = o.totals.length
       ? o.totals.map((t) => `<li>${esc(money(t.paidAmount, t.currency))}</li>`).join("")
@@ -111,6 +118,7 @@
 
     let html = `<div class="view-head row-between"><div><h1>Resumen</h1><p>Actualizado ${esc(new Date(o.generatedAt).toLocaleTimeString("es-UY", { hour: "2-digit", minute: "2-digit" }))}</p></div>
         <button class="btn btn-sm" type="button" data-action="reload-summary">${icons.refresh} Actualizar</button></div>`;
+    html += testModeNotice();
     if (o.professionalsWithManualToken > 0) {
       html += `<div class="notice notice-warn" style="margin-bottom:16px">${icons.alert}<p><strong>${o.professionalsWithManualToken} ${o.professionalsWithManualToken === 1 ? "profesional cobra" : "profesionales cobran"} sin comisión</strong> porque ${o.professionalsWithManualToken === 1 ? "pegó" : "pegaron"} su Access Token a mano. Cuando abran la sección Mercado Pago de su app se les pide reconectar con un clic.</p></div>`;
     }
@@ -209,12 +217,48 @@
   }
 
   /* ---------------- Mantenimiento ---------------- */
+  function platformCard() {
+    const p = state.platform;
+    const toggle = (name, on, configured, title, sub, missing) => `<label class="choice" style="margin-bottom:10px">
+        <input type="checkbox" data-setting="${name}" ${on ? "checked" : ""} ${configured ? "" : "disabled"} />
+        <span class="choice-box" ${configured ? "" : 'style="opacity:.6"'}><strong>${title}</strong><span>${configured ? sub : missing}</span></span></label>`;
+    return `<div class="card" id="platform-card">
+        <div class="row-between" style="margin-bottom:12px"><h2 class="card-title" style="margin:0">Modo y funciones</h2>
+          ${p.live ? '<span class="pill pill-late">Modo real</span>' : '<span class="pill pill-warn">Modo prueba</span>'}</div>
+        <p class="muted small" style="margin:0 0 14px">${p.live
+          ? "Los cobros mueven plata real. Mercado Pago acepta cualquier cuenta."
+          : "Ningún cobro mueve plata real: Mercado Pago solo acepta cuentas de prueba (TESTUSER) y el pago desde el banco solo va al sandbox de Prometeo."}</p>
+        ${toggle("bankPayments", p.bankPayments, p.bankPaymentsConfigured, `Pagar desde el banco (Prometeo${p.prometeoSandbox ? ", sandbox" : ""})`,
+          "El cliente paga desde su banco en la página de pago y se confirma solo.",
+          "Falta configurar APP_PROMETEO_API_KEY y APP_PROMETEO_BANK_PAYMENTS_ENABLED en el servidor.")}
+        ${toggle("mercadoPagoOAuth", p.mercadoPagoOAuth, p.mercadoPagoOAuthConfigured, "Conectar Mercado Pago con un clic (OAuth)",
+          "Apagado, el profesional conecta pegando su Access Token (por ejemplo, el de su usuario de prueba).",
+          "Faltan MERCADOPAGO_CLIENT_ID y MERCADOPAGO_CLIENT_SECRET en el servidor.")}
+        <div style="margin-top:6px">${p.live
+          ? '<button type="button" class="btn btn-block" data-action="go-test">Volver a modo prueba</button>'
+          : `<div class="field" style="margin:0 0 8px"><label for="live-confirm">Para pasar a modo real escribí <strong>REAL</strong></label><input class="input" id="live-confirm" autocomplete="off" autocapitalize="characters" /></div>
+             <button type="button" class="btn btn-danger btn-block" data-action="go-live">Pasar a modo real</button>`}</div>
+      </div>`;
+  }
+
+  async function savePlatform(body, okMessage) {
+    try {
+      state.platform = await api("/api/admin/platform-settings", { method: "PUT", body });
+      toast(okMessage);
+    } catch (error) { toast(humanError(error), true); }
+    renderMaintenance();
+  }
+
   async function renderMaintenance() {
-    if (!state.tenants) {
-      loadingView("Cargando las cuentas…");
-      try { await loadTenants(); } catch (error) { return errorView(error, "reload-maintenance"); }
+    if (!state.tenants || !state.platform) {
+      loadingView("Cargando la configuración…");
+      try { await Promise.all([state.tenants ? null : loadTenants(), state.platform ? null : loadPlatform()]); }
+      catch (error) { return errorView(error, "reload-maintenance"); }
     }
-    const html = `<div class="view-head"><h1>Empezar limpio</h1><p>Borra las cuentas que no marques, con sus profesionales, alumnos, cursos y cobros. Tu acceso de administrador no se toca.</p></div>
+    const html = `<div class="view-head"><h1>Configuración</h1><p>Modo de la plataforma, funciones que se prenden por etapas y limpieza de datos.</p></div>
+      ${platformCard()}
+      <h2 class="section-title">Empezar limpio</h2>
+      <p class="muted small" style="margin:-4px 0 10px">Borra las cuentas que no marques, con sus profesionales, clientes y cobros. Tu acceso de administrador no se toca.</p>
       <form id="reset-form" class="card" novalidate>
         <fieldset class="choice-group"><legend>Cuentas que se conservan</legend>
           <div class="keep-list">${state.tenants.map((t) => `<label class="choice"><input type="checkbox" name="keep" value="${esc(t.tenantSlug)}" ${t.mercadoPagoConnection === "OAUTH" ? "checked" : ""} />
@@ -227,8 +271,12 @@
         <p class="field-error" id="reset-error" role="alert" hidden></p>
         <button class="btn btn-danger btn-lg btn-block" type="submit" id="reset-submit">Borrar datos</button>
       </form>`;
-    setView(html, "Mantenimiento");
+    setView(html, "Configuración");
     document.getElementById("reset-form").addEventListener("submit", runReset);
+    document.querySelectorAll("[data-setting]").forEach((input) => input.addEventListener("change", () => {
+      const labels = { bankPayments: "Pagar desde el banco", mercadoPagoOAuth: "Conexión de Mercado Pago con un clic" };
+      savePlatform({ [input.dataset.setting]: input.checked }, `${labels[input.dataset.setting]}: ${input.checked ? "prendido" : "apagado"}`);
+    }));
   }
 
   async function runReset(e) {
@@ -275,7 +323,16 @@
       case "logout": logout(); break;
       case "reload-summary": state.overview = null; renderSummary(); break;
       case "reload-accounts": state.tenants = null; renderAccounts(); break;
-      case "reload-maintenance": state.tenants = null; renderMaintenance(); break;
+      case "reload-maintenance": state.tenants = null; state.platform = null; renderMaintenance(); break;
+      case "go-test":
+        if (window.confirm("¿Volvemos a modo prueba? Los cobros reales dejan de crearse.")) savePlatform({ live: false }, "Modo prueba activado");
+        break;
+      case "go-live": {
+        const confirmText = (document.getElementById("live-confirm") || {}).value || "";
+        if (confirmText.trim().toUpperCase() !== "REAL") { toast("Escribí REAL para confirmar", true); break; }
+        savePlatform({ live: true, confirm: "REAL" }, "Modo real activado");
+        break;
+      }
       default: break;
     }
   });

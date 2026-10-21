@@ -88,3 +88,21 @@ de Mercado Pago.
 | `APP_PROMETEO_BANKING_BASE_URL` | `https://banking.sandbox.prometeoapi.com` o el host de producción que indique Prometeo |
 
 En producción el banco destino se busca por nombre en la lista de destinos del banco del cliente.
+
+## Modo prueba e interruptores por etapa
+
+La plataforma arranca en **modo prueba** (`platform_settings.payments.mode = TEST`) y el administrador la cambia
+desde `admin.html#mantenimiento` sin redesplegar (`GET/PUT /api/admin/platform-settings`; pasar a real exige
+`confirm = "REAL"`). En modo prueba ningún cobro mueve plata real:
+
+- **Mercado Pago**: `MercadoPagoAccountGuard` consulta `/users/me` del token y solo deja crear cobros con cuentas de
+  prueba (`TESTUSER…`, tag `test_user`, o tokens `TEST-`). Con una cuenta real el cobro se rechaza con un mensaje claro.
+- **Prometeo**: el pago desde el banco solo funciona si `APP_PROMETEO_SANDBOX=true`.
+- La página de pago y la app muestran un aviso de "Modo prueba" (`GET /api/public/platform`).
+
+Interruptores (además de las variables de entorno, que siguen siendo el límite):
+
+| Interruptor | Por defecto | Efecto |
+|---|---|---|
+| Pagar desde el banco (Prometeo) | apagado | Muestra u oculta "Pagar desde tu banco" |
+| Conectar Mercado Pago con un clic (OAuth) | prendido | Apagado, el profesional pega su Access Token (de prueba) |
