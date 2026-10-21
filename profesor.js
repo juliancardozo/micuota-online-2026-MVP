@@ -918,24 +918,33 @@
     const s = state.settings || {};
     const theme = store.get("micuota.theme", "auto");
     const big = store.get("micuota.bigText") === "1";
-    const html = `<div class="view-head"><h1>Mi cuenta</h1><p>${esc(state.me.fullName)} · ${esc(state.me.email)}</p></div>
-      <a class="card row-between" href="#medios" style="text-decoration:none;color:inherit">
-        <span><strong class="card-title" style="display:block;margin:0">Cómo te pagan</strong>
-        <span class="muted small">${esc([mpConnected() ? "Mercado Pago" : "", s.transferAccountNumber || s.transferAlias ? "Transferencia" : "", s.otherPaymentInstructions ? "Efectivo u otras" : ""].filter(Boolean).join(" · ") || "Todavía sin elegir")}</span></span>
-        ${icons.arrowRight}</a>
-      <div class="card">
-        <h2 class="card-title">Para entrar desde otro celular</h2>
-        <p class="muted small" style="margin:0">Entrás con tu email (${esc(state.me.email)}): te mandamos un código, sin contraseña.</p>
+    const methods = [mpConnected() ? "Mercado Pago" : "", s.transferAccountNumber || s.transferAlias ? "Transferencia" : "", s.otherPaymentInstructions ? "Efectivo u otras" : ""].filter(Boolean);
+    const mpUpToDate = mpConnected() && (s.mercadoPagoConnection === "OAUTH" || !s.mercadoPagoOAuthAvailable);
+    const mpPill = mpUpToDate ? `<span class="pill pill-ok">Conectado</span>` : mpConnected() ? `<span class="pill pill-warn">Actualizar</span>` : `<span class="pill pill-info">Sin conectar</span>`;
+    const settingRow = (href, icon, title, sub, right) => `<li><a class="row-item row-link setting-row" href="${href}">
+        <span class="avatar setting-icon" aria-hidden="true">${icons[icon]}</span>
+        <span class="row-text"><p class="row-name">${esc(title)}</p><p class="row-sub">${esc(sub)}</p></span>
+        ${right || ""}<span class="row-chevron" aria-hidden="true">${icons.arrowRight}</span></a></li>`;
+    const html = `<div class="view-head"><h1>Mi cuenta</h1></div>
+      <div class="card profile-card">
+        <span class="avatar avatar-lg" aria-hidden="true">${esc(initials(state.me.fullName))}</span>
+        <span class="grow" style="min-width:0"><strong class="profile-name">${esc(state.me.fullName)}</strong>
+          <span class="muted small profile-email">${esc(state.me.email)}</span></span>
       </div>
+      <h2 class="section-title">Cobros</h2>
+      <ul class="rows">
+        ${settingRow("#medios", "wallet", "Cómo te pagan", methods.length ? methods.join(" · ") : "Todavía sin elegir")}
+        ${settingRow("#mercadopago", "link", "Mercado Pago", mpConnected() ? "Los pagos se marcan solos" : "Conectalo para cobrar con tarjeta", mpPill)}
+      </ul>
+      <h2 class="section-title">Pantalla</h2>
       <div class="card">
-        <h2 class="card-title">Pantalla</h2>
         <fieldset class="choice-group choice-grid-2" style="grid-template-columns:repeat(3,1fr)"><legend>Colores</legend>
           ${[["auto", "Automático"], ["light", "Claro"], ["dark", "Oscuro"]].map(([k, l]) => `<label class="choice"><input type="radio" name="theme" value="${k}" ${theme === k ? "checked" : ""} /><span class="choice-box center"><strong>${l}</strong></span></label>`).join("")}
         </fieldset>
         <label class="choice"><input type="checkbox" id="big-text" ${big ? "checked" : ""} /><span class="choice-box"><strong>Letra más grande</strong><span>Agranda todo el texto de la app</span></span></label>
       </div>
-      <button type="button" class="btn btn-block btn-danger" data-action="logout" style="margin-top:16px">${icons.logout} Cerrar sesión</button>
-      <p class="hint center" style="margin-top:16px">¿Dudas? Escribinos a <a href="mailto:hola@micuota.online">hola@micuota.online</a></p>`;
+      <button type="button" class="btn btn-block btn-danger" data-action="logout" style="margin-top:24px">${icons.logout} Cerrar sesión</button>
+      <p class="hint center" style="margin-top:16px">Para entrar desde otro celular usás tu email: te mandamos un código, sin contraseña.<br>¿Dudas? Escribinos a <a href="mailto:hola@micuota.online">hola@micuota.online</a></p>`;
     setView(html, "Mi cuenta");
     view.querySelectorAll('input[name="theme"]').forEach((r) => r.addEventListener("change", () => {
       if (r.value === "auto") { store.remove("micuota.theme"); delete document.documentElement.dataset.theme; }
