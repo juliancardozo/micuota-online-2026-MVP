@@ -5,6 +5,7 @@ import com.micuota.mvp.domain.CourseEnrollment;
 import com.micuota.mvp.domain.OperationStatus;
 import com.micuota.mvp.domain.TeacherProfile;
 import com.micuota.mvp.domain.Tenant;
+import com.micuota.mvp.integration.prometeo.service.PrometeoBankingClient;
 import com.micuota.mvp.domain.User;
 import com.micuota.mvp.domain.UserRole;
 import com.micuota.mvp.repository.CourseEnrollmentRepository;
@@ -39,6 +40,7 @@ public class BackofficeService {
     private final PaymentKpiService paymentKpiService;
     private final MercadoPagoOAuthService mercadoPagoOAuthService;
     private final OnboardingEmailService onboardingEmailService;
+    private final PrometeoBankingClient prometeoBankingClient;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     public BackofficeService(
@@ -50,7 +52,8 @@ public class BackofficeService {
         PaymentOperationRepository paymentOperationRepository,
         PaymentKpiService paymentKpiService,
         MercadoPagoOAuthService mercadoPagoOAuthService,
-        OnboardingEmailService onboardingEmailService
+        OnboardingEmailService onboardingEmailService,
+        PrometeoBankingClient prometeoBankingClient
     ) {
         this.userRepository = userRepository;
         this.teacherProfileRepository = teacherProfileRepository;
@@ -61,6 +64,7 @@ public class BackofficeService {
         this.paymentKpiService = paymentKpiService;
         this.mercadoPagoOAuthService = mercadoPagoOAuthService;
         this.onboardingEmailService = onboardingEmailService;
+        this.prometeoBankingClient = prometeoBankingClient;
     }
 
     @Transactional
@@ -391,7 +395,8 @@ public class BackofficeService {
             profile.getMpPublicKey(),
             connection,
             mercadoPagoOAuthService.isEnabled(),
-            feeBps
+            feeBps,
+            prometeoBankingClient.isConfigured()
         );
     }
 

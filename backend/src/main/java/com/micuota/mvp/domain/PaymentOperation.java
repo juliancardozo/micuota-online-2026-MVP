@@ -87,6 +87,10 @@ public class PaymentOperation {
     @Column(length = 300)
     private String paidNote;
 
+    // Cobro generado por un cobro mensual sin Mercado Pago (RecurringCharge).
+    @Column
+    private Long recurringChargeId;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private OperationStatus status;
@@ -291,6 +295,14 @@ public class PaymentOperation {
 
     public void setPaidNote(String paidNote) {
         this.paidNote = paidNote;
+    }
+
+    public Long getRecurringChargeId() {
+        return recurringChargeId;
+    }
+
+    public void setRecurringChargeId(Long recurringChargeId) {
+        this.recurringChargeId = recurringChargeId;
     }
 
     public OperationStatus getStatus() {

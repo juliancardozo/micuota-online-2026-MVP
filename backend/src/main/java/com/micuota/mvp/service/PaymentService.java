@@ -883,6 +883,25 @@ public class PaymentService {
         return saved;
     }
 
+    /** Transferencia confirmada por el banco del cliente via Prometeo: se concilia sola, sin comision. */
+    @Transactional
+    public PaymentOperation markPaidByBankTransfer(Long operationId, String bankReference) {
+        PaymentOperation operation = paymentOperationRepository.findById(operationId)
+            .orElseThrow(() -> new IllegalArgumentException("Operacion no encontrada"));
+        if (operation.getStatus() == OperationStatus.SUCCESS) {
+            return operation;
+        }
+        OperationStatus previous = operation.getStatus();
+        applyStatusUpdate(operation, OperationStatus.SUCCESS, null);
+        operation.setPaidMethod(PaidMethod.TRANSFER);
+        operation.setPaidAt(operation.getUpdatedAt());
+        operation.setPaidNote("Transferencia desde su banco" + (bankReference == null ? "" : " · ref. " + bankReference));
+        PaymentOperation saved = paymentOperationRepository.save(operation);
+        paymentEventService.recordStatusChanged(saved, previous, OperationStatus.SUCCESS,
+            "{\"bank\":true,\"method\":\"TRANSFER\"" + (bankReference == null ? "" : ",\"reference\":\"" + escapeJson(bankReference) + "\"") + "}");
+        return saved;
+    }
+
     /** Deshace un "ya me pago" marcado a mano (por ejemplo, si se marco el cobro equivocado). */
     @Transactional
     public PaymentOperation markUnpaidFromBackoffice(Long tenantId, Long userId, UserRole role, Long operationId) {
@@ -898,6 +917,20 @@ public class PaymentService {
         PaymentOperation saved = paymentOperationRepository.save(operation);
         paymentEventService.recordStatusChanged(saved, OperationStatus.SUCCESS, OperationStatus.CREATED, "{\"manual\":true,\"undo\":true}");
         return saved;
+    }
+
+    /** Perfiles profesionales que la sesion puede ver (el propio, o los del tenant para un TENANT_ADMIN). */
+    @Transactional(readOnly = true)
+    public List<Long> teacherProfileIdsForBackoffice(Long tenantId, Long userId, UserRole role) {
+        return resolveTeacherProfileIdsForBackoffice(tenantId, userId, role, null);
+    }
+
+    @Transactional
+    public PaymentOperation linkToRecurringCharge(Long operationId, Long recurringChargeId) {
+        PaymentOperation operation = paymentOperationRepository.findById(operationId)
+            .orElseThrow(() -> new IllegalArgumentException("Operacion no encontrada"));
+        operation.setRecurringChargeId(recurringChargeId);
+        return paymentOperationRepository.save(operation);
     }
 
     private PaymentOperation requireBackofficeOperation(Long tenantId, Long userId, UserRole role, Long operationId) {

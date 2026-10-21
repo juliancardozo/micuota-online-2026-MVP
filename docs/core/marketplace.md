@@ -55,3 +55,35 @@ todas las que tenga cargadas.
   `POST .../mark-unpaid` lo deshace. Los pagos por Mercado Pago se marcan solos (`paid_method = MERCADOPAGO`).
 - Si un cobro de Mercado Pago se marca pagado a mano, la comisión no cuenta como cobrada.
 - Los recordatorios por email siguen funcionando para los cobros manuales y llevan a la página de pago.
+
+## Cobros mensuales sin Mercado Pago
+
+"Todos los meses" funciona con cualquier medio. Con Mercado Pago es su suscripción (preapproval). Sin Mercado Pago,
+`POST /api/backoffice/payments/subscriptions` con `provider = MANUAL` crea el cobro de este mes y una plantilla en
+`recurring_charges` (día del mes, máximo 28). `RecurringChargeService` corre cada hora
+(`app.payments.recurring.cron`), genera el cobro del mes cuando corresponde (con Mercado Pago si el profesional ya lo
+conectó) y el cliente lo recibe por email. `GET /api/backoffice/recurring-charges` los lista y
+`POST .../recurring-charges/{id}/stop` deja de generarlos.
+
+## Pago desde el banco del cliente (Prometeo)
+
+MiCuota actúa de proxy de la Banking API de Prometeo (`PrometeoBankingClient`, `BankTransferPaymentService`):
+el cliente elige su banco en la página de pago, entra con sus credenciales (que se reenvían a Prometeo sin
+guardarse ni registrarse), elige su cuenta y confirma una transferencia a la cuenta del profesional por el monto
+del cobro. Al confirmarse, el cobro queda pagado solo (`paid_method = TRANSFER`, sin comisión).
+
+Endpoints públicos bajo `/api/public/payments/{id}/bank`: `GET` (disponibilidad y bancos), `GET /providers/{code}/fields`,
+`POST /login`, `/challenge`, `/client`, `/transfer`, `/confirm`, `/cancel`. La sesión con el banco vive en memoria
+como máximo 10 minutos y se cierra al terminar; hay hasta 5 intentos de login por cobro cada 15 minutos.
+
+Requisitos: el profesional cargó banco, número de cuenta y titular; el cobro es en UYU o USD y no es una suscripción
+de Mercado Pago.
+
+| Variable | Uso |
+|---|---|
+| `APP_PROMETEO_API_KEY` | API key de Prometeo |
+| `APP_PROMETEO_BANK_PAYMENTS_ENABLED` | `true` para mostrar "Pagar desde tu banco" (por defecto apagado) |
+| `APP_PROMETEO_SANDBOX` | `true` en sandbox: aparece el banco de prueba y el destino es `APP_PROMETEO_SANDBOX_DESTINATION_INSTITUTION` |
+| `APP_PROMETEO_BANKING_BASE_URL` | `https://banking.sandbox.prometeoapi.com` o el host de producción que indique Prometeo |
+
+En producción el banco destino se busca por nombre en la lista de destinos del banco del cliente.

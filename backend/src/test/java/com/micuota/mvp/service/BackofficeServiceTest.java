@@ -47,6 +47,8 @@ class BackofficeServiceTest {
     private MercadoPagoOAuthService mercadoPagoOAuthService;
     @MockitoBean
     private OnboardingEmailService onboardingEmailService;
+    @MockitoBean
+    private com.micuota.mvp.integration.prometeo.service.PrometeoBankingClient prometeoBankingClient;
 
     private Tenant academy;
 
