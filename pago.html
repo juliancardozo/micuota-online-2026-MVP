@@ -38,8 +38,17 @@
       .methods li::before { content: "✓ "; color: var(--ok); font-weight: 700; }
       .trust { display: flex; gap: 10px; align-items: flex-start; color: var(--text-muted); font-size: var(--fs-sm); margin-top: 20px; }
       .trust svg { width: 20px; height: 20px; flex: none; margin-top: 2px; color: var(--ok); }
-      details.alt { margin-top: 18px; border-top: 1px solid var(--border); padding-top: 14px; }
-      details.alt summary { cursor: pointer; font-weight: 700; color: var(--brand); min-height: 44px; display: flex; align-items: center; }
+      .manual-pay { margin-top: 20px; }
+      .manual-pay.has-divider { border-top: 1px solid var(--border); padding-top: 16px; }
+      .manual-pay h2 { font-size: 1.15rem; margin: 0 0 10px; }
+      .pay-option { padding: 14px 16px; border-radius: var(--r-md); background: var(--surface-2); border: 1px solid var(--border); }
+      .pay-option + .pay-option { margin-top: 10px; }
+      .pay-option h3 { font-size: 1rem; margin: 0 0 8px; }
+      .pay-option dl { display: grid; grid-template-columns: auto 1fr auto; gap: 6px 10px; align-items: center; margin: 0; }
+      .pay-option dt { color: var(--text-muted); }
+      .pay-option dd { margin: 0; font-weight: 700; overflow-wrap: anywhere; }
+      .pay-option .copy-btn { min-height: 36px; padding: 4px 10px; }
+      .pay-option p { margin: 0; white-space: pre-line; }
       .receipt { margin: 18px 0 0; padding: 16px; border-radius: var(--r-md); background: var(--surface-2); border: 1px dashed var(--border-strong); }
       .receipt dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 0; }
       .receipt dt { color: var(--text-muted); }
@@ -112,6 +121,7 @@
               <dt>Monto</dt><dd id="r-amount"></dd>
               <dt>A</dt><dd id="r-payee"></dd>
               <dt>Estado</dt><dd id="r-status">Pagado</dd>
+              <dt>Pagado con</dt><dd id="r-method"></dd>
               <dt>Comprobante</dt><dd id="r-id"></dd>
             </dl>
           </div>
@@ -132,17 +142,11 @@
             <span>El pago lo procesa <strong>Mercado Pago</strong> y la plata va directo a <span class="payee-ref"></span>. MiCuota nunca ve los datos de tu tarjeta.</span>
           </p>
 
-          <details class="alt no-print" id="transfer" hidden>
-            <summary>¿Preferís pagar por transferencia?</summary>
-            <p class="muted small">Transferí a esta cuenta y mandale el comprobante a <span class="payee-ref"></span>. Ojo: los pagos por transferencia no se marcan solos como pagados.</p>
-            <div class="receipt" style="margin-top:8px">
-              <dl>
-                <dt>Alias</dt><dd id="t-alias"></dd>
-                <dt>Banco</dt><dd id="t-bank"></dd>
-              </dl>
-            </div>
-            <button type="button" class="btn btn-sm" id="copy-alias" style="margin-top:10px">Copiar alias</button>
-          </details>
+          <section class="manual-pay no-print" id="manual-pay" hidden aria-labelledby="manual-title">
+            <h2 id="manual-title">Otras formas de pagar</h2>
+            <div id="manual-options"></div>
+            <p class="muted small" id="manual-note" style="margin:12px 0 0"></p>
+          </section>
         </article>
       </div>
     </main>
@@ -201,6 +205,7 @@
           document.querySelectorAll(".payee-ref").forEach((n) => { n.textContent = payee; });
           $("concept").textContent = d.description || "Pago";
           $("amount").innerHTML = `${esc(amountText)}<span class="cur">${esc((d.currency || "UYU").toUpperCase())}</span>`;
+          const hasMercadoPago = Boolean(d.checkoutUrl);
           $("flow-copy").textContent = isMonthly
             ? "Cuota mensual: con tu autorización, Mercado Pago la cobra sola cada mes. La podés cancelar cuando quieras desde Mercado Pago."
             : "Pago único. Se paga una sola vez.";
@@ -215,21 +220,16 @@
           $("status-block").hidden = true;
           $("summary").hidden = false;
           $("receipt").hidden = true;
-          $("pay-actions").hidden = false;
-          $("methods").hidden = false;
-          $("trust").hidden = false;
-
-          if (d.transferAlias && d.status !== "SUCCESS") {
-            $("transfer").hidden = false;
-            $("t-alias").textContent = d.transferAlias;
-            $("t-bank").textContent = d.transferBankName || "—";
-          } else {
-            $("transfer").hidden = true;
-          }
+          $("pay-actions").hidden = !hasMercadoPago;
+          $("methods").hidden = !hasMercadoPago;
+          $("trust").hidden = !hasMercadoPago;
+          renderManual(d, payee, hasMercadoPago);
 
           if (d.status === "SUCCESS") {
+            const byHand = d.paidMethod && d.paidMethod !== "MERCADOPAGO";
             setStatusBlock("ok", icons.checkCircle, "¡Listo! Tu pago está confirmado",
-              `${payee} ya puede ver que pagaste. No hace falta que le mandes comprobante.`);
+              byHand ? `${payee} registró tu pago. Te queda este comprobante.` : `${payee} ya puede ver que pagaste. No hace falta que le mandes comprobante.`);
+            $("r-method").textContent = METHOD_LABELS[d.paidMethod] || "—";
             $("summary").hidden = true;
             $("receipt").hidden = false;
             $("r-concept").textContent = d.description || "Pago";
@@ -239,6 +239,7 @@
             $("pay-actions").hidden = true;
             $("methods").hidden = true;
             $("trust").hidden = true;
+            $("manual-pay").hidden = true;
             afterActions.hidden = false;
             afterActions.innerHTML = `<button type="button" class="btn btn-block" id="print">${icons.printer} Guardar comprobante</button>`;
             $("print").addEventListener("click", () => window.print());
@@ -258,6 +259,33 @@
           }
 
           show("view-payment");
+        }
+
+        const METHOD_LABELS = { MERCADOPAGO: "Mercado Pago", TRANSFER: "Transferencia", CASH: "Efectivo", GIRO: "Giro", OTHER: "Otro medio" };
+
+        // Transferencia, giro o efectivo: datos para pagar por fuera de Mercado Pago. Los marca como pagados quien cobra.
+        function renderManual(d, payee, hasMercadoPago) {
+          const box = $("manual-pay");
+          const options = [];
+          if (d.transferAccountNumber || d.transferAlias) {
+            const row = (label, value, copyable) => value
+              ? `<dt>${esc(label)}</dt><dd>${esc(value)}</dd><dd>${copyable ? `<button type="button" class="btn btn-sm copy-btn" data-copy="${esc(value)}">Copiar</button>` : ""}</dd>`
+              : "";
+            options.push(`<div class="pay-option"><h3>Transferencia o depósito</h3><dl>
+              ${row("Banco", d.transferBankName, false)}${row("Cuenta", d.transferAccountNumber, true)}${row("Titular", d.transferAccountHolder, false)}${row("Alias", d.transferAlias, true)}
+              ${row("Monto", money(d.amount, d.currency), false)}</dl></div>`);
+          }
+          if (d.otherPaymentInstructions) {
+            options.push(`<div class="pay-option"><h3>Efectivo, giro u otras formas</h3><p>${esc(d.otherPaymentInstructions)}</p></div>`);
+          }
+          if (!options.length && hasMercadoPago) { box.hidden = true; return; }
+          box.hidden = false;
+          box.classList.toggle("has-divider", hasMercadoPago);
+          $("manual-title").textContent = hasMercadoPago ? "Otras formas de pagar" : "Cómo pagar";
+          $("manual-options").innerHTML = options.length
+            ? options.join("")
+            : `<div class="pay-option"><p>Coordiná con ${esc(payee)} cómo pagarle.</p></div>`;
+          $("manual-note").textContent = `Cuando pagues, avisale a ${payee}: lo marca como pagado y te queda el comprobante en esta página.`;
         }
 
         function startPolling() {
@@ -296,9 +324,11 @@
         }
 
         $("retry").addEventListener("click", () => load());
-        $("copy-alias").addEventListener("click", async () => {
-          const ok = await copy(data && data.transferAlias || "");
-          toast(ok ? "Alias copiado" : "No se pudo copiar", !ok);
+        $("manual-options").addEventListener("click", async (event) => {
+          const btn = event.target.closest("[data-copy]");
+          if (!btn) return;
+          const ok = await copy(btn.dataset.copy);
+          toast(ok ? "Copiado" : "No se pudo copiar", !ok);
         });
         $("pay-now").addEventListener("click", (event) => {
           if (!data || !data.checkoutUrl) { event.preventDefault(); toast("Este pago todavía no tiene link de Mercado Pago. Avisale a quien te cobra.", true); }

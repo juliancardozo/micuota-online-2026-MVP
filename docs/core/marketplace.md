@@ -40,3 +40,18 @@ Hay un unico usuario `ADMIN`, en su propio tenant de plataforma (`micuota`, excl
 (por defecto `admin@micuota.online`) y `APP_PLATFORM_ADMIN_PASSWORD`. Cualquier otro `ADMIN` pierde el rol.
 Entra solo por `POST /api/auth/admin-login` (formulario de `admin.html`), con un limite de 5 intentos fallidos
 por IP cada 15 minutos; no puede usar el login por tenant ni el codigo por email.
+
+## Pagos por fuera de Mercado Pago
+
+Cada profesional elige en la app (**Cómo te pagan**) una o varias formas: Mercado Pago, transferencia o depósito
+(banco, cuenta, titular, alias) y texto libre para efectivo, giro u otras. La página de pago (`pago.html`) muestra
+todas las que tenga cargadas.
+
+- Sin Mercado Pago conectado, el cobro se crea con `provider = MANUAL` (`ManualPaymentGateway`): no hay checkout
+  externo, el link es la página pública del cobro y no lleva comisión. Los cobros mensuales automáticos necesitan
+  Mercado Pago.
+- El profesional concilia con `POST /api/backoffice/payments/{id}/mark-paid` (`{method: TRANSFER|CASH|GIRO|OTHER, note}`),
+  que deja el cobro `SUCCESS` con `paid_method`, `paid_at` y `paid_note`, y registra el evento en el historial.
+  `POST .../mark-unpaid` lo deshace. Los pagos por Mercado Pago se marcan solos (`paid_method = MERCADOPAGO`).
+- Si un cobro de Mercado Pago se marca pagado a mano, la comisión no cuenta como cobrada.
+- Los recordatorios por email siguen funcionando para los cobros manuales y llevan a la página de pago.

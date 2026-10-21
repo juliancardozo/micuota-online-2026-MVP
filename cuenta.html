@@ -65,10 +65,10 @@
               <fieldset class="choice-group">
                 <legend>¿Qué cobrás?</legend>
                 <div class="chips" id="c-activity">
-                  <button type="button" class="chip" aria-pressed="true" data-value="CLASES">Clases</button>
+                  <button type="button" class="chip" aria-pressed="true" data-value="SERVICIOS">Servicios</button>
                   <button type="button" class="chip" aria-pressed="false" data-value="CONSULTAS">Consultas o terapia</button>
-                  <button type="button" class="chip" aria-pressed="false" data-value="TALLERES">Talleres</button>
-                  <button type="button" class="chip" aria-pressed="false" data-value="ALQUILER">Alquiler</button>
+                  <button type="button" class="chip" aria-pressed="false" data-value="CLASES">Clases o talleres</button>
+                  <button type="button" class="chip" aria-pressed="false" data-value="ALQUILER">Alquiler o cuotas</button>
                   <button type="button" class="chip" aria-pressed="false" data-value="OTRO">Otra cosa</button>
                 </div>
               </fieldset>
@@ -147,7 +147,7 @@
         });
 
         /* ---------- Chips de actividad ---------- */
-        let activity = "CLASES";
+        let activity = "SERVICIOS";
         $("c-activity").addEventListener("click", (e) => {
           const chip = e.target.closest(".chip");
           if (!chip) return;

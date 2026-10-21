@@ -345,8 +345,21 @@ public class BackofficeService {
         TeacherProfile profile = teacherProfileRepository.findByUserId(userId)
             .orElseThrow(() -> new IllegalArgumentException("El usuario no tiene perfil profesional configurado"));
 
-        profile.setTransferAlias(blankToNull(request.transferAlias()));
-        profile.setTransferBankName(blankToNull(request.transferBankName()));
+        if (request.transferAlias() != null) {
+            profile.setTransferAlias(blankToNull(request.transferAlias()));
+        }
+        if (request.transferBankName() != null) {
+            profile.setTransferBankName(blankToNull(request.transferBankName()));
+        }
+        if (request.transferAccountNumber() != null) {
+            profile.setTransferAccountNumber(limit(blankToNull(request.transferAccountNumber()), 64));
+        }
+        if (request.transferAccountHolder() != null) {
+            profile.setTransferAccountHolder(limit(blankToNull(request.transferAccountHolder()), 120));
+        }
+        if (request.otherPaymentInstructions() != null) {
+            profile.setOtherPaymentInstructions(limit(blankToNull(request.otherPaymentInstructions()), 500));
+        }
         if (request.mercadoPagoAccessToken() != null) {
             String manualToken = blankToNull(request.mercadoPagoAccessToken());
             // Con el marketplace activo solo se conecta por OAuth: un token pegado cobraria sin la comision de MiCuota.
@@ -371,12 +384,19 @@ public class BackofficeService {
         return new PaymentSettingsView(
             profile.getTransferAlias(),
             profile.getTransferBankName(),
+            profile.getTransferAccountNumber(),
+            profile.getTransferAccountHolder(),
+            profile.getOtherPaymentInstructions(),
             hasText(profile.getMpAccessToken()),
             profile.getMpPublicKey(),
             connection,
             mercadoPagoOAuthService.isEnabled(),
             feeBps
         );
+    }
+
+    private static String limit(String value, int max) {
+        return value == null || value.length() <= max ? value : value.substring(0, max);
     }
 
     private static int valueOrDefault(Integer value, int fallback) {

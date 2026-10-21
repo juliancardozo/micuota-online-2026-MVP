@@ -14,6 +14,7 @@ public record AdminOverviewView(
     long students,
     long paymentsCreated,
     long paymentsPaid,
+    long paymentsPaidByHand,
     long paymentsPending,
     long leads,
     List<CurrencyTotal> totals,

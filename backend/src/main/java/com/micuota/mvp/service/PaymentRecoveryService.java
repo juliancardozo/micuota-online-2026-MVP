@@ -1,6 +1,7 @@
 package com.micuota.mvp.service;
 
 import com.micuota.mvp.domain.OperationStatus;
+import com.micuota.mvp.domain.PaymentProviderType;
 import com.micuota.mvp.domain.PaymentOperation;
 import com.micuota.mvp.repository.PaymentOperationRepository;
 import com.micuota.mvp.repository.TeacherProfileRepository;
@@ -207,17 +208,16 @@ public class PaymentRecoveryService {
     }
 
     private String messageByFailureReason(String reason, OperationStatus status, int attempt) {
-        String prefix = "Intento " + attempt + ": ";
         if ("PROCESSOR_DECLINED".equalsIgnoreCase(reason)) {
-            return prefix + "el medio de pago fue rechazado. Prueba de nuevo o usa otro metodo para completar el cobro.";
+            return "El último intento de pago fue rechazado. Probá de nuevo o elegí otra forma de pago desde el link.";
         }
         if ("PROCESSOR_REVIEW".equalsIgnoreCase(reason) || status == OperationStatus.PENDING) {
-            return prefix + "tu pago sigue en revision. Si no se acredita, puedes retomarlo desde este mismo link.";
+            return "Tu pago sigue en proceso. Si no se acredita, podés pagar de nuevo desde el mismo link.";
         }
         if ("OVERDUE_PAYMENT".equalsIgnoreCase(reason)) {
-            return prefix + "tu cuota esta vencida. Retomala ahora para evitar interrupciones del servicio.";
+            return "Este pago está vencido. Desde el link podés ver todas las formas de pago.";
         }
-        return prefix + "tu pago sigue pendiente. Retomalo desde este link embebido en MiCuota.";
+        return "Este pago sigue pendiente. Desde el link podés ver todas las formas de pago. Si ya pagaste, avisale para que lo marque.";
     }
 
     private OffsetDateTime calculateNextRetry(int retryCount, OffsetDateTime now) {
@@ -239,7 +239,9 @@ public class PaymentRecoveryService {
             return isBlank(operation.getProviderReference()) || isBlank(operation.getCheckoutUrl());
         }
 
+        // Un cobro manual sin pagar no es un descalce: nadie lo confirma salvo el profesional.
         if ((operation.getStatus() == OperationStatus.CREATED || operation.getStatus() == OperationStatus.PENDING)
+            && operation.getProvider() != PaymentProviderType.MANUAL
             && operation.getCreatedAt() != null
             && operation.getCreatedAt().isBefore(now.minus(48, ChronoUnit.HOURS))) {
             return true;

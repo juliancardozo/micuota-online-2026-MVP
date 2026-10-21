@@ -120,9 +120,9 @@ public class OnboardingEmailService {
                       <h1 style="margin:0 0 12px;font-size:24px;line-height:1.2;">%s, tu cuenta ya está lista</h1>
                       <p style="margin:0 0 16px;color:#4b5a52;">Para entrar no necesitás contraseña: ponés tu email (%s) y te mandamos un código.</p>
                       <ol style="margin:0 0 20px;padding-left:20px;line-height:1.7;">
-                        <li>Conectá tu Mercado Pago: ahí te llega la plata.</li>
+                        <li>Elegí cómo te pagan: Mercado Pago, transferencia, giro o efectivo.</li>
                         <li>Creá tu primer cobro, por ejemplo "Cuota de noviembre".</li>
-                        <li>Mandalo por WhatsApp. Te avisamos cuando te paguen.</li>
+                        <li>Mandalo por WhatsApp. Si pagan con Mercado Pago se marca solo; si no, lo marcás con un toque.</li>
                       </ol>
                       <p style="margin:0 0 18px;">
                         <a href="%s" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#0b6b4d;color:#ffffff;text-decoration:none;font-weight:700;">Entrar a MiCuota</a>

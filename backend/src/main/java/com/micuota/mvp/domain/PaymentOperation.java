@@ -78,6 +78,16 @@ public class PaymentOperation {
     private BigDecimal marketplaceFeeAmount;
 
     @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private PaidMethod paidMethod;
+
+    @Column
+    private OffsetDateTime paidAt;
+
+    @Column(length = 300)
+    private String paidNote;
+
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private OperationStatus status;
 
@@ -257,6 +267,30 @@ public class PaymentOperation {
 
     public void setMarketplaceFeeAmount(BigDecimal marketplaceFeeAmount) {
         this.marketplaceFeeAmount = marketplaceFeeAmount;
+    }
+
+    public PaidMethod getPaidMethod() {
+        return paidMethod;
+    }
+
+    public void setPaidMethod(PaidMethod paidMethod) {
+        this.paidMethod = paidMethod;
+    }
+
+    public OffsetDateTime getPaidAt() {
+        return paidAt;
+    }
+
+    public void setPaidAt(OffsetDateTime paidAt) {
+        this.paidAt = paidAt;
+    }
+
+    public String getPaidNote() {
+        return paidNote;
+    }
+
+    public void setPaidNote(String paidNote) {
+        this.paidNote = paidNote;
     }
 
     public OperationStatus getStatus() {
