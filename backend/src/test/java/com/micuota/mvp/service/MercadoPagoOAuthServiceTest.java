@@ -35,11 +35,14 @@ class MercadoPagoOAuthServiceTest {
     private MercadoPagoService mercadoPagoService;
     @Mock
     private TeacherProfileRepository teacherProfileRepository;
+    @Mock
+    private PlatformSettingsService settings;
 
     private MercadoPagoOAuthService service;
 
     @BeforeEach
     void setUp() {
+        org.mockito.Mockito.lenient().when(settings.mercadoPagoOAuthOn()).thenReturn(true);
         service = new MercadoPagoOAuthService(
             mercadoPagoService,
             teacherProfileRepository,
@@ -48,14 +51,22 @@ class MercadoPagoOAuthServiceTest {
             "secret-xyz",
             "https://api.micuota.online/api/mercadopago/oauth/callback",
             "https://auth.mercadopago.com/authorization",
-            "test-secret"
+            "test-secret",
+            settings
         );
+    }
+
+    @Test
+    void adminSwitchTurnsOAuthOffEvenWithCredentials() {
+        when(settings.mercadoPagoOAuthOn()).thenReturn(false);
+        assertThat(service.hasCredentials()).isTrue();
+        assertThat(service.isEnabled()).isFalse();
     }
 
     @Test
     void isDisabledWithoutClientCredentials() {
         MercadoPagoOAuthService disabled = new MercadoPagoOAuthService(
-            mercadoPagoService, teacherProfileRepository, objectMapper, "", "", "https://x/callback", "https://auth", "s"
+            mercadoPagoService, teacherProfileRepository, objectMapper, "", "", "https://x/callback", "https://auth", "s", settings
         );
         assertThat(disabled.isEnabled()).isFalse();
         assertThatThrownBy(() -> disabled.authorizationUrlFor(1L)).isInstanceOf(IllegalStateException.class);

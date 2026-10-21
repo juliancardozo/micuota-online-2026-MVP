@@ -36,13 +36,15 @@
       return false;
     }
     state.me = me;
-    const [payments, students, settings, recurring] = await Promise.all([
+    const [payments, students, settings, recurring, platform] = await Promise.all([
       api("/api/backoffice/payments"),
       api("/api/backoffice/users?role=STUDENT").catch(() => []),
       api("/api/backoffice/payment-settings").catch(() => null),
-      api("/api/backoffice/recurring-charges").catch(() => [])
+      api("/api/backoffice/recurring-charges").catch(() => []),
+      api("/api/public/platform", { auth: false }).catch(() => null)
     ]);
     state.recurring = recurring || [];
+    state.testMode = Boolean(platform && platform.testMode);
     state.payments = (payments || []).slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     state.students = (students || []).slice().sort((a, b) => a.fullName.localeCompare(b.fullName, "es"));
     state.settings = settings;
@@ -175,6 +177,12 @@
     return `<div class="card empty"><div class="empty-icon">${icons[icon]}</div><h2>${esc(title)}</h2><p class="muted">${esc(copyText)}</p>${ctaHref ? `<a class="btn btn-primary btn-lg" href="${ctaHref}">${esc(ctaLabel)}</a>` : ""}</div>`;
   }
 
+  // Mientras la plataforma esta en modo prueba ningun cobro mueve plata real.
+  function testModeBanner() {
+    if (!state.testMode) return "";
+    return `<div class="notice notice-warn" style="margin-bottom:16px">${icons.lock}<p class="small"><strong>MiCuota está en modo prueba.</strong> Ningún cobro mueve plata real. Con Mercado Pago, conectá tu usuario de prueba (TESTUSER…).</p></div>`;
+  }
+
   function mpBanner() {
     if (canCharge()) return "";
     return `<div class="banner-mp" role="note">${icons.alert.replace("<svg", '<svg width="28" height="28" style="flex:none;color:var(--warn)"')}<p class="grow"><strong>Falta decir cómo te pagan.</strong> Mercado Pago, transferencia, giro o efectivo: elegí uno y ya podés cobrar.</p><a class="btn btn-primary" href="#medios">Elegir ahora</a></div>`;
@@ -200,7 +208,7 @@
     const hour = new Date().getHours();
     const greet = hour < 12 ? "Buen día" : hour < 20 ? "Buenas tardes" : "Buenas noches";
 
-    let html = `<div class="view-head"><h1 class="hello">${greet}, ${esc(name)}</h1><p>${esc(todayLine())}</p></div>`;
+    let html = `<div class="view-head"><h1 class="hello">${greet}, ${esc(name)}</h1><p>${esc(todayLine())}</p></div>${testModeBanner()}`;
 
     if (!hideOnboarding) {
       html += `<section class="onboard" aria-labelledby="ob-title">
@@ -456,7 +464,7 @@
     const peopleOptions = state.students.map((s) => `<label class="choice person-opt"><input type="radio" name="person" value="${s.id}" ${preset === String(s.id) ? "checked" : ""} /><span class="choice-box"><span class="avatar" aria-hidden="true">${esc(initials(s.fullName))}</span><span><strong>${esc(s.fullName)}</strong><span>${esc(s.email)}</span></span></span></label>`).join("");
 
     const html = `<a class="back" href="#inicio">${icons.arrowLeft} Inicio</a>
-      <div class="view-head"><h1>Nuevo cobro</h1><p>Completá 3 cosas y te damos el link para mandar.</p></div>
+      <div class="view-head"><h1>Nuevo cobro</h1><p>Completá 3 cosas y te damos el link para mandar.</p></div>${testModeBanner()}
       <form id="new-form" novalidate>
         <section class="form-section" aria-labelledby="q1">
           <h2 id="q1"><span class="n">1</span>¿A quién le cobrás?</h2>
@@ -732,7 +740,7 @@
     const mpUpToDate = mpConnected() && (s.mercadoPagoConnection === "OAUTH" || !s.mercadoPagoOAuthAvailable);
     const mpPill = mpUpToDate ? `<span class="pill pill-ok">Conectado</span>` : mpConnected() ? `<span class="pill pill-warn">Actualizá la conexión</span>` : `<span class="pill pill-info">Sin conectar</span>`;
     const html = `<a class="back" href="#inicio">${icons.arrowLeft} Inicio</a>
-      <div class="view-head"><h1>Cómo te pagan</h1><p>Elegí una o varias. Tus clientes ven todas en la página de pago.</p></div>
+      <div class="view-head"><h1>Cómo te pagan</h1><p>Elegí una o varias. Tus clientes ven todas en la página de pago.</p></div>${testModeBanner()}
       <div class="card">
         <div class="row-between"><h2 class="card-title" style="margin:0">Mercado Pago</h2>${mpPill}</div>
         <p class="muted" style="margin:8px 0 12px">Tarjeta, débito o saldo de Mercado Pago. <strong>El pago se marca solo</strong> y la plata va directo a tu cuenta. Permite cobros mensuales automáticos.</p>
@@ -838,11 +846,13 @@
           <li><strong>Abrí el panel de Mercado Pago</strong><p>Entrá con tu usuario y contraseña de Mercado Pago de siempre.</p>
             <a class="btn btn-mp btn-sm" style="margin-top:8px" href="https://www.${domain}/developers/panel/app" target="_blank" rel="noopener">Abrir Mercado Pago ${icons.arrowRight}</a></li>
           <li><strong>Tocá “Crear aplicación”</strong><p>Ponele de nombre <em>MiCuota</em>. Si te pregunta qué vas a integrar, elegí <em>Pagos online</em> y <em>Checkout Pro</em>. Si ya tenés una aplicación, abrila.</p></li>
-          <li><strong>Entrá a “Credenciales de producción”</strong><p>Está en el menú de la izquierda. Puede que te pida completar datos de tu actividad: es un formulario corto.</p></li>
+          <li><strong>Entrá a “${state.testMode ? "Credenciales de prueba" : "Credenciales de producción"}”</strong><p>${state.testMode
+            ? "MiCuota está en modo prueba: usá las credenciales de prueba (de tu usuario TESTUSER). No mueven plata real."
+            : "Está en el menú de la izquierda. Puede que te pida completar datos de tu actividad: es un formulario corto."}</p></li>
           <li><strong>Copiá el “Access Token”</strong><p>Es un texto largo que empieza con <code>APP_USR-</code>. Tocá el botoncito de copiar al lado.</p>
             <div class="mock" aria-hidden="true" style="margin-top:10px">
               <div class="mock-bar">Mercado Pago Developers</div>
-              <div class="mock-crumbs">Tus integraciones › MiCuota › Credenciales de producción</div>
+              <div class="mock-crumbs">Tus integraciones › MiCuota › ${state.testMode ? "Credenciales de prueba" : "Credenciales de producción"}</div>
               <div class="mock-body">
                 <div class="mock-field"><small>Public Key</small><code>APP_USR-1a2b3c4d-…</code></div>
                 <div class="mock-field is-target"><small>Access Token</small><code>APP_USR-12345678901234-…</code> 📋<span class="mock-arrow">▲ Copiá este</span></div>

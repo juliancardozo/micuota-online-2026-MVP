@@ -42,6 +42,7 @@ public class MercadoPagoOAuthService {
     private final String redirectUri;
     private final String authorizationUrl;
     private final String stateSecret;
+    private final PlatformSettingsService platformSettingsService;
 
     public MercadoPagoOAuthService(
         MercadoPagoService mercadoPagoService,
@@ -51,7 +52,8 @@ public class MercadoPagoOAuthService {
         @Value("${app.payments.mercadopago.oauth.client-secret:}") String clientSecret,
         @Value("${app.payments.mercadopago.oauth.redirect-uri:}") String redirectUri,
         @Value("${app.payments.mercadopago.oauth.authorization-url:https://auth.mercadopago.com/authorization}") String authorizationUrl,
-        @Value("${app.auth.session-secret:micuota-local-dev-secret-change-in-prod}") String stateSecret
+        @Value("${app.auth.session-secret:micuota-local-dev-secret-change-in-prod}") String stateSecret,
+        PlatformSettingsService platformSettingsService
     ) {
         this.mercadoPagoService = mercadoPagoService;
         this.teacherProfileRepository = teacherProfileRepository;
@@ -61,10 +63,17 @@ public class MercadoPagoOAuthService {
         this.redirectUri = redirectUri == null ? "" : redirectUri.trim();
         this.authorizationUrl = authorizationUrl;
         this.stateSecret = stateSecret;
+        this.platformSettingsService = platformSettingsService;
     }
 
-    public boolean isEnabled() {
+    /** Hay credenciales de la aplicacion marketplace (variables de entorno). */
+    public boolean hasCredentials() {
         return !clientId.isBlank() && !clientSecret.isBlank() && !redirectUri.isBlank();
+    }
+
+    /** Con credenciales y con el interruptor del admin prendido. Apagado, se conecta pegando el Access Token. */
+    public boolean isEnabled() {
+        return hasCredentials() && platformSettingsService.mercadoPagoOAuthOn();
     }
 
     public String authorizationUrlFor(Long teacherProfileId) {
@@ -118,7 +127,7 @@ public class MercadoPagoOAuthService {
     // Los tokens OAuth de Mercado Pago duran 180 dias: se renuevan con un mes de margen.
     @Scheduled(cron = "${app.payments.mercadopago.oauth.refresh-cron:0 15 3 * * *}")
     public void refreshExpiringTokens() {
-        if (!isEnabled()) {
+        if (!hasCredentials()) {
             return;
         }
         OffsetDateTime limit = OffsetDateTime.now(ZoneOffset.UTC).plusDays(REFRESH_WINDOW_DAYS);

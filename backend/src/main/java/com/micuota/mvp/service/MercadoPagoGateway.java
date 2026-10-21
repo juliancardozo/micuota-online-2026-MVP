@@ -16,10 +16,12 @@ public class MercadoPagoGateway implements PaymentProviderGateway {
 
     private final MercadoPagoService mercadoPagoService;
     private final ObjectMapper objectMapper;
+    private final MercadoPagoAccountGuard accountGuard;
 
-    public MercadoPagoGateway(MercadoPagoService mercadoPagoService, ObjectMapper objectMapper) {
+    public MercadoPagoGateway(MercadoPagoService mercadoPagoService, ObjectMapper objectMapper, MercadoPagoAccountGuard accountGuard) {
         this.mercadoPagoService = mercadoPagoService;
         this.objectMapper = objectMapper;
+        this.accountGuard = accountGuard;
     }
 
     @Override
@@ -38,6 +40,7 @@ public class MercadoPagoGateway implements PaymentProviderGateway {
         if (token == null || token.isBlank()) {
             throw new IllegalStateException("El profesor debe conectar su Access Token de Mercado Pago para usar este motor");
         }
+        accountGuard.requireAllowed(token);
 
         String externalReference = "MC-" + UUID.randomUUID();
 

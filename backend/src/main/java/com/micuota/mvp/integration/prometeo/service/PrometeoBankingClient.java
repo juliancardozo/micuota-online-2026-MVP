@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.micuota.mvp.integration.prometeo.config.PrometeoProperties;
 import com.micuota.mvp.integration.prometeo.exception.PrometeoIntegrationException;
+import com.micuota.mvp.service.PlatformSettingsService;
 import io.netty.channel.ChannelOption;
 import java.io.IOException;
 import java.time.Duration;
@@ -35,10 +36,17 @@ public class PrometeoBankingClient {
     private final PrometeoProperties properties;
     private final ObjectMapper objectMapper;
     private final WebClient webClient;
+    private final PlatformSettingsService platformSettingsService;
 
-    public PrometeoBankingClient(PrometeoProperties properties, WebClient.Builder webClientBuilder, ObjectMapper objectMapper) {
+    public PrometeoBankingClient(
+        PrometeoProperties properties,
+        WebClient.Builder webClientBuilder,
+        ObjectMapper objectMapper,
+        PlatformSettingsService platformSettingsService
+    ) {
         this.properties = properties;
         this.objectMapper = objectMapper;
+        this.platformSettingsService = platformSettingsService;
         HttpClient httpClient = HttpClient.create()
             .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, properties.getConnectTimeoutMs())
             .responseTimeout(Duration.ofMillis(properties.getReadTimeoutMs()));
@@ -48,8 +56,19 @@ public class PrometeoBankingClient {
             .build();
     }
 
-    public boolean isConfigured() {
+    /** Variables de entorno: API key y la funcion habilitada para este despliegue. */
+    public boolean hasCredentials() {
         return properties.isBankPaymentsEnabled() && StringUtils.hasText(properties.getApiKey());
+    }
+
+    /**
+     * Ademas, el interruptor del admin prendido. En modo prueba solo contra el sandbox de Prometeo,
+     * asi apagar el modo real corta cualquier transferencia de verdad.
+     */
+    public boolean isConfigured() {
+        return hasCredentials()
+            && platformSettingsService.bankPaymentsOn()
+            && (platformSettingsService.isLive() || properties.isSandbox());
     }
 
     public JsonNode providers() {

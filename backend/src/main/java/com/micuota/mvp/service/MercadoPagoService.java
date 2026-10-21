@@ -54,6 +54,10 @@ public class MercadoPagoService {
         }
     }
 
+    public MercadoPagoApiResponse getCurrentUser(String accessToken) {
+        return get(accessToken, "/users/{id}", "me", "usuario");
+    }
+
     public MercadoPagoApiResponse getPayment(String accessToken, String paymentId) {
         return get(accessToken, "/v1/payments/{id}", paymentId, "pago");
     }

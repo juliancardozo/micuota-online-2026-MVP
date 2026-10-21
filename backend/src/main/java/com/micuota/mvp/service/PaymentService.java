@@ -618,6 +618,9 @@ public class PaymentService {
                     );
                 }
                 return new ProviderSelection(candidate, result, wrapRawResponse(requestedProvider, candidate, failures, result.rawResponse()));
+            } catch (TestModeViolationException exception) {
+                // El modo prueba se informa tal cual: no es una falla del proveedor ni hay que probar otro.
+                throw exception;
             } catch (RuntimeException exception) {
                 failures.put(candidate, exception.getMessage());
             }
