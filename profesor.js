@@ -616,6 +616,7 @@
           <button type="button" class="btn" data-action="qr" data-id="${p.id}">${icons.qr} Mostrar QR</button>
         </div>
         ${navigator.share ? `<button type="button" class="btn btn-ghost btn-block" style="margin-top:8px" data-action="native-share" data-id="${p.id}">${icons.share} Compartir por otra app</button>` : ""}
+        <a class="btn btn-ghost btn-block" style="margin-top:8px" href="${esc(payLink(p.id))}" target="_blank" rel="noopener">${icons.eye} Ver lo que ve tu cliente</a>
       </div>
       <div class="notice notice-info" style="margin-top:14px">${icons.bell}<p>${p.recurringChargeId
         ? `Este es el cobro de este mes. <strong>Cada mes, el día ${(recurringOf(p) || {}).dayOfMonth || new Date().getDate()}</strong>, le mandamos el nuevo por email. Cuando te pague, tocá «Ya me pagó».`
@@ -623,8 +624,8 @@
         ? "Cuando te pague, entrá al cobro y tocá <strong>«Ya me pagó»</strong>. Mientras tanto le recordamos por email."
         : "Si paga con Mercado Pago, <strong>se marca solo</strong>. Si te paga de otra forma, entrá al cobro y tocá «Ya me pagó»."}</p></div>
       <div class="detail-actions-2" style="margin-top:16px">
+        <a class="btn" href="#cobro/${p.id}">${icons.list} Ver el cobro</a>
         <a class="btn" href="#nuevo">${icons.plus} Otro cobro</a>
-        <a class="btn" href="#inicio">${icons.home} Ir al inicio</a>
       </div>`;
     setView(html, "Cobro creado");
   }
